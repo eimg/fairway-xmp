@@ -1,0 +1,465 @@
+[
+  {
+    "package": "c-client-2007f-1-vs16-x64.zip",
+    "repo": "winlibs/imap",
+    "tag": "imap-2007f-1",
+    "revision": "4f5969e9dd677122f30416de044576644f612c71",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "freetype-2.9.1-1-vs16-x64.zip",
+    "repo": "winlibs/freetype",
+    "tag": "freetype-2.9.1",
+    "revision": "16ce3db337180fc839ffb69eda5b44aeca545056",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "glib-2.53.3-1-vs16-x64.zip",
+    "repo": "winlibs/glib",
+    "tag": "glib-2.53.3-1",
+    "revision": "5738e74e82ed5e2e8f3df42b2eea052a88d3f29d",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "glib-2.53.3-vs16-x64.zip",
+    "repo": "winlibs/glib",
+    "tag": "glib-2.53.3",
+    "revision": "b1d67033b21b4ad79875f320bc66e12a79edc588",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "ICU-68.2-vs16-x64.zip",
+    "repo": "winlibs/icu4c",
+    "tag": "icu4c-68.2",
+    "revision": "e0415cbafe0aeec7c19111fb0d4fe69a30ae7b3c",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "ICU-70.1-vs16-x64.zip",
+    "repo": "winlibs/icu4c",
+    "tag": "icu4c-70.1",
+    "revision": "988705d50738ebc143466f0116bfa67cf4eb7bfd",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libargon2-20190702-vs16-x64.zip",
+    "repo": "winlibs/argon2",
+    "tag": "libargon2-20190702",
+    "revision": "fb53ef37be212380d51877b70f514f3bf2c1ee40",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libavif-0.9.0-1-vs16-x64.zip",
+    "repo": "winlibs/libavif",
+    "tag": "libavif-0.9.0-1",
+    "revision": "462589765f6290020390a2c42a1226b1d3aa5d1f",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libbzip2-1.0.8-vs16-x64.zip",
+    "repo": "winlibs/libbzip2",
+    "tag": "libbzip2-1.0.8",
+    "revision": "f131eb16809565cbeb0684ecad2bd20130e7d5a1",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libcurl-7.76.1-3-vs16-x64.zip",
+    "repo": "winlibs/curl",
+    "tag": "libcurl-7.76.1-2",
+    "revision": "f7b3634e1d4465e7ea30e10dbd10887f4d7aaed8",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libcurl-8.15.0.pl1-vs16-x64.zip",
+    "repo": "winlibs/curl",
+    "tag": "libcurl-8.15.0.pl1",
+    "revision": "6bcf0dbde9314ffdb25f59469ff32013f30db374",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libenchant2-2.2.8-vs16-x64.zip",
+    "repo": "winlibs/enchant",
+    "tag": "enchant-2.2.8",
+    "revision": "df5a4586e09d67bf2c208c7dfd0517657d06910e",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libffi-3.3-4-vs16-x64.zip",
+    "repo": "winlibs/libffi",
+    "tag": "libffi-3.3",
+    "revision": "0d0ab67e54893e7f140e4401d56901899586f4ce",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libiconv-1.16-5-vs16-x64.zip",
+    "repo": "winlibs/libiconv",
+    "tag": "libiconv-1.16-1",
+    "revision": "b6ed966db09f0ad458cb4006e53d6a588c352653",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libiconv-1.17-vs16-x64.zip",
+    "repo": "winlibs/libiconv",
+    "tag": "libiconv-1.17",
+    "revision": "3b9151dad09ecb8e41e150f41d196f2792e1a1c6",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libintl-0.18.3-8-vs16-x64.zip",
+    "repo": "winlibs/gettext",
+    "tag": "gettext-0.18.3",
+    "revision": "41517b32a9207814b94f0b3ff85c9d005dfeaf50",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libjpeg-9c-vs16-x64.zip",
+    "repo": "winlibs/libjpeg",
+    "tag": "libjpeg-9c",
+    "revision": "9a41511e9cd8f4357f4f33c163fa384ef5750fad",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libjpeg-turbo-2.1.0-vs16-x64.zip",
+    "repo": "winlibs/libjpeg",
+    "tag": "libjpeg-turbo-2.1.0",
+    "revision": "a49f7ac5dc62126ed253105aab76388b6309e2d0",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "liblmdb-0.9.22-6-vs16-x64.zip",
+    "repo": "winlibs/lmdb",
+    "tag": "liblmdb-0.9.22",
+    "revision": "e615c2ed45e83351ac1372e0eea6fffa53631d3e",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "liblzma-5.2.5-vs16-x64.zip",
+    "repo": "winlibs/liblzma",
+    "tag": "liblzma-5.2.5",
+    "revision": "5948553a1ae8ac246d05c4692beaf2606c230c67",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libonig-6.9.7.1-vs16-x64.zip",
+    "repo": "winlibs/oniguruma",
+    "tag": "oniguruma-6.9.7.1",
+    "revision": "a4bdf211491190aeb64cbcf21c5356c1870503dd",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libpng-1.6.34-8-vs16-x64.zip",
+    "repo": "winlibs/libpng",
+    "tag": "libpng-1.6.34",
+    "revision": "3ec4237518a4cb30b2f25950b065a9420766a268",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libpq-11.4-vs16-x64.zip",
+    "repo": "winlibs/postgresql",
+    "tag": "postgresql-11.4",
+    "revision": "50bcf175692efbf5dbaac64582b5abf5e6079294",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libpq-14.18-1-vs16-x64.zip",
+    "repo": "winlibs/postgresql",
+    "tag": "libpq-14.18",
+    "revision": "96ab7742d0c6022edb7a3d2e4d42c4d8a76696dc",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libqdbm-1.8.78-vs16-x64.zip",
+    "repo": "winlibs/qdbm",
+    "tag": "libqdbm-1.8.78",
+    "revision": "586aa477ff42f0d307dc26adada275642630b28f",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libsasl-2.1.27-2-vs16-x64.zip",
+    "repo": "winlibs/cyrus-sasl",
+    "tag": "cyrus-sasl-2.1.27-2",
+    "revision": "dcedf247a0cb30aa7c34921abbb02260cfb3ec3a",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libsodium-1.0.18-vs16-x64.zip",
+    "repo": "winlibs/libsodium",
+    "tag": "libsodium-1.0.18",
+    "revision": "a38fc95ae2dc330b645a37d4bf45c1f522b93f85",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libssh2-1.10.0-1-vs16-x64.zip",
+    "repo": "winlibs/libssh2",
+    "tag": "libssh2-1.10.0",
+    "revision": "60401ec4c25405be6ab54b8e50ad1ff7039d8acf",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libssh2-1.9.0-1-vs16-x64.zip",
+    "repo": "winlibs/libssh2",
+    "tag": "libssh2-1.9.0",
+    "revision": "c9d9ea4f2da2670857f58ed1b50b5f10dcd4fc8f",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libtidy-5.6.0-2-vs16-x64.zip",
+    "repo": "winlibs/libtidy",
+    "tag": "libtidy-5.6.0-1",
+    "revision": "30372f248cda4bcd82e99eda0be7402b64911a0b",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libwebp-1.1.0-vs16-x64.zip",
+    "repo": "winlibs/libwebp",
+    "tag": "libwebp-1.1.0",
+    "revision": "6386bb6485bc82536bbf4cbbf37b58756ffc1be3",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libwebp-1.3.2-vs16-x64.zip",
+    "repo": "winlibs/libwebp",
+    "tag": "libwebp-1.3.2",
+    "revision": "f6ee4b24d8d0c0a0e14baee113beb72ca69c2ad9",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libxml2-2.9.10-2-vs16-x64.zip",
+    "repo": "winlibs/libxml2",
+    "tag": "libxml2-2.9.10",
+    "revision": "81a9f8ea095b28b0cb081461fbc821cfd7154922",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libxml2-2.9.14-4-vs16-x64.zip",
+    "repo": "winlibs/libxml2",
+    "tag": "libxml2-2.9.14-4",
+    "revision": "0ee8eb82bdb5f56d7ca4f124b6fa54bcf631c0a2",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libxpm-3.5.12-8-vs16-x64.zip",
+    "repo": "winlibs/libxpm",
+    "tag": "libxpm-3.5.12",
+    "revision": "e296d8c226cda0b1b7a77befadf04f68bdf883c5",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "libxpm-3.5.12pl1-vs16-x64.zip",
+    "repo": "winlibs/libxpm",
+    "tag": "libxpm-3.5.12pl1",
+    "revision": "581af1b3953fa152224bb967a1ef516e85d95e1a",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "libxslt-1.1.34-vs16-x64.zip",
+    "repo": "winlibs/libxslt",
+    "tag": "libxslt-1.1.34",
+    "revision": "e4c4ac6fea81c758f0c8669ae57c40b780d15398",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "libzip-1.7.1-1-vs16-x64.zip",
+    "repo": "winlibs/libzip",
+    "tag": "libzip-1.7.1",
+    "revision": "6f8c03985d520588a50917831b777c759a57cc96",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "mpir-3.0.0-vs16-x64.zip",
+    "repo": "winlibs/mpir",
+    "tag": "mpir-3.0.0",
+    "revision": "d1ba0e2ead7c5c68b5748d6e27b2fa50aad470c4",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "net-snmp-5.7.3-1-vs16-x64.zip",
+    "repo": "winlibs/net-snmp",
+    "tag": "net-snmp-5.7.3",
+    "revision": "b0b4c772c55284883d233a8e85e2775e783c0d0f",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "nghttp2-1.40.0-vs16-x64.zip",
+    "repo": "winlibs/nghttp2",
+    "tag": "nghttp2-1.40.0",
+    "revision": "e16c0f2bd389495242f94ffeffa567a51a4e35a2",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "nghttp2-1.57.0-vs16-x64.zip",
+    "repo": "nghttp2/nghttp2",
+    "tag": "v1.57.0",
+    "revision": "6f41cc72718a1c0fca39e83d9537c1a91efa6d18",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "openldap-2.4.47-vs16-x64.zip",
+    "repo": "winlibs/openldap",
+    "tag": "openldap-2.4.47",
+    "revision": "9b9595b73c12540afd4b4081f6264d412c3a1fba",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "openssl-1.1.1t-vs16-x64.zip",
+    "repo": "winlibs/openssl",
+    "tag": "openssl-1.1.1t",
+    "revision": "58bea78d5f6d936001bb4ffa32fbba483cc1ddf9",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "openssl-1.1.1w.pl1-vs16-x64.zip",
+    "repo": "openssl/openssl",
+    "tag": "OpenSSL_1_1_1w",
+    "revision": "e04bd3433fd84e1861bf258ea37928d9845e6a86",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "sqlite3-3.33.0-vs16-x64.zip",
+    "repo": "winlibs/sqlite3",
+    "tag": "sqlite3-3.33.0",
+    "revision": "9ff69dfd747a07fc01a2cb47477b9e95765a95b2",
+    "php": [
+      "8.0"
+    ]
+  },
+  {
+    "package": "sqlite3-3.36.0-vs16-x64.zip",
+    "repo": "winlibs/sqlite3",
+    "tag": "sqlite3-3.36.0",
+    "revision": "3e576e5db6c856fdf079c96dd3a47f6aa19a3049",
+    "php": [
+      "8.1"
+    ]
+  },
+  {
+    "package": "wineditline-2.205-1-vs16-x64.zip",
+    "repo": "winlibs/wineditline",
+    "tag": "WinEditLine-2.205",
+    "revision": "320e15f4c647f814bd62245d4aff22f8deeed977",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "package": "zlib-1.2.12-vs16-x64.zip",
+    "repo": "winlibs/zlib",
+    "tag": "zlib-1.2.12",
+    "revision": "18712b93f10b8dad9db67d892f22d9b433b17e6d",
+    "php": [
+      "8.0",
+      "8.1"
+    ]
+  }
+]

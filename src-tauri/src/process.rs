@@ -389,7 +389,14 @@ fn linux_executable_matches(pid: u32, expected: &Path) -> bool {
 
 #[cfg(target_os = "linux")]
 pub fn matches_web(pid: u32, id: &str, layout: &crate::config::Layout) -> bool {
-    let exe = layout.exe(id, if id == "php" { "php-fpm" } else { "nginx" });
+    let exe = if id == "php" {
+        let Ok(exe) = layout.php_exe("php-fpm") else {
+            return false;
+        };
+        exe
+    } else {
+        layout.exe(id, "nginx")
+    };
     if !pid_alive(pid) || !linux_executable_matches(pid, &exe) {
         return false;
     }

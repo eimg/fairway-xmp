@@ -51,7 +51,7 @@ pub fn write_unix_launchers(layout: &Layout) -> Result<()> {
             shell_quote(&layout.data.join("config/php.ini").to_string_lossy()),
             shell_quote(&layout.data.join("composer").to_string_lossy())
         );
-    let php = shell_quote(&layout.exe("php", "php").to_string_lossy());
+    let php = shell_quote(&layout.php_exe("php")?.to_string_lossy());
     let scripts = [
         ("php", format!("{base}exec {php} \"$@\"\n")),
         (
@@ -71,7 +71,7 @@ pub fn write_unix_launchers(layout: &Layout) -> Result<()> {
 }
 
 pub fn install(layout: &Layout) -> Result<()> {
-    if !layout.exe("php", "php").is_file() || !layout.runtime.join("composer.phar").is_file() {
+    if !layout.php_exe("php")?.is_file() || !layout.runtime.join("composer.phar").is_file() {
         return Err("Install the complete runtime before enabling command-line tools.".into());
     }
     layout.initialize()?;
@@ -139,13 +139,13 @@ pub fn install(layout: &Layout) -> Result<()> {
             layout.data.join("config/php.ini").display(), layout.data.join("composer").display());
         atomic_write(
             &layout.bin.join("php.cmd"),
-            format!("{base}\"{}\" %*\r\n", layout.exe("php", "php").display()).as_bytes(),
+            format!("{base}\"{}\" %*\r\n", layout.php_exe("php")?.display()).as_bytes(),
         )?;
         atomic_write(
             &layout.bin.join("composer.cmd"),
             format!(
                 "{base}\"{}\" \"{}\" %*\r\n",
-                layout.exe("php", "php").display(),
+                layout.php_exe("php")?.display(),
                 layout.runtime.join("composer.phar").display()
             )
             .as_bytes(),

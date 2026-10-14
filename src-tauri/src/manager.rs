@@ -32,6 +32,8 @@ pub struct Snapshot {
     pub data_dir: String,
     pub runtime_ready: bool,
     pub runtime_versions: serde_json::Value,
+    pub php_version: String,
+    pub php_versions: BTreeMap<String, String>,
     pub path_installed: bool,
     pub path_php: Option<String>,
     pub path_composer: Option<String>,
@@ -88,10 +90,18 @@ impl Manager {
     }
 
     pub fn runtime_ready(&self) -> bool {
+        let Ok(php) = self.layout.php_exe("php") else {
+            return false;
+        };
+        let Ok(worker) = self
+            .layout
+            .php_exe(if cfg!(windows) { "php-cgi" } else { "php-fpm" })
+        else {
+            return false;
+        };
         [
-            self.layout.exe("php", "php"),
-            self.layout
-                .exe("php", if cfg!(windows) { "php-cgi" } else { "php-fpm" }),
+            php,
+            worker,
             self.layout.exe("nginx", "nginx"),
             self.layout.exe("mysql", "mysqld"),
             self.layout.exe("mysql", "mysql"),
@@ -148,6 +158,14 @@ impl Manager {
                 .ok()
                 .and_then(|s| serde_json::from_slice(&s).ok())
                 .unwrap_or(serde_json::Value::Null),
+            php_version: self.layout.php_version().unwrap_or_default(),
+            php_versions: self
+                .layout
+                .php_versions()
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|(minor, full)| full.as_str().map(|version| (minor, version.into())))
+                .collect(),
             path_installed: crate::integration::installed(&self.layout),
             path_php: crate::integration::resolve("php"),
             path_composer: crate::integration::resolve("composer"),
@@ -165,6 +183,80 @@ impl Manager {
         self.ports = ports;
         self.errors.clear();
         Ok(())
+    }
+
+    pub fn save_settings(&mut self, ports: Ports, version: String) -> Result<()> {
+        if !self.processes.is_empty() {
+            return Err("Stop all services before changing settings.".into());
+        }
+        ports.validate()?;
+        if !self.layout.php_versions()?.contains_key(&version) {
+            return Err(format!(
+                "PHP {version} is not bundled with this installation."
+            ));
+        }
+        let previous = self.layout.php_version()?;
+        let version_changed = version != previous;
+        self.save_php_version(version)?;
+        if let Err(error) = self.save_ports(ports) {
+            let restore: Result<()> = (|| {
+                if version_changed {
+                    atomic_write(&self.layout.data.join("php-version"), previous.as_bytes())?;
+                }
+                self.layout.write_configs(&self.ports)?;
+                if version_changed && crate::integration::installed(&self.layout) {
+                    crate::integration::install(&self.layout)?;
+                }
+                Ok(())
+            })();
+            return match restore {
+                Ok(()) => Err(error),
+                Err(restore_error) => Err(format!(
+                    "{error} Previous settings could not be fully restored: {restore_error}"
+                )),
+            };
+        }
+        Ok(())
+    }
+
+    pub fn save_php_version(&mut self, version: String) -> Result<()> {
+        if !self.processes.is_empty() {
+            return Err("Stop all services before changing PHP versions.".into());
+        }
+        if !self.layout.php_versions()?.contains_key(&version) {
+            return Err(format!(
+                "PHP {version} is not bundled with this installation."
+            ));
+        }
+        let previous = self.layout.php_version()?;
+        if version == previous {
+            return Ok(());
+        }
+        let marker = self.layout.data.join("php-version");
+        atomic_write(&marker, version.as_bytes())?;
+        let result = (|| {
+            if !self.layout.php_exe("php")?.is_file()
+                || !self
+                    .layout
+                    .php_exe(if cfg!(windows) { "php-cgi" } else { "php-fpm" })?
+                    .is_file()
+            {
+                return Err(format!("PHP {version} runtime files are missing."));
+            }
+            self.layout.write_configs(&self.ports)?;
+            if crate::integration::installed(&self.layout) {
+                crate::integration::install(&self.layout)?;
+            }
+            Ok(())
+        })();
+        if result.is_err() {
+            let _ = atomic_write(&marker, previous.as_bytes());
+            let _ = self.layout.write_configs(&self.ports);
+            if crate::integration::installed(&self.layout) {
+                let _ = crate::integration::install(&self.layout);
+            }
+        }
+        result
     }
 
     pub fn start_all(&mut self) -> Result<()> {
@@ -281,10 +373,11 @@ impl Manager {
     fn spawn_service(&mut self, id: &str) -> Result<()> {
         let mut cmd = match id {
             "php" => {
-                let mut cmd = process::command(
-                    self.layout
-                        .exe("php", if cfg!(windows) { "php-cgi" } else { "php-fpm" }),
-                );
+                let mut cmd = process::command(self.layout.php_exe(if cfg!(windows) {
+                    "php-cgi"
+                } else {
+                    "php-fpm"
+                })?);
                 cmd.arg("-c").arg(self.layout.data.join("config/php.ini"));
                 #[cfg(windows)]
                 cmd.args(["-b", &format!("127.0.0.1:{}", self.ports.php)])
@@ -608,4 +701,60 @@ fn copy_tree(source: &Path, target: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn settings_save_validates_both_fields_before_changing_either() {
+        let root = std::env::temp_dir().join(format!(
+            "fairway-settings-{}-{}",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+        fs::create_dir_all(&layout.runtime).unwrap();
+        fs::write(
+            layout.runtime.join("manifest.json"),
+            br#"{"php":"8.5.11","phpVersions":{"8.4":"8.4.26","8.5":"8.5.11"}}"#,
+        )
+        .unwrap();
+        let mut manager = Manager::new(layout).unwrap();
+        let ports = Ports {
+            website: 8810,
+            ..Ports::default()
+        };
+        let invalid = Ports {
+            mysql: 8810,
+            ..ports.clone()
+        };
+        assert!(manager.save_settings(invalid, "8.4".into()).is_err());
+        assert_eq!(manager.layout.php_version().unwrap(), "8.5");
+        assert_eq!(manager.ports, Ports::default());
+        assert!(manager.save_settings(ports.clone(), "8.4".into()).is_err());
+        assert_eq!(manager.layout.php_version().unwrap(), "8.5");
+        assert_eq!(manager.ports, Ports::default());
+        let bin = manager.layout.runtime.join("php-8.4/bin");
+        fs::create_dir_all(&bin).unwrap();
+        for executable in ["php", if cfg!(windows) { "php-cgi" } else { "php-fpm" }] {
+            let name = if cfg!(windows) {
+                format!("{executable}.exe")
+            } else {
+                executable.into()
+            };
+            fs::write(bin.join(name), b"").unwrap();
+        }
+        let settings = manager.layout.data.join("settings.json");
+        fs::create_dir(&settings).unwrap();
+        assert!(manager.save_settings(ports.clone(), "8.4".into()).is_err());
+        assert_eq!(manager.layout.php_version().unwrap(), "8.5");
+        assert_eq!(manager.ports, Ports::default());
+        fs::remove_dir(settings).unwrap();
+        manager.save_settings(ports.clone(), "8.4".into()).unwrap();
+        assert_eq!(manager.layout.php_version().unwrap(), "8.4");
+        assert_eq!(manager.layout.ports().unwrap(), ports);
+        fs::remove_dir_all(root).unwrap();
+    }
 }

@@ -77,6 +77,8 @@ composer --version
 
 Manage this integration under **Settings → Command-line tools**. You can also use **Open terminal** in the control panel.
 
+Development builds with PHP 8.0 through 8.5 let you switch under **Settings → Service Settings → Advanced settings** after stopping all services. Select the version and click **Save**. The selection controls websites, terminal PHP, and Composer, and is saved for the next launch. On Linux, use `fairway php-version 8.0` through `fairway php-version 8.5` after `fairway stop all`. See the [step by step test guide](docs/testing-php-versions.md). The v0.1.0-alpha.2 installers linked above contain PHP 8.5 only. PHP 8.0 and 8.1 are end of life; use newer versions for internet-facing projects.
+
 For projects with their own development server, run the usual command, such as Laravel’s `php artisan serve`.
 
 ## Your database

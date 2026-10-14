@@ -118,6 +118,77 @@ impl Layout {
         self.runtime.join(service).join("bin").join(name)
     }
 
+    pub fn php_versions(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+        let manifest = self.runtime_manifest()?;
+        if let Some(versions) = manifest["phpVersions"].as_object() {
+            return Ok(versions.clone());
+        }
+        let version = manifest["php"]
+            .as_str()
+            .ok_or("The bundled PHP version is missing.")?;
+        let minor = version.split('.').take(2).collect::<Vec<_>>().join(".");
+        Ok(serde_json::Map::from_iter([(
+            minor,
+            serde_json::Value::String(version.into()),
+        )]))
+    }
+
+    pub fn php_version(&self) -> Result<String> {
+        let version = match fs::read_to_string(self.data.join("php-version")) {
+            Ok(version) => version.trim().to_string(),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                let manifest = self.runtime_manifest()?;
+                manifest["php"]
+                    .as_str()
+                    .ok_or("The bundled PHP version is missing.")?
+                    .split('.')
+                    .take(2)
+                    .collect::<Vec<_>>()
+                    .join(".")
+            }
+            Err(e) => return Err(e.to_string()),
+        };
+        if !self.php_versions()?.contains_key(&version) {
+            return Err(format!(
+                "PHP {version} is not bundled with this installation."
+            ));
+        }
+        Ok(version)
+    }
+
+    pub fn php_root(&self) -> Result<PathBuf> {
+        let selected = self.php_version()?;
+        let manifest = self.runtime_manifest()?;
+        let default = manifest["php"]
+            .as_str()
+            .ok_or("The bundled PHP version is missing.")?;
+        if default.starts_with(&format!("{selected}.")) {
+            Ok(self.runtime.join("php"))
+        } else {
+            Ok(self.runtime.join(format!("php-{selected}")))
+        }
+    }
+
+    pub fn php_exe(&self, executable: &str) -> Result<PathBuf> {
+        let name = if cfg!(windows) {
+            format!("{executable}.exe")
+        } else {
+            executable.into()
+        };
+        Ok(self.php_root()?.join("bin").join(name))
+    }
+
+    fn runtime_manifest(&self) -> Result<serde_json::Value> {
+        let bytes = match fs::read(self.runtime.join("manifest.json")) {
+            Ok(bytes) => bytes,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                include_bytes!("../../runtime-manifest.json").to_vec()
+            }
+            Err(e) => return Err(e.to_string()),
+        };
+        serde_json::from_slice(&bytes).map_err(|e| e.to_string())
+    }
+
     pub fn ports(&self) -> Result<Ports> {
         let path = self.data.join("settings.json");
         match fs::read(&path) {
@@ -149,9 +220,9 @@ impl Layout {
         let php = format!(
             "[PHP]\nengine=On\nshort_open_tag=Off\nerror_reporting=E_ALL\ndisplay_errors=On\nlog_errors=On\nerror_log={}\ndate.timezone=UTC\nmemory_limit=256M\npost_max_size=64M\nupload_max_filesize=64M\nmax_execution_time=120\nsession.save_path={}\nupload_tmp_dir={}\nextension_dir={}\ncurl.cainfo={}\nopenssl.cafile={}\n{}",
             ini(&self.data.join("logs/php.log")), ini(&self.data.join("sessions")),
-            ini(&self.data.join("tmp")), ini(&self.runtime.join("php/ext")),
+            ini(&self.data.join("tmp")), ini(&self.php_root()?.join("ext")),
             ini(&self.runtime.join("cacert.pem")), ini(&self.runtime.join("cacert.pem")),
-            if cfg!(windows) { "extension=curl\nextension=fileinfo\nextension=gd\nextension=intl\nextension=mbstring\nextension=mysqli\nextension=openssl\nextension=pdo_mysql\nextension=pdo_sqlite\nextension=sodium\nextension=sqlite3\nextension=zip\n" } else { "" }
+            if cfg!(windows) { windows_php_extensions(&self.php_root()?) } else { String::new() }
         );
         atomic_write(&conf.join("php.ini"), php.as_bytes())?;
         let fpm = format!(
@@ -279,6 +350,15 @@ fn nginx_config(layout: &Layout, ports: &Ports) -> String {
         nginx_path(&layout.data.join("phpmyadmin")), fastcgi)
 }
 
+fn windows_php_extensions(php_root: &Path) -> String {
+    let mut extensions = String::from("extension=curl\nextension=fileinfo\nextension=gd\nextension=intl\nextension=mbstring\nextension=mysqli\nextension=openssl\nextension=pdo_mysql\nextension=pdo_sqlite\nextension=sodium\nextension=sqlite3\n");
+    // PHP 8.0/8.1 ship ZIP in the binary; later Windows releases ship php_zip.dll.
+    if php_root.join("ext/php_zip.dll").is_file() {
+        extensions.push_str("extension=zip\n");
+    }
+    extensions
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -312,5 +392,42 @@ mod tests {
         assert!(nginx.contains("/tmp/data/phpmyadmin"));
         assert!(!nginx.contains("listen 0.0.0.0"));
         assert_eq!(php_string("a'b\\c"), "'a\\'b\\\\c'");
+    }
+
+    #[test]
+    fn php_selection_uses_the_matching_runtime_and_rejects_unknown_versions() {
+        let root = std::env::temp_dir().join(format!(
+            "fairway-php-{}-{}",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+        fs::create_dir_all(&layout.runtime).unwrap();
+        fs::create_dir_all(&layout.data).unwrap();
+        fs::write(
+            layout.runtime.join("manifest.json"),
+            br#"{"php":"8.5.11","phpVersions":{"8.4":"8.4.26","8.5":"8.5.11"}}"#,
+        )
+        .unwrap();
+        assert_eq!(layout.php_root().unwrap(), layout.runtime.join("php"));
+        fs::write(layout.data.join("php-version"), "8.4").unwrap();
+        assert_eq!(layout.php_root().unwrap(), layout.runtime.join("php-8.4"));
+        fs::write(layout.data.join("php-version"), "8.3").unwrap();
+        assert!(layout.php_version().is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn windows_zip_configuration_follows_the_selected_runtime() {
+        let root = std::env::temp_dir().join(format!(
+            "fairway-zip-{}-{}",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        fs::create_dir_all(root.join("ext")).unwrap();
+        assert!(!windows_php_extensions(&root).contains("extension=zip"));
+        fs::write(root.join("ext/php_zip.dll"), b"").unwrap();
+        assert!(windows_php_extensions(&root).contains("extension=zip\n"));
+        fs::remove_dir_all(root).unwrap();
     }
 }

@@ -19,12 +19,12 @@ jobs:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
@@ -53,6 +53,13 @@ jobs:
           } else {
             python scripts/prepare_runtime.py
           }
+      - name: Check Windows bundle size
+        run: |
+          $runtimeFiles = @(Get-ChildItem 'src-tauri/resources/runtime' -File -Recurse)
+          $bytes = ($runtimeFiles | Measure-Object -Property Length -Sum).Sum
+          Write-Host "Bundled runtime: $([math]::Round($bytes / 1MB, 1)) MiB"
+          $debugFiles = @($runtimeFiles | Where-Object { $_.FullName -match '[\\/]mysql[\\/]' -and $_.Extension -in '.pdb', '.lib' })
+          if ($debugFiles.Count -gt 0) { throw 'MySQL debug symbols or linker libraries remain in the bundle.' }
       - name: Exercise real services, backups, and PATH cleanup
         run: |
           $root = Join-Path (Get-Location) '.runtime-work/windows-smoke'
@@ -95,7 +102,7 @@ jobs:
             checks = @('frontend build', 'packaging tests', 'Rust tests and clippy', 'fresh runtime smoke', 'MySQL 8.4 to 9.7 upgrade, backup and restart')
             purpose = 'Release candidate installer; reuse this exact file after testing'
           } | ConvertTo-Json -Depth 8 | Set-Content "$output/build-info.json" -Encoding utf8
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: fairway-windows-x64-${{ steps.metadata.outputs.version }}
           path: artifacts/windows-installer/
@@ -103,7 +110,7 @@ jobs:
           retention-days: 90
       - name: Save failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: windows-build-diagnostics
           path: |

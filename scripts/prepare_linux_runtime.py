@@ -80,7 +80,8 @@ def bundle_component_libraries(target):
 
 def bundle_libraries(target):
     packages = set()
-    for component in ('php', 'nginx', 'mysql'):
+    php_components = [f'php-{minor}' for minor, version in MANIFEST.get('phpVersions', {}).items() if version != MANIFEST['php']]
+    for component in ('php', *php_components, 'nginx', 'mysql'):
         packages.update(bundle_component_libraries(target / component))
     sources = []
     for package in sorted(packages):
@@ -103,23 +104,38 @@ def linux(target, lock, refresh):
     work.mkdir(parents=True, exist_ok=True)
     source_output = ROOT / '.runtime-work/linux-sources'
     source_output.mkdir(parents=True, exist_ok=True)
-    for name, suffix in [('php', 'tar.xz'), ('nginx', 'tar.gz')]:
-        url = f'https://www.php.net/distributions/php-{MANIFEST["php"]}.tar.xz' if name == 'php' else f'https://nginx.org/download/nginx-{MANIFEST["nginx"]}.tar.gz'
+    php_builds = [('php', MANIFEST['php'])]
+    php_builds.extend((f'php-{minor}', version) for minor, version in MANIFEST.get('phpVersions', {}).items() if version != MANIFEST['php'])
+    for name, version in [*php_builds, ('nginx', MANIFEST['nginx'])]:
+        suffix = 'tar.xz' if name.startswith('php') else 'tar.gz'
+        url = f'https://www.php.net/distributions/php-{version}.tar.xz' if name.startswith('php') else f'https://nginx.org/download/nginx-{version}.tar.gz'
         archive = lock_download(name + '-linux-source', url, refresh=refresh, lock=lock)
-        copy(archive, source_output / f'{name}-{MANIFEST[name]}.{suffix}')
+        copy(archive, source_output / f'{name}-{version}.{suffix}')
         source = work / name
         if source.exists(): shutil.rmtree(source)
         safe_extract(archive, source, 'tar')
         source, = [path for path in source.iterdir() if path.is_dir()]
-        if name == 'php':
-            prefix = work / 'php-install'
+        if name.startswith('php'):
+            if version.startswith('8.0.'):
+                # PHP 8.0 predates OpenSSL 3 in Ubuntu 22.04. Apply the
+                # checksummed backports used by Homebrew's final 8.0 formula.
+                patches = (
+                    ('openssl3', '0002-Add-minimal-OpenSSL-3.0-patch-PHP8.0.patch'),
+                    ('openssl-eof', '0003-Fix-bug-79589-ssl3_read_n-unexpected-eof-while-reading-PHP8.0.patch'),
+                )
+                for key, filename in patches:
+                    url = f'https://raw.githubusercontent.com/shivammathur/php-src-backports/2bcb0b/patches/{filename}'
+                    patch = lock_download(f'php-8.0-linux-{key}-patch', url, refresh=refresh, lock=lock)
+                    copy(patch, source_output / filename)
+                    run(['patch', '-p1', '-i', str(patch)], cwd=source)
+            prefix = work / f'{name}-install'
             run(['./configure', f'--prefix={prefix}', '--disable-all', '--enable-cli', '--enable-phar', '--with-iconv', '--enable-fpm', '--disable-cgi', '--enable-bcmath', '--enable-ctype', '--with-curl', '--enable-dom', '--enable-fileinfo', '--enable-filter', '--with-libxml', '--enable-gd', '--with-jpeg', '--with-webp', '--with-freetype', '--enable-intl', '--enable-mbstring', '--enable-mysqlnd', '--with-mysqli=mysqlnd', '--with-openssl', '--enable-pdo', '--with-pdo-mysql=mysqlnd', '--with-pdo-sqlite', '--enable-session', '--enable-simplexml', '--with-sodium', '--with-sqlite3', '--enable-tokenizer', '--enable-xml', '--enable-xmlreader', '--enable-xmlwriter', '--with-zip', '--with-zlib', '--without-pear'], cwd=source)
             run(['make', '-j' + jobs], cwd=source)
             run(['make', 'install'], cwd=source)
-            copy(prefix / 'bin/php', target / 'php/bin/php')
-            copy(prefix / 'sbin/php-fpm', target / 'php/bin/php-fpm')
-            (target / 'php/ext').mkdir(parents=True, exist_ok=True)
-            for notice in ('LICENSE', 'NEWS'): copy(source / notice, target / 'licenses/php' / notice)
+            copy(prefix / 'bin/php', target / name / 'bin/php')
+            copy(prefix / 'sbin/php-fpm', target / name / 'bin/php-fpm')
+            (target / name / 'ext').mkdir(parents=True, exist_ok=True)
+            for notice in ('LICENSE', 'NEWS'): copy(source / notice, target / 'licenses' / name / notice)
         else:
             prefix = target / 'nginx'
             run(['./configure', '--prefix=/', '--sbin-path=bin/nginx', '--conf-path=conf/nginx.conf', '--pid-path=nginx.pid', '--error-log-path=logs/nginx.log', '--http-log-path=logs/access.log', '--with-http_ssl_module', '--with-http_gzip_static_module', '--with-http_realip_module', '--with-http_stub_status_module'], cwd=source)

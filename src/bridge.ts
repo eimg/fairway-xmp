@@ -28,6 +28,7 @@ export const preview: Snapshot = {
     php: manifest.php, mysql: manifest.mysql, nginx: manifest.nginx,
     phpmyadmin: manifest.phpmyadmin, composer: manifest.composer,
   }, pathInstalled: false,
+  phpVersion: manifest.php.split('.').slice(0, 2).join('.'), phpVersions: manifest.phpVersions,
   pathPhp: null, pathComposer: null, version,
 };
 

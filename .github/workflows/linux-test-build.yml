@@ -11,8 +11,8 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - uses: dtolnay/rust-toolchain@stable
@@ -33,7 +33,7 @@ jobs:
           cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
           cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --locked
           cargo clippy --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --all-targets --locked -- -D warnings
-      - uses: actions/cache/restore@v4
+      - uses: actions/cache/restore@v5
         id: runtime-cache
         with:
           path: |
@@ -45,7 +45,7 @@ jobs:
         run: python scripts/prepare_runtime.py --lockfile runtime-linux-downloads.lock.json
       - name: Verify staged runtime
         run: python scripts/prepare_runtime.py --verify-only
-      - uses: actions/cache/save@v4
+      - uses: actions/cache/save@v5
         if: steps.runtime-cache.outputs.cache-hit != 'true'
         with:
           path: |
@@ -60,7 +60,7 @@ jobs:
         run: python scripts/package_linux.py
       - name: Test installed CLI, supervisor and terminal dashboard
         run: python tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-0.1.0-alpha.2-linux-x86_64.run
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: fairway-linux-x86_64
           path: |
@@ -70,13 +70,13 @@ jobs:
             artifacts/linux-installer/build-info.json
           if-no-files-found: error
           retention-days: 90
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: fairway-linux-x86_64-sources
           path: artifacts/linux-installer/*-sources.tar.gz
           if-no-files-found: error
           retention-days: 90
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: linux-build-diagnostics
@@ -95,7 +95,7 @@ jobs:
       matrix:
         image: ['ubuntu:22.04', 'ubuntu:24.04', 'debian:bookworm-slim', 'fedora:latest', 'archlinux:base']
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: fairway-linux-x86_64
           path: artifacts

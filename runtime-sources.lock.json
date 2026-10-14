@@ -15,7 +15,7 @@
   {
     "name": "aom",
     "url": "https://aomedia.googlesource.com/aom/+archive/af3dc9aadc793c1b00edc003e3fc19a44fdeb574.tar.gz",
-    "sha256": "33d8b8aeb91eac2498d26cf7030f8d7cce5df68902dfaa987a58d486bd696369",
+    "sha256": "ed87a10f50418497b87a9b4568271774f0847893211b36bb341987e4c68f4da3",
     "file": "aom.tar.gz",
     "revision": "af3dc9aadc793c1b00edc003e3fc19a44fdeb574",
     "binary": {
@@ -39,6 +39,555 @@
       "version": "20190702"
     },
     "mirrors": []
+  },
+  {
+    "name": "aspell",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/aspell-0.60.8.2.tar.gz",
+    "sha256": "57fe4863eae6048f72245a8575b44b718fb85ca14b9f8c0afc41b254dfd76919",
+    "file": "aspell.tar.gz",
+    "binary": {
+      "key": "brew-aspell-arm64-sequoia",
+      "sha256": "f071da3a05bb8d84d2df84df586f0e1a940934e630010f77673339ef69ee867d",
+      "url": "https://ghcr.io/v2/homebrew/core/aspell/blobs/sha256:f071da3a05bb8d84d2df84df586f0e1a940934e630010f77673339ef69ee867d",
+      "version": "0.60.8.2"
+    },
+    "mirrors": [
+      "https://ftp.gnu.org/gnu/aspell/aspell-0.60.8.2.tar.gz"
+    ]
+  },
+  {
+    "name": "aspell-resource-0",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/af/aspell-af-0.50-0.tar.bz2",
+    "sha256": "9d6000aeca5911343278bd6ed9e21d42c8cb26247dafe94a76ff81d8ac98e602",
+    "file": "aspell-resource-0.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-1",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/am/aspell6-am-0.03-1.tar.bz2",
+    "sha256": "bf27dd21f8871e2b3332c211b402cd46604d431a7773e599729c242cdfb9d487",
+    "file": "aspell-resource-1.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-2",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ar/aspell6-ar-1.2-0.tar.bz2",
+    "sha256": "041ea24a82cdd6957040e2fb84262583bf46b3a8301283a75d257a7417207cab",
+    "file": "aspell-resource-2.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-3",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ast/aspell6-ast-0.01.tar.bz2",
+    "sha256": "43f23ed01c338c37f9bbb820db757b36ede1cea47a7b93dc8b6d7bd66b410f92",
+    "file": "aspell-resource-3.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-4",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/az/aspell6-az-0.02-0.tar.bz2",
+    "sha256": "063176ec459d61acd59450ae49b5076e42abb1dcd54c1f934bae5fa6658044c3",
+    "file": "aspell-resource-4.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-5",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/be/aspell5-be-0.01.tar.bz2",
+    "sha256": "550bad0c03a142241ffe5ecc183659d80020b566003a05341cd1e97c6ed274eb",
+    "file": "aspell-resource-5.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-6",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/bg/aspell6-bg-4.1-0.tar.bz2",
+    "sha256": "74570005dc2be5a244436fa2b46a5f612be84c6843f881f0cb1e4c775f658aaa",
+    "file": "aspell-resource-6.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-7",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/bn/aspell6-bn-0.01.1-1.tar.bz2",
+    "sha256": "b03f9cc4feb00df9bfd697b032f4f4ae838ad5a6bb41db798eefc5639a1480d9",
+    "file": "aspell-resource-7.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-8",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/br/aspell-br-0.50-2.tar.bz2",
+    "sha256": "c2122a6dcca653c082d785f0da4bf267363182a017fea4129e8b0882aa6d2a3b",
+    "file": "aspell-resource-8.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-9",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ca/aspell6-ca-2.1.5-1.tar.bz2",
+    "sha256": "ebdae47edf87357a4df137dd754737e6417452540cb1ed34b545ccfd66f165b9",
+    "file": "aspell-resource-9.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-10",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/cs/aspell6-cs-20040614-1.tar.bz2",
+    "sha256": "01c091f907c2fa4dfa38305c2494bb80009407dfb76ead586ad724ae21913066",
+    "file": "aspell-resource-10.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-11",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/csb/aspell6-csb-0.02-0.tar.bz2",
+    "sha256": "c166ad07d50e9e13ac9f87d5a8938b3f675a0f8a01017bd8969c2053e7f52298",
+    "file": "aspell-resource-11.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-12",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/cy/aspell-cy-0.50-3.tar.bz2",
+    "sha256": "d5399dcd70061e5ed5af1214eb580f62864dd35ea4fa1ec2882ffc4f03307897",
+    "file": "aspell-resource-12.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-13",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/da/aspell6-da-1.6.36-11-0.tar.bz2",
+    "sha256": "dbc6cbceaa7a4528f3756f0b5cce5c3d0615c2103d3899b47e9df2ed9582e2f7",
+    "file": "aspell-resource-13.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-14",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/de/aspell6-de-20161207-7-0.tar.bz2",
+    "sha256": "c2125d1fafb1d4effbe6c88d4e9127db59da9ed92639c7cbaeae1b7337655571",
+    "file": "aspell-resource-14.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-15",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/de-alt/aspell6-de-alt-2.1-1.tar.bz2",
+    "sha256": "36d13c6c743a6b1ff05fb1af79134e118e5a94db06ba40c076636f9d04158c73",
+    "file": "aspell-resource-15.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-16",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/el/aspell6-el-0.08-0.tar.bz2",
+    "sha256": "4af60f1a8adf8b1899680deefdf49288d7406a2c591658f880628bf7c1604cd2",
+    "file": "aspell-resource-16.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-17",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/en/aspell6-en-2020.12.07-0.tar.bz2",
+    "sha256": "4c8f734a28a088b88bb6481fcf972d0b2c3dc8da944f7673283ce487eac49fb3",
+    "file": "aspell-resource-17.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-18",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/eo/aspell6-eo-2.1.20000225a-2.tar.bz2",
+    "sha256": "41d2d18d6a4de6422185a31ecfc1a3de2e751f3dfb2cbec8f275b11857056e27",
+    "file": "aspell-resource-18.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-19",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/es/aspell6-es-1.11-2.tar.bz2",
+    "sha256": "ad367fa1e7069c72eb7ae37e4d39c30a44d32a6aa73cedccbd0d06a69018afcc",
+    "file": "aspell-resource-19.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-20",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/et/aspell6-et-0.1.21-1.tar.bz2",
+    "sha256": "b1e857aa3daaea2a19462b2671e87c26a7eb7337c83b709685394eed8472b249",
+    "file": "aspell-resource-20.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-21",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/fa/aspell6-fa-0.11-0.tar.bz2",
+    "sha256": "482d26ea879a8ea02d9373952205f67e07c85a7550841b13b5079bb2f9f2e15b",
+    "file": "aspell-resource-21.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-22",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/fi/aspell6-fi-0.7-0.tar.bz2",
+    "sha256": "f8d7f07b4511e606eb56392ddaa76fd29918006331795e5942ad11b510d0a51d",
+    "file": "aspell-resource-22.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-23",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/fo/aspell5-fo-0.2.16-1.tar.bz2",
+    "sha256": "f7e0ddc039bb4f5c142d39dab72d9dfcb951f5e46779f6e3cf1d084a69f95e08",
+    "file": "aspell-resource-23.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-24",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/fr/aspell-fr-0.50-3.tar.bz2",
+    "sha256": "f9421047519d2af9a7a466e4336f6e6ea55206b356cd33c8bd18cb626bf2ce91",
+    "file": "aspell-resource-24.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-25",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/fy/aspell6-fy-0.12-0.tar.bz2",
+    "sha256": "3447cfa90e459af32183a6bc8af9ba3ed571087811cdfc336821454bac8995aa",
+    "file": "aspell-resource-25.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-26",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ga/aspell5-ga-4.5-0.tar.bz2",
+    "sha256": "455fdbbca24cecb4667fbcf9544d84ae83e5b2505caae79afa6b2cb76b4d0679",
+    "file": "aspell-resource-26.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-27",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/gd/aspell5-gd-0.1.1-1.tar.bz2",
+    "sha256": "e316a08a75da8a0d4d15eb892023073a971e0a326382a5532db29856768e0929",
+    "file": "aspell-resource-27.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-28",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/gl/aspell6-gl-0.5a-2.tar.bz2",
+    "sha256": "b3cdcf65971e70b8c09fb7f319164c6344a80d260b6e98dc6ecca1e02b7cfc8a",
+    "file": "aspell-resource-28.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-29",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/grc/aspell6-grc-0.02-0.tar.bz2",
+    "sha256": "2214883e2b9883f360b090948afd2cb0687bc6bba4e1e98011fb8c8d4a42b9ff",
+    "file": "aspell-resource-29.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-30",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/gu/aspell6-gu-0.03-0.tar.bz2",
+    "sha256": "432c125acc6a86456061dcd47018df4318a117be9f7c09a590979243ad448311",
+    "file": "aspell-resource-30.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-31",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/gv/aspell-gv-0.50-0.tar.bz2",
+    "sha256": "bbe626feb5c81c1b7e7d3199d558bc5c560b2d4aef377d0e4b4227ae3c7176e6",
+    "file": "aspell-resource-31.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-32",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/he/aspell6-he-1.0-0.tar.bz2",
+    "sha256": "d64dabac9f40ca9e632a8eee40fc01c7d18a2c699d8f9742000fadd2e15b708d",
+    "file": "aspell-resource-32.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-33",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/hi/aspell6-hi-0.02-0.tar.bz2",
+    "sha256": "da0778c46716f4209da25195294139c2f5e6031253381afa4f81908fc9193a37",
+    "file": "aspell-resource-33.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-34",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/hil/aspell5-hil-0.11-0.tar.bz2",
+    "sha256": "570a374fd0b97943bc6893cf25ac7b23da815120842a80144e2c7ee8b41388e8",
+    "file": "aspell-resource-34.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-35",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/hr/aspell-hr-0.51-0.tar.bz2",
+    "sha256": "2ac4030354d7961e45d63b46e06e59248d59cc70dfc9e1d8ee0ae21d9c774a25",
+    "file": "aspell-resource-35.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-36",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/hsb/aspell6-hsb-0.02-0.tar.bz2",
+    "sha256": "8d9f2ae428c7754a922ce6a7ef23401bc65f6f1909aec5077975077b3edc222e",
+    "file": "aspell-resource-36.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-37",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/hu/aspell6-hu-0.99.4.2-0.tar.bz2",
+    "sha256": "3335a7b45cf9774bccf03740fbddeb7ec4752dd87178fa93f92d4c71e3f236b5",
+    "file": "aspell-resource-37.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-38",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/hus/aspell6-hus-0.03-1.tar.bz2",
+    "sha256": "6d28f371d1a172439395d56d2d5ce8f27c617de03f847f02643dfd79dd8df425",
+    "file": "aspell-resource-38.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-39",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/hy/aspell6-hy-0.10.0-0.tar.bz2",
+    "sha256": "2dea8d0093a3b8373cc97703dca2979b285f71916181d1a20db70bea28c2bcf0",
+    "file": "aspell-resource-39.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-40",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ia/aspell-ia-0.50-1.tar.bz2",
+    "sha256": "5797cb59606d007cf8fe5b9ec435de0d63b2d0e0d391ed8850ef8aa3f4bb0c2f",
+    "file": "aspell-resource-40.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-41",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/id/aspell5-id-1.2-0.tar.bz2",
+    "sha256": "523912082848d891746dbb233f2ddb2cdbab6750dc76c38b3f6e000c9eb37308",
+    "file": "aspell-resource-41.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-42",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/it/aspell6-it-2.2_20050523-0.tar.bz2",
+    "sha256": "3b19dc709924783c8d87111aa9653dc6c000e845183778abee750215d83aaebd",
+    "file": "aspell-resource-42.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-43",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/kn/aspell6-kn-0.01-1.tar.bz2",
+    "sha256": "cb010b34a712f853fa53c4618cb801704b9f76c72db9390009ba914e3a075383",
+    "file": "aspell-resource-43.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-44",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ku/aspell5-ku-0.20-1.tar.bz2",
+    "sha256": "968f76418c991dc004a1cc3d8cd07b58fb210b6ad506106857ed2d97274a6a27",
+    "file": "aspell-resource-44.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-45",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ky/aspell6-ky-0.01-0.tar.bz2",
+    "sha256": "e10f2f25b44b71e30fa1ea9c248c04543c688845a734d0b9bdc65a2bbd16fb4f",
+    "file": "aspell-resource-45.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-46",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/la/aspell6-la-20020503-0.tar.bz2",
+    "sha256": "d486b048d1c3056d3a555744584a81873a63ecd4641f04e8b7bf9910b98d2985",
+    "file": "aspell-resource-46.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-47",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/lt/aspell6-lt-1.2.1-0.tar.bz2",
+    "sha256": "f6f53b6e418c22f63e1a70b8bc77bc66912bc1afd40cf98dc026d110d26452ab",
+    "file": "aspell-resource-47.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-48",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/lv/aspell6-lv-0.5.5-1.tar.bz2",
+    "sha256": "3c30e206ea562b2e759fb7467680e1a01d5deec5edbd66653c83184550d1fb8a",
+    "file": "aspell-resource-48.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-49",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/mg/aspell5-mg-0.03-0.tar.bz2",
+    "sha256": "5182f832e1630ceef5711a83b530fb583ffe04f28cc042d195b5c6b2d25cb041",
+    "file": "aspell-resource-49.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-50",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/mi/aspell-mi-0.50-0.tar.bz2",
+    "sha256": "beee1e33baf6301e3ffc56558c84c3e7d29622541b232c1aea1e91d12ebd7d89",
+    "file": "aspell-resource-50.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-51",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/mk/aspell-mk-0.50-0.tar.bz2",
+    "sha256": "15fc2380fb673d2003d8075d8cef2b0dbb4d30b430587ad459257681904d9971",
+    "file": "aspell-resource-51.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-52",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ml/aspell6-ml-0.03-1.tar.bz2",
+    "sha256": "e4cd551e558b6d26e4db58e051eeca3d893fc2c4e7fce90a022af247422096fd",
+    "file": "aspell-resource-52.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-53",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/mn/aspell6-mn-0.06-2.tar.bz2",
+    "sha256": "2f1b6edd48b82cd9b99b9262d5635f72271c062ef4e772b90388dfc48a4f1294",
+    "file": "aspell-resource-53.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-54",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/mr/aspell6-mr-0.10-0.tar.bz2",
+    "sha256": "d3a35a40bee0234a5b388375485ab8bf0ba8edbf3b0a82e2c2f76a40a8586f33",
+    "file": "aspell-resource-54.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-55",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ms/aspell-ms-0.50-0.tar.bz2",
+    "sha256": "3cc4e3537bb0f455ce58b4d2fa84b03dc678e0153536a41dee1a3a7623dc246f",
+    "file": "aspell-resource-55.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-56",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/mt/aspell-mt-0.50-0.tar.bz2",
+    "sha256": "e00fcaad60a90cfed687ba02f62be8c27b8650457dd3c5bdcb064b476da059b4",
+    "file": "aspell-resource-56.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-57",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/nds/aspell6-nds-0.01-0.tar.bz2",
+    "sha256": "ce381e869def56e54a31f965df518deca0e6f12238859650fcb115623f8772da",
+    "file": "aspell-resource-57.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-58",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/nl/aspell-nl-0.50-2.tar.bz2",
+    "sha256": "440e0b7df8c5903d728221fe4ba88a74658ce14c8bb04b290c41402dfd41cb39",
+    "file": "aspell-resource-58.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-59",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/nn/aspell-nn-0.50.1-1.tar.bz2",
+    "sha256": "ac6610540c7e134f09cbebbd148f9316bef27bc491e377638ef4e2950b2d5370",
+    "file": "aspell-resource-59.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-60",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ny/aspell5-ny-0.01-0.tar.bz2",
+    "sha256": "176f970f6ba3bb448c7e946fa8d209eb4da7138ac6899af7731a98c7b6484b3e",
+    "file": "aspell-resource-60.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-61",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/or/aspell6-or-0.03-1.tar.bz2",
+    "sha256": "d6ffa369f8918d74cdea966112bc5cb700e09dca5ac6b968660cfc22044ef24f",
+    "file": "aspell-resource-61.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-62",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/pa/aspell6-pa-0.01-1.tar.bz2",
+    "sha256": "c7f3abb1c5efe62e072ca8bef44b0d0506501bbb7b48ced1d0d95f10e61fc945",
+    "file": "aspell-resource-62.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-63",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/pl/aspell6-pl-6.0_20061121-0.tar.bz2",
+    "sha256": "017741fcb70a885d718c534160c9de06b03cc72f352879bd106be165e024574d",
+    "file": "aspell-resource-63.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-64",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/pt_BR/aspell6-pt_BR-20131030-12-0.tar.bz2",
+    "sha256": "eb0d99db0b5d5c442133a88bddfe96dd252c0c3df3da36e9326c241dc4bc14f7",
+    "file": "aspell-resource-64.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-65",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/pt_PT/aspell6-pt_PT-20190329-1-0.tar.bz2",
+    "sha256": "e5708b890c2afff51276a6cc276af5e6b3b8a026db75eda48b58124f2368a051",
+    "file": "aspell-resource-65.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-66",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/qu/aspell6-qu-0.02-0.tar.bz2",
+    "sha256": "80977629b8425bda7ffd951628d23a6793a457f4948151c71ff9e0bff5073f01",
+    "file": "aspell-resource-66.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-67",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ro/aspell5-ro-3.3-2.tar.bz2",
+    "sha256": "53c38b7668a540cf90ddca11c007ce812d2ad86bd11c2c43a08da9e06392683d",
+    "file": "aspell-resource-67.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-68",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ru/aspell6-ru-0.99f7-1.tar.bz2",
+    "sha256": "5c29b6ccce57bc3f7c4fb0510d330446b9c769e59c92bdfede27333808b6e646",
+    "file": "aspell-resource-68.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-69",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/rw/aspell-rw-0.50-0.tar.bz2",
+    "sha256": "3406102e0e33344b6eae73dbfaf86d8e411b7c97775827a6db79c943ce43f081",
+    "file": "aspell-resource-69.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-70",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/sc/aspell5-sc-1.0.tar.bz2",
+    "sha256": "591ae22f712b472182b41b8bc97dce1e5ecd240c75eccc25f59ab15c60be8742",
+    "file": "aspell-resource-70.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-71",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/sk/aspell6-sk-2.01-2.tar.bz2",
+    "sha256": "c6a80a2989c305518e0d71af1196b7484fda26fe53be4e49eec7b15b76a860a6",
+    "file": "aspell-resource-71.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-72",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/sl/aspell-sl-0.50-0.tar.bz2",
+    "sha256": "e566d127f7130da2df7b1f4f4cb4bc51932517b0c24299f84498ba325e6133d1",
+    "file": "aspell-resource-72.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-73",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/sr/aspell6-sr-0.02.tar.bz2",
+    "sha256": "705e58fb390633c89c4cb224a1cfb34e67e09496448f7adc6500494b6e009289",
+    "file": "aspell-resource-73.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-74",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/sv/aspell-sv-0.51-0.tar.bz2",
+    "sha256": "9b70573c9c8cf76f5cdb6abcdfb834a754bbaa1efd7d6f57f47b8a91a19c5c0a",
+    "file": "aspell-resource-74.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-75",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/sw/aspell-sw-0.50-0.tar.bz2",
+    "sha256": "7ed51f107dc57a7b3555f20d1cee2903275d63e022b055ea6b6409d9e081f297",
+    "file": "aspell-resource-75.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-76",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/ta/aspell6-ta-20040424-1.tar.bz2",
+    "sha256": "52f552f1a2c0fc53ed4eac75990ff75bccf3d5f1440ca3d948d96eafe5f3486a",
+    "file": "aspell-resource-76.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-77",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/te/aspell6-te-0.01-2.tar.bz2",
+    "sha256": "3682638a757a65afcc770e565e68347e8eb7be94052d9d6eff64fc767e7fec5d",
+    "file": "aspell-resource-77.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-78",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/tet/aspell5-tet-0.1.1.tar.bz2",
+    "sha256": "9dd546c9c48f42085e3c17f22c8e6d46e56f3ea9c4618b933c642a091df1c09e",
+    "file": "aspell-resource-78.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-79",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/tk/aspell5-tk-0.01-0.tar.bz2",
+    "sha256": "86f24209cab61a54ed85ad3020915d8ce1dec13fbfe012f1bf1d648825696a0b",
+    "file": "aspell-resource-79.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-80",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/tl/aspell5-tl-0.02-1.tar.bz2",
+    "sha256": "48b65d2c6886f353d1e1756a93bcd4d8ab2b88b021176c25dfdb5d8bcf348acd",
+    "file": "aspell-resource-80.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-81",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/tn/aspell5-tn-1.0.1-0.tar.bz2",
+    "sha256": "41a0c20e1d2acaa28a647d74b40778e491815566019f79e7049621f40d3bbd60",
+    "file": "aspell-resource-81.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-82",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/tr/aspell-tr-0.50-0.tar.bz2",
+    "sha256": "0bc6530e5eebf8b2b53f1e8add596c62099173f62b9baa6b3efaa86752bdfb4a",
+    "file": "aspell-resource-82.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-83",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/uk/aspell6-uk-1.4.0-0.tar.bz2",
+    "sha256": "35f9a7e840c1272706bc6dd172bc9625cbd843d021094da8598a6abba525f18c",
+    "file": "aspell-resource-83.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-84",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/uz/aspell6-uz-0.6-0.tar.bz2",
+    "sha256": "2281c1fc7fe2411f02d25887c8a68eaa2965df3cd25f5ff06d31787a3de5e369",
+    "file": "aspell-resource-84.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-85",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/vi/aspell6-vi-0.01.1-1.tar.bz2",
+    "sha256": "3cd85d53bb62b0d104cb5c03e142c3bbe1ad64329d7beae057854816dc7e7c17",
+    "file": "aspell-resource-85.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-86",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/wa/aspell-wa-0.50-0.tar.bz2",
+    "sha256": "5a17aa8aa37afbcc8f52336476670b93cba16462bcb89dd46b80f4d9cfe73fe4",
+    "file": "aspell-resource-86.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-87",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/yi/aspell6-yi-0.01.1-1.tar.bz2",
+    "sha256": "9879d35a5b0b86f8e217601568480f2f634bc8b7a97341e9e80b0d40a8202856",
+    "file": "aspell-resource-87.tar.bz2"
+  },
+  {
+    "name": "aspell-resource-88",
+    "url": "https://ftpmirror.gnu.org/gnu/aspell/dict/zu/aspell-zu-0.50-0.tar.bz2",
+    "sha256": "3fa255cd0b20e6229a53df972fd3c5ed8481db11cfd0347dd3da629bbb7a6796",
+    "file": "aspell-resource-88.tar.bz2"
   },
   {
     "name": "brotli",
@@ -175,6 +724,19 @@
     "mirrors": [
       "https://gmplib.org/download/gmp/gmp-6.3.0.tar.xz"
     ]
+  },
+  {
+    "name": "icu4c",
+    "url": "https://github.com/unicode-org/icu/releases/download/release-73-2/icu4c-73_2-src.tgz",
+    "sha256": "818a80712ed3caacd9b652305e01afc7fa167e6f2e94996da44b90c2ab604ce1",
+    "file": "icu4c.tgz",
+    "binary": {
+      "key": "brew-icu4c-arm64-sequoia",
+      "sha256": "734c09d5285cf68f3c86c09522f6f24734bbe6d7338c4900d89092bcd9fb8fc0",
+      "url": "https://ghcr.io/v2/homebrew/core/icu4c/blobs/sha256:734c09d5285cf68f3c86c09522f6f24734bbe6d7338c4900d89092bcd9fb8fc0",
+      "version": "73.2"
+    },
+    "mirrors": []
   },
   {
     "name": "icu4c@78",
@@ -638,6 +1200,99 @@
     },
     "mirrors": [
       "https://fossies.org/linux/www/php-8.5.11.tar.xz"
+    ]
+  },
+  {
+    "name": "php@8.0",
+    "url": "https://www.php.net/distributions/php-8.0.30.tar.xz",
+    "sha256": "216ab305737a5d392107112d618a755dc5df42058226f1670e9db90e77d777d9",
+    "file": "php-8.0.tar.xz",
+    "binary": {
+      "key": "brew-php@8.0-arm64-sequoia",
+      "sha256": "0aa6da1fd999d315d7d42ae51796f460533a7248748e1e42557e52097f597bca",
+      "url": "https://ghcr.io/v2/homebrew/core/php/8.0/blobs/sha256:0aa6da1fd999d315d7d42ae51796f460533a7248748e1e42557e52097f597bca",
+      "version": "8.0.30"
+    },
+    "mirrors": [
+      "https://fossies.org/linux/www/php-8.0.30.tar.xz"
+    ]
+  },
+  {
+    "name": "php@8.0-resource-0",
+    "url": "https://raw.githubusercontent.com/shivammathur/php-src-backports/2bcb0b/patches/0002-Add-minimal-OpenSSL-3.0-patch-PHP8.0.patch",
+    "sha256": "8c359c0b0cc63dc6779a4fb1b2ba5ca555eb60e962013123dcb1239aef5cee9a",
+    "file": "php-8.0-patch-0.patch"
+  },
+  {
+    "name": "php@8.0-resource-1",
+    "url": "https://raw.githubusercontent.com/shivammathur/php-src-backports/2bcb0b/patches/0003-Fix-bug-79589-ssl3_read_n-unexpected-eof-while-reading-PHP8.0.patch",
+    "sha256": "3383d1881379827e02b42842367666725f4f54f4364d937c6acb0ee67bce84a2",
+    "file": "php-8.0-patch-1.patch"
+  },
+  {
+    "name": "php@8.1",
+    "url": "https://www.php.net/distributions/php-8.1.34.tar.xz",
+    "sha256": "ffa9e0982e82eeaea848f57687b425ed173aa278fe563001310ae2638db5c251",
+    "file": "php-8.1.tar.xz",
+    "binary": {
+      "key": "brew-php@8.1-arm64-sequoia",
+      "sha256": "378fc7e713eae59285201701166b87ce121c938c7fb9a2b44acf574cbbb1f276",
+      "url": "https://ghcr.io/v2/homebrew/core/php/8.1/blobs/sha256:378fc7e713eae59285201701166b87ce121c938c7fb9a2b44acf574cbbb1f276",
+      "version": "8.1.34"
+    },
+    "mirrors": [
+      "https://fossies.org/linux/www/php-8.1.34.tar.xz"
+    ]
+  },
+  {
+    "name": "php@8.1-resource-0",
+    "url": "https://raw.githubusercontent.com/Homebrew/homebrew-core/aa9d3cb46652a573884a3cdf09364ff23634db0b/Patches/php/openssl4-8.1.34.diff",
+    "sha256": "f4e046dbff1d024e981232afaf7578eae56115fe250aec7f94fc65c0acd25ee8",
+    "file": "php-8.1-patch-0.patch"
+  },
+  {
+    "name": "php@8.2",
+    "url": "https://www.php.net/distributions/php-8.2.34.tar.xz",
+    "sha256": "5351330c54de240f54f7527c26ef292e239749e6fe11db0330acb5317e02bb39",
+    "file": "php-8.2.tar.xz",
+    "binary": {
+      "key": "brew-php@8.2-arm64-sequoia",
+      "sha256": "b3cba5a3406b828c9c657b40e5345ab695ecbc2f9150a4a33014f6492c75f274",
+      "url": "https://ghcr.io/v2/homebrew/core/php/8.2/blobs/sha256:b3cba5a3406b828c9c657b40e5345ab695ecbc2f9150a4a33014f6492c75f274",
+      "version": "8.2.34"
+    },
+    "mirrors": [
+      "https://ftp.osuosl.org/pub/php/php-8.2.34.tar.xz"
+    ]
+  },
+  {
+    "name": "php@8.3",
+    "url": "https://www.php.net/distributions/php-8.3.35.tar.xz",
+    "sha256": "ff4630fbbbd94359134b7d3c223db59329905bdc4f5a9ef93d257b48e358619a",
+    "file": "php-8.3.tar.xz",
+    "binary": {
+      "key": "brew-php@8.3-arm64-sequoia",
+      "sha256": "8cf917b82d501c01b15473216b4797fe1ea54437456e8c8dbed8a87fbef5d924",
+      "url": "https://ghcr.io/v2/homebrew/core/php/8.3/blobs/sha256:8cf917b82d501c01b15473216b4797fe1ea54437456e8c8dbed8a87fbef5d924",
+      "version": "8.3.35"
+    },
+    "mirrors": [
+      "https://fossies.org/linux/www/php-8.3.35.tar.xz"
+    ]
+  },
+  {
+    "name": "php@8.4",
+    "url": "https://www.php.net/distributions/php-8.4.26.tar.xz",
+    "sha256": "32a2de53862ad44ed4a5005244ce4f1b50c271e74dced215449a4443b40569f1",
+    "file": "php-8.4.tar.xz",
+    "binary": {
+      "key": "brew-php@8.4-arm64-sequoia",
+      "sha256": "7514a9ce27876c2ad3bfe8edaabd163f1aba92ed1d759c35d7543f2e55052dff",
+      "url": "https://ghcr.io/v2/homebrew/core/php/8.4/blobs/sha256:7514a9ce27876c2ad3bfe8edaabd163f1aba92ed1d759c35d7543f2e55052dff",
+      "version": "8.4.26"
+    },
+    "mirrors": [
+      "https://fossies.org/linux/www/php-8.4.26.tar.xz"
     ]
   },
   {
@@ -1135,5 +1790,634 @@
     "revision": "39ae4ff02a06c97f804833844b767777d6625fb8",
     "binaryPackage": "wineditline",
     "binaryVersion": "2.208"
+  },
+  {
+    "name": "windows-winlibs-imap-4f5969e9dd67",
+    "url": "https://codeload.github.com/winlibs/imap/tar.gz/4f5969e9dd677122f30416de044576644f612c71",
+    "sha256": "b6b438a11dfc086c706a9e5576c16a36ad2a1ba3bcba34a4c3a2034cf3d80265",
+    "file": "windows-winlibs-imap-4f5969e9dd67.tar.gz",
+    "revision": "4f5969e9dd677122f30416de044576644f612c71",
+    "binaryPackage": "c-client-2007f-1-vs16-x64.zip",
+    "sourceTag": "imap-2007f-1",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-freetype-16ce3db33718",
+    "url": "https://codeload.github.com/winlibs/freetype/tar.gz/16ce3db337180fc839ffb69eda5b44aeca545056",
+    "sha256": "40cd1b9f6abb77c5141c518fbeba48bc1c5c5ac05c03941c45ae318fa5f3771c",
+    "file": "windows-winlibs-freetype-16ce3db33718.tar.gz",
+    "revision": "16ce3db337180fc839ffb69eda5b44aeca545056",
+    "binaryPackage": "freetype-2.9.1-1-vs16-x64.zip",
+    "sourceTag": "freetype-2.9.1",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-glib-b1d67033b21b",
+    "url": "https://codeload.github.com/winlibs/glib/tar.gz/b1d67033b21b4ad79875f320bc66e12a79edc588",
+    "sha256": "b6782e55ead8b03ea1cba002dd6423b64b6b4f29799b0967dacd2d6893da75b3",
+    "file": "windows-winlibs-glib-b1d67033b21b.tar.gz",
+    "revision": "b1d67033b21b4ad79875f320bc66e12a79edc588",
+    "binaryPackage": "glib-2.53.3-vs16-x64.zip",
+    "sourceTag": "glib-2.53.3",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-icu4c-e0415cbafe0a",
+    "url": "https://codeload.github.com/winlibs/icu4c/tar.gz/e0415cbafe0aeec7c19111fb0d4fe69a30ae7b3c",
+    "sha256": "5150d986bd21cde8750bc961995d0e7bb7c2801f565c01ed8b0c4f85ed1e15d7",
+    "file": "windows-winlibs-icu4c-e0415cbafe0a.tar.gz",
+    "revision": "e0415cbafe0aeec7c19111fb0d4fe69a30ae7b3c",
+    "binaryPackage": "ICU-68.2-vs16-x64.zip",
+    "sourceTag": "icu4c-68.2",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libbzip2-f131eb168095",
+    "url": "https://codeload.github.com/winlibs/libbzip2/tar.gz/f131eb16809565cbeb0684ecad2bd20130e7d5a1",
+    "sha256": "4c8d004064ef1823f2b47d97ec895d83f99f7370e6e9bb7c52b8dd9db536e41f",
+    "file": "windows-winlibs-libbzip2-f131eb168095.tar.gz",
+    "revision": "f131eb16809565cbeb0684ecad2bd20130e7d5a1",
+    "binaryPackage": "libbzip2-1.0.8-vs16-x64.zip",
+    "sourceTag": "libbzip2-1.0.8",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-curl-f7b3634e1d44",
+    "url": "https://codeload.github.com/winlibs/curl/tar.gz/f7b3634e1d4465e7ea30e10dbd10887f4d7aaed8",
+    "sha256": "871f2b0a83a14d0a98009b6cd93275dcfbe55f5c8355c3c0b3dddf242c7efd92",
+    "file": "windows-winlibs-curl-f7b3634e1d44.tar.gz",
+    "revision": "f7b3634e1d4465e7ea30e10dbd10887f4d7aaed8",
+    "binaryPackage": "libcurl-7.76.1-3-vs16-x64.zip",
+    "sourceTag": "libcurl-7.76.1-2",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-enchant-df5a4586e09d",
+    "url": "https://codeload.github.com/winlibs/enchant/tar.gz/df5a4586e09d67bf2c208c7dfd0517657d06910e",
+    "sha256": "f994219d8e815693500b1a56671b40390924d7d53ddeb5871e57bb4f5491a07b",
+    "file": "windows-winlibs-enchant-df5a4586e09d.tar.gz",
+    "revision": "df5a4586e09d67bf2c208c7dfd0517657d06910e",
+    "binaryPackage": "libenchant2-2.2.8-vs16-x64.zip",
+    "sourceTag": "enchant-2.2.8",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libffi-0d0ab67e5489",
+    "url": "https://codeload.github.com/winlibs/libffi/tar.gz/0d0ab67e54893e7f140e4401d56901899586f4ce",
+    "sha256": "b37cb54a3e0900216e1b119758fd9b70711f3427bd76126e25cd686aea9942a4",
+    "file": "windows-winlibs-libffi-0d0ab67e5489.tar.gz",
+    "revision": "0d0ab67e54893e7f140e4401d56901899586f4ce",
+    "binaryPackage": "libffi-3.3-4-vs16-x64.zip",
+    "sourceTag": "libffi-3.3",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libiconv-b6ed966db09f",
+    "url": "https://codeload.github.com/winlibs/libiconv/tar.gz/b6ed966db09f0ad458cb4006e53d6a588c352653",
+    "sha256": "e7377766f61f5643f94c062e4666eb19252e3325f601dbc9b42294a05b179e61",
+    "file": "windows-winlibs-libiconv-b6ed966db09f.tar.gz",
+    "revision": "b6ed966db09f0ad458cb4006e53d6a588c352653",
+    "binaryPackage": "libiconv-1.16-5-vs16-x64.zip",
+    "sourceTag": "libiconv-1.16-1",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-gettext-41517b32a920",
+    "url": "https://codeload.github.com/winlibs/gettext/tar.gz/41517b32a9207814b94f0b3ff85c9d005dfeaf50",
+    "sha256": "8630fd128066b3d6ea91c74ec755fdec2f6cc00c28dc308c6f37aa1e70cba0a3",
+    "file": "windows-winlibs-gettext-41517b32a920.tar.gz",
+    "revision": "41517b32a9207814b94f0b3ff85c9d005dfeaf50",
+    "binaryPackage": "libintl-0.18.3-8-vs16-x64.zip",
+    "sourceTag": "gettext-0.18.3",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libjpeg-9a41511e9cd8",
+    "url": "https://codeload.github.com/winlibs/libjpeg/tar.gz/9a41511e9cd8f4357f4f33c163fa384ef5750fad",
+    "sha256": "6ff65b94201b2cc57d05eddf26e9e780f51a908f097fd9febe8eb13b699bc945",
+    "file": "windows-winlibs-libjpeg-9a41511e9cd8.tar.gz",
+    "revision": "9a41511e9cd8f4357f4f33c163fa384ef5750fad",
+    "binaryPackage": "libjpeg-9c-vs16-x64.zip",
+    "sourceTag": "libjpeg-9c",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-lmdb-e615c2ed45e8",
+    "url": "https://codeload.github.com/winlibs/lmdb/tar.gz/e615c2ed45e83351ac1372e0eea6fffa53631d3e",
+    "sha256": "f12f124affbc530fa18d80b2994de779ff688b3e109b0bff43bc9927faa127be",
+    "file": "windows-winlibs-lmdb-e615c2ed45e8.tar.gz",
+    "revision": "e615c2ed45e83351ac1372e0eea6fffa53631d3e",
+    "binaryPackage": "liblmdb-0.9.22-6-vs16-x64.zip",
+    "sourceTag": "liblmdb-0.9.22",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-liblzma-5948553a1ae8",
+    "url": "https://codeload.github.com/winlibs/liblzma/tar.gz/5948553a1ae8ac246d05c4692beaf2606c230c67",
+    "sha256": "aeed0798a1eb4cc727a3b6c202d5647037f84b1aae30eec4cf29ada76c25d5fd",
+    "file": "windows-winlibs-liblzma-5948553a1ae8.tar.gz",
+    "revision": "5948553a1ae8ac246d05c4692beaf2606c230c67",
+    "binaryPackage": "liblzma-5.2.5-vs16-x64.zip",
+    "sourceTag": "liblzma-5.2.5",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-oniguruma-a4bdf2114911",
+    "url": "https://codeload.github.com/winlibs/oniguruma/tar.gz/a4bdf211491190aeb64cbcf21c5356c1870503dd",
+    "sha256": "c4fece9ed44fc1d50eda5129ce6694207bf0c45bf428416fb3e6d4980bd696fa",
+    "file": "windows-winlibs-oniguruma-a4bdf2114911.tar.gz",
+    "revision": "a4bdf211491190aeb64cbcf21c5356c1870503dd",
+    "binaryPackage": "libonig-6.9.7.1-vs16-x64.zip",
+    "sourceTag": "oniguruma-6.9.7.1",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libpng-3ec4237518a4",
+    "url": "https://codeload.github.com/winlibs/libpng/tar.gz/3ec4237518a4cb30b2f25950b065a9420766a268",
+    "sha256": "303c493b351233f44f9c9b9891394bb5a4f8a8d6ee21237cfe721c9b40f506aa",
+    "file": "windows-winlibs-libpng-3ec4237518a4.tar.gz",
+    "revision": "3ec4237518a4cb30b2f25950b065a9420766a268",
+    "binaryPackage": "libpng-1.6.34-8-vs16-x64.zip",
+    "sourceTag": "libpng-1.6.34",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-postgresql-50bcf175692e",
+    "url": "https://codeload.github.com/winlibs/postgresql/tar.gz/50bcf175692efbf5dbaac64582b5abf5e6079294",
+    "sha256": "f3b0c632c79254a0e4f23debcf7a2868dd76bb04dffbbb60fb51c37d21ab6512",
+    "file": "windows-winlibs-postgresql-50bcf175692e.tar.gz",
+    "revision": "50bcf175692efbf5dbaac64582b5abf5e6079294",
+    "binaryPackage": "libpq-11.4-vs16-x64.zip",
+    "sourceTag": "postgresql-11.4",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-cyrus-sasl-dcedf247a0cb",
+    "url": "https://codeload.github.com/winlibs/cyrus-sasl/tar.gz/dcedf247a0cb30aa7c34921abbb02260cfb3ec3a",
+    "sha256": "bdac121fdaf5738ff02d397d525c0201bcdaec292274b7cd6d5f0d17f81be28f",
+    "file": "windows-winlibs-cyrus-sasl-dcedf247a0cb.tar.gz",
+    "revision": "dcedf247a0cb30aa7c34921abbb02260cfb3ec3a",
+    "binaryPackage": "libsasl-2.1.27-2-vs16-x64.zip",
+    "sourceTag": "cyrus-sasl-2.1.27-2",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libsodium-a38fc95ae2dc",
+    "url": "https://codeload.github.com/winlibs/libsodium/tar.gz/a38fc95ae2dc330b645a37d4bf45c1f522b93f85",
+    "sha256": "70b860eaab358cda4b050b29f6a4c739287307e511dccc67cdc73c4bcfeab5b1",
+    "file": "windows-winlibs-libsodium-a38fc95ae2dc.tar.gz",
+    "revision": "a38fc95ae2dc330b645a37d4bf45c1f522b93f85",
+    "binaryPackage": "libsodium-1.0.18-vs16-x64.zip",
+    "sourceTag": "libsodium-1.0.18",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libssh2-c9d9ea4f2da2",
+    "url": "https://codeload.github.com/winlibs/libssh2/tar.gz/c9d9ea4f2da2670857f58ed1b50b5f10dcd4fc8f",
+    "sha256": "fde78851d4bbcb63ecd1c3859cd9328491cbee1af402b086c21a65c3249671e3",
+    "file": "windows-winlibs-libssh2-c9d9ea4f2da2.tar.gz",
+    "revision": "c9d9ea4f2da2670857f58ed1b50b5f10dcd4fc8f",
+    "binaryPackage": "libssh2-1.9.0-1-vs16-x64.zip",
+    "sourceTag": "libssh2-1.9.0",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libtidy-30372f248cda",
+    "url": "https://codeload.github.com/winlibs/libtidy/tar.gz/30372f248cda4bcd82e99eda0be7402b64911a0b",
+    "sha256": "d0e2c1a386c05040baff33ec32cc16e697917fe95d0394fdaa3b1d8859a6c5b7",
+    "file": "windows-winlibs-libtidy-30372f248cda.tar.gz",
+    "revision": "30372f248cda4bcd82e99eda0be7402b64911a0b",
+    "binaryPackage": "libtidy-5.6.0-2-vs16-x64.zip",
+    "sourceTag": "libtidy-5.6.0-1",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libwebp-6386bb6485bc",
+    "url": "https://codeload.github.com/winlibs/libwebp/tar.gz/6386bb6485bc82536bbf4cbbf37b58756ffc1be3",
+    "sha256": "8c549bec7bcb50bee02877aef3c825490642dad090b51c1074b538846e0bd502",
+    "file": "windows-winlibs-libwebp-6386bb6485bc.tar.gz",
+    "revision": "6386bb6485bc82536bbf4cbbf37b58756ffc1be3",
+    "binaryPackage": "libwebp-1.1.0-vs16-x64.zip",
+    "sourceTag": "libwebp-1.1.0",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libxml2-81a9f8ea095b",
+    "url": "https://codeload.github.com/winlibs/libxml2/tar.gz/81a9f8ea095b28b0cb081461fbc821cfd7154922",
+    "sha256": "29713e9c2f9e4517069ce23f44adf76e9c431b6ebeb7d7572d77cda4fa2da1ca",
+    "file": "windows-winlibs-libxml2-81a9f8ea095b.tar.gz",
+    "revision": "81a9f8ea095b28b0cb081461fbc821cfd7154922",
+    "binaryPackage": "libxml2-2.9.10-2-vs16-x64.zip",
+    "sourceTag": "libxml2-2.9.10",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libxpm-e296d8c226cd",
+    "url": "https://codeload.github.com/winlibs/libxpm/tar.gz/e296d8c226cda0b1b7a77befadf04f68bdf883c5",
+    "sha256": "b41381648b95c16167ca3b3da41ae22c9808d64f0144aa0336857b49f24e99ab",
+    "file": "windows-winlibs-libxpm-e296d8c226cd.tar.gz",
+    "revision": "e296d8c226cda0b1b7a77befadf04f68bdf883c5",
+    "binaryPackage": "libxpm-3.5.12-8-vs16-x64.zip",
+    "sourceTag": "libxpm-3.5.12",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libxslt-e4c4ac6fea81",
+    "url": "https://codeload.github.com/winlibs/libxslt/tar.gz/e4c4ac6fea81c758f0c8669ae57c40b780d15398",
+    "sha256": "422bb1f20570a9d7809714a3001d42dad4ff702365c5125cc5de970cd7c64f33",
+    "file": "windows-winlibs-libxslt-e4c4ac6fea81.tar.gz",
+    "revision": "e4c4ac6fea81c758f0c8669ae57c40b780d15398",
+    "binaryPackage": "libxslt-1.1.34-vs16-x64.zip",
+    "sourceTag": "libxslt-1.1.34",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libzip-6f8c03985d52",
+    "url": "https://codeload.github.com/winlibs/libzip/tar.gz/6f8c03985d520588a50917831b777c759a57cc96",
+    "sha256": "5e5610e28d59ac1e3c5deca7a3e58c154fc3bfef3d6b8043f7361d0622c28516",
+    "file": "windows-winlibs-libzip-6f8c03985d52.tar.gz",
+    "revision": "6f8c03985d520588a50917831b777c759a57cc96",
+    "binaryPackage": "libzip-1.7.1-1-vs16-x64.zip",
+    "sourceTag": "libzip-1.7.1",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-mpir-d1ba0e2ead7c",
+    "url": "https://codeload.github.com/winlibs/mpir/tar.gz/d1ba0e2ead7c5c68b5748d6e27b2fa50aad470c4",
+    "sha256": "87c5508ab882d383d53b440bc4df27d87bf3e721edf6f24e80984fdd630e3679",
+    "file": "windows-winlibs-mpir-d1ba0e2ead7c.tar.gz",
+    "revision": "d1ba0e2ead7c5c68b5748d6e27b2fa50aad470c4",
+    "binaryPackage": "mpir-3.0.0-vs16-x64.zip",
+    "sourceTag": "mpir-3.0.0",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-net-snmp-b0b4c772c552",
+    "url": "https://codeload.github.com/winlibs/net-snmp/tar.gz/b0b4c772c55284883d233a8e85e2775e783c0d0f",
+    "sha256": "e4be4cc0ed761ce0d2ace981a27fdb2cb41fba233568f1ae65e93e780e32bb22",
+    "file": "windows-winlibs-net-snmp-b0b4c772c552.tar.gz",
+    "revision": "b0b4c772c55284883d233a8e85e2775e783c0d0f",
+    "binaryPackage": "net-snmp-5.7.3-1-vs16-x64.zip",
+    "sourceTag": "net-snmp-5.7.3",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-nghttp2-e16c0f2bd389",
+    "url": "https://codeload.github.com/winlibs/nghttp2/tar.gz/e16c0f2bd389495242f94ffeffa567a51a4e35a2",
+    "sha256": "614b16ba18c79c6d77d16ef4ee66146809d3f96643bca7c7ba50d71f18c0097f",
+    "file": "windows-winlibs-nghttp2-e16c0f2bd389.tar.gz",
+    "revision": "e16c0f2bd389495242f94ffeffa567a51a4e35a2",
+    "binaryPackage": "nghttp2-1.40.0-vs16-x64.zip",
+    "sourceTag": "nghttp2-1.40.0",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-openldap-9b9595b73c12",
+    "url": "https://codeload.github.com/winlibs/openldap/tar.gz/9b9595b73c12540afd4b4081f6264d412c3a1fba",
+    "sha256": "49234ad96ce3a0dbfb1fd9889b17ad771cc1c8e8d1cc243ad11a70013834da62",
+    "file": "windows-winlibs-openldap-9b9595b73c12.tar.gz",
+    "revision": "9b9595b73c12540afd4b4081f6264d412c3a1fba",
+    "binaryPackage": "openldap-2.4.47-vs16-x64.zip",
+    "sourceTag": "openldap-2.4.47",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-openssl-58bea78d5f6d",
+    "url": "https://codeload.github.com/winlibs/openssl/tar.gz/58bea78d5f6d936001bb4ffa32fbba483cc1ddf9",
+    "sha256": "35a1972798b9fa078c76c9c9f94e3d0713c5c5c0a9f4e32198feb54f8263b442",
+    "file": "windows-winlibs-openssl-58bea78d5f6d.tar.gz",
+    "revision": "58bea78d5f6d936001bb4ffa32fbba483cc1ddf9",
+    "binaryPackage": "openssl-1.1.1t-vs16-x64.zip",
+    "sourceTag": "openssl-1.1.1t",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-sqlite3-9ff69dfd747a",
+    "url": "https://codeload.github.com/winlibs/sqlite3/tar.gz/9ff69dfd747a07fc01a2cb47477b9e95765a95b2",
+    "sha256": "f70a3693632d021e776bae4e170a0e66bfeb8888fc47ac9b05f833d088e49e57",
+    "file": "windows-winlibs-sqlite3-9ff69dfd747a.tar.gz",
+    "revision": "9ff69dfd747a07fc01a2cb47477b9e95765a95b2",
+    "binaryPackage": "sqlite3-3.33.0-vs16-x64.zip",
+    "sourceTag": "sqlite3-3.33.0",
+    "phpVersions": [
+      "8.0"
+    ]
+  },
+  {
+    "name": "windows-winlibs-wineditline-320e15f4c647",
+    "url": "https://codeload.github.com/winlibs/wineditline/tar.gz/320e15f4c647f814bd62245d4aff22f8deeed977",
+    "sha256": "14d24fb693809cef11b71c8456210df306378fa2d9a5bed65db6539e0595bff5",
+    "file": "windows-winlibs-wineditline-320e15f4c647.tar.gz",
+    "revision": "320e15f4c647f814bd62245d4aff22f8deeed977",
+    "binaryPackage": "wineditline-2.205-1-vs16-x64.zip",
+    "sourceTag": "WinEditLine-2.205",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-zlib-18712b93f10b",
+    "url": "https://codeload.github.com/winlibs/zlib/tar.gz/18712b93f10b8dad9db67d892f22d9b433b17e6d",
+    "sha256": "1090081483f6d38e1658c96107ed733f10e59d5c9ed41d9d1d69db0675db3bbf",
+    "file": "windows-winlibs-zlib-18712b93f10b.tar.gz",
+    "revision": "18712b93f10b8dad9db67d892f22d9b433b17e6d",
+    "binaryPackage": "zlib-1.2.12-vs16-x64.zip",
+    "sourceTag": "zlib-1.2.12",
+    "phpVersions": [
+      "8.0",
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-glib-5738e74e82ed",
+    "url": "https://codeload.github.com/winlibs/glib/tar.gz/5738e74e82ed5e2e8f3df42b2eea052a88d3f29d",
+    "sha256": "a14bd92ccaf2eb5ea6cb591c4055aea5357c96edf88571b825f39ad5a947bda0",
+    "file": "windows-winlibs-glib-5738e74e82ed.tar.gz",
+    "revision": "5738e74e82ed5e2e8f3df42b2eea052a88d3f29d",
+    "binaryPackage": "glib-2.53.3-1-vs16-x64.zip",
+    "sourceTag": "glib-2.53.3-1",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-icu4c-988705d50738",
+    "url": "https://codeload.github.com/winlibs/icu4c/tar.gz/988705d50738ebc143466f0116bfa67cf4eb7bfd",
+    "sha256": "9f58c2dc842ec71b16360dee3040db7361ecf62b38fbf214581c12cc47f4a7de",
+    "file": "windows-winlibs-icu4c-988705d50738.tar.gz",
+    "revision": "988705d50738ebc143466f0116bfa67cf4eb7bfd",
+    "binaryPackage": "ICU-70.1-vs16-x64.zip",
+    "sourceTag": "icu4c-70.1",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libavif-462589765f62",
+    "url": "https://codeload.github.com/winlibs/libavif/tar.gz/462589765f6290020390a2c42a1226b1d3aa5d1f",
+    "sha256": "c0e2e73b2cd4689e23c369a27d2a29a57e44d716f4c999a3fd5d32766c58f2d7",
+    "file": "windows-winlibs-libavif-462589765f62.tar.gz",
+    "revision": "462589765f6290020390a2c42a1226b1d3aa5d1f",
+    "binaryPackage": "libavif-0.9.0-1-vs16-x64.zip",
+    "sourceTag": "libavif-0.9.0-1",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-curl-6bcf0dbde931",
+    "url": "https://codeload.github.com/winlibs/curl/tar.gz/6bcf0dbde9314ffdb25f59469ff32013f30db374",
+    "sha256": "2652631f863bc7410ab4702e5b3e7993f3e90ab2b16cdddf6987a4f71aff8cae",
+    "file": "windows-winlibs-curl-6bcf0dbde931.tar.gz",
+    "revision": "6bcf0dbde9314ffdb25f59469ff32013f30db374",
+    "binaryPackage": "libcurl-8.15.0.pl1-vs16-x64.zip",
+    "sourceTag": "libcurl-8.15.0.pl1",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libiconv-3b9151dad09e",
+    "url": "https://codeload.github.com/winlibs/libiconv/tar.gz/3b9151dad09ecb8e41e150f41d196f2792e1a1c6",
+    "sha256": "610689b2469cdfa00db9a79d8ea82f4d60fdc4a1989890b1559b961b35ad9254",
+    "file": "windows-winlibs-libiconv-3b9151dad09e.tar.gz",
+    "revision": "3b9151dad09ecb8e41e150f41d196f2792e1a1c6",
+    "binaryPackage": "libiconv-1.17-vs16-x64.zip",
+    "sourceTag": "libiconv-1.17",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libjpeg-a49f7ac5dc62",
+    "url": "https://codeload.github.com/winlibs/libjpeg/tar.gz/a49f7ac5dc62126ed253105aab76388b6309e2d0",
+    "sha256": "fb634db162a21044fa4818dabcde34b32cec53076d7938900e048a4e09ddc417",
+    "file": "windows-winlibs-libjpeg-a49f7ac5dc62.tar.gz",
+    "revision": "a49f7ac5dc62126ed253105aab76388b6309e2d0",
+    "binaryPackage": "libjpeg-turbo-2.1.0-vs16-x64.zip",
+    "sourceTag": "libjpeg-turbo-2.1.0",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-postgresql-96ab7742d0c6",
+    "url": "https://codeload.github.com/winlibs/postgresql/tar.gz/96ab7742d0c6022edb7a3d2e4d42c4d8a76696dc",
+    "sha256": "7fcf18fbf4c5c824ea04037f823c730d0447367f5053560fa30e4d064de53856",
+    "file": "windows-winlibs-postgresql-96ab7742d0c6.tar.gz",
+    "revision": "96ab7742d0c6022edb7a3d2e4d42c4d8a76696dc",
+    "binaryPackage": "libpq-14.18-1-vs16-x64.zip",
+    "sourceTag": "libpq-14.18",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libssh2-60401ec4c254",
+    "url": "https://codeload.github.com/winlibs/libssh2/tar.gz/60401ec4c25405be6ab54b8e50ad1ff7039d8acf",
+    "sha256": "6fc541e7d2eb3bb0d9450fb0ea8af12b216df71fdec89d1c6101aedc8739952c",
+    "file": "windows-winlibs-libssh2-60401ec4c254.tar.gz",
+    "revision": "60401ec4c25405be6ab54b8e50ad1ff7039d8acf",
+    "binaryPackage": "libssh2-1.10.0-1-vs16-x64.zip",
+    "sourceTag": "libssh2-1.10.0",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libwebp-f6ee4b24d8d0",
+    "url": "https://codeload.github.com/winlibs/libwebp/tar.gz/f6ee4b24d8d0c0a0e14baee113beb72ca69c2ad9",
+    "sha256": "0a0c5f81d03aaf7365f454b737d817044bff52df5bda6631669f7bdc97176178",
+    "file": "windows-winlibs-libwebp-f6ee4b24d8d0.tar.gz",
+    "revision": "f6ee4b24d8d0c0a0e14baee113beb72ca69c2ad9",
+    "binaryPackage": "libwebp-1.3.2-vs16-x64.zip",
+    "sourceTag": "libwebp-1.3.2",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libxml2-0ee8eb82bdb5",
+    "url": "https://codeload.github.com/winlibs/libxml2/tar.gz/0ee8eb82bdb5f56d7ca4f124b6fa54bcf631c0a2",
+    "sha256": "8cc3de122421fdf63dad4c51dd2bf9764d5c0d7691b7bd06683e223bd762a364",
+    "file": "windows-winlibs-libxml2-0ee8eb82bdb5.tar.gz",
+    "revision": "0ee8eb82bdb5f56d7ca4f124b6fa54bcf631c0a2",
+    "binaryPackage": "libxml2-2.9.14-4-vs16-x64.zip",
+    "sourceTag": "libxml2-2.9.14-4",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-libxpm-581af1b3953f",
+    "url": "https://codeload.github.com/winlibs/libxpm/tar.gz/581af1b3953fa152224bb967a1ef516e85d95e1a",
+    "sha256": "f8b7f670351dacedb4f7d4df15284758341fe62e08314d264e310cea3d3097a5",
+    "file": "windows-winlibs-libxpm-581af1b3953f.tar.gz",
+    "revision": "581af1b3953fa152224bb967a1ef516e85d95e1a",
+    "binaryPackage": "libxpm-3.5.12pl1-vs16-x64.zip",
+    "sourceTag": "libxpm-3.5.12pl1",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-nghttp2-nghttp2-6f41cc72718a",
+    "url": "https://codeload.github.com/nghttp2/nghttp2/tar.gz/6f41cc72718a1c0fca39e83d9537c1a91efa6d18",
+    "sha256": "48c8736d0d9e2f715317993c491d9eb0032fb7f9cab889e6bb47ff8999eb2eb9",
+    "file": "windows-nghttp2-nghttp2-6f41cc72718a.tar.gz",
+    "revision": "6f41cc72718a1c0fca39e83d9537c1a91efa6d18",
+    "binaryPackage": "nghttp2-1.57.0-vs16-x64.zip",
+    "sourceTag": "v1.57.0",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-openssl-openssl-e04bd3433fd8",
+    "url": "https://codeload.github.com/openssl/openssl/tar.gz/e04bd3433fd84e1861bf258ea37928d9845e6a86",
+    "sha256": "23c52cc22a7455b7fb260efa0804f4584ebbe08b66da231e22afbb026ea67b7c",
+    "file": "windows-openssl-openssl-e04bd3433fd8.tar.gz",
+    "revision": "e04bd3433fd84e1861bf258ea37928d9845e6a86",
+    "binaryPackage": "openssl-1.1.1w.pl1-vs16-x64.zip",
+    "sourceTag": "OpenSSL_1_1_1w",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-sqlite3-3e576e5db6c8",
+    "url": "https://codeload.github.com/winlibs/sqlite3/tar.gz/3e576e5db6c856fdf079c96dd3a47f6aa19a3049",
+    "sha256": "805f5c2ae9fcf560c5063ca4be9dc5e9a9a55fd965f34abc4a1ecbfa309a26b9",
+    "file": "windows-winlibs-sqlite3-3e576e5db6c8.tar.gz",
+    "revision": "3e576e5db6c856fdf079c96dd3a47f6aa19a3049",
+    "binaryPackage": "sqlite3-3.36.0-vs16-x64.zip",
+    "sourceTag": "sqlite3-3.36.0",
+    "phpVersions": [
+      "8.1"
+    ]
+  },
+  {
+    "name": "windows-winlibs-icu4c-38b181c5322d",
+    "url": "https://codeload.github.com/winlibs/icu4c/tar.gz/38b181c5322d0d28ace5951eafc8308933e7cbd9",
+    "sha256": "e8ba7246fae29ccc38fcbc9104031a0f21f35f088cb4dc160d36e45e9a0b497d",
+    "file": "windows-winlibs-icu4c-38b181c5322d.tar.gz",
+    "revision": "38b181c5322d0d28ace5951eafc8308933e7cbd9",
+    "binaryPackage": "ICU",
+    "binaryVersion": "71.1-2"
+  },
+  {
+    "name": "windows-winlibs-postgresql-d6d085e93776",
+    "url": "https://codeload.github.com/winlibs/postgresql/tar.gz/d6d085e9377626a66c10144123ad67f0ca42f62d",
+    "sha256": "ab36b3033831822376f27ce7314e3c3b3c065795cfad53589bb0bdd1c6023d90",
+    "file": "windows-winlibs-postgresql-d6d085e93776.tar.gz",
+    "revision": "d6d085e9377626a66c10144123ad67f0ca42f62d",
+    "binaryPackage": "libpq",
+    "binaryVersion": "14.24"
+  },
+  {
+    "name": "windows-winlibs-libxml2-b9ca51098499",
+    "url": "https://codeload.github.com/winlibs/libxml2/tar.gz/b9ca51098499e5b4d47ed08778369b2f015fa8f3",
+    "sha256": "f07d8843525f61e7602347b6c7381f945379a2963145718927ff460ce2355dce",
+    "file": "windows-winlibs-libxml2-b9ca51098499.tar.gz",
+    "revision": "b9ca51098499e5b4d47ed08778369b2f015fa8f3",
+    "binaryPackage": "libxml2",
+    "binaryVersion": "2.10.4-9"
+  },
+  {
+    "name": "windows-winlibs-net-snmp-106c51bea5ae",
+    "url": "https://codeload.github.com/winlibs/net-snmp/tar.gz/106c51bea5ae2efeb6e6659a5ebc610ffe0e3e89",
+    "sha256": "ead7359992167f21a6018f6a0c1795f098f482afe29343a681c6be3a9e926e89",
+    "file": "windows-winlibs-net-snmp-106c51bea5ae.tar.gz",
+    "revision": "106c51bea5ae2efeb6e6659a5ebc610ffe0e3e89",
+    "binaryPackage": "net-snmp",
+    "binaryVersion": "5.7.3-5"
+  },
+  {
+    "name": "windows-winlibs-icu4c-c4b64c7513cd",
+    "url": "https://codeload.github.com/winlibs/icu4c/tar.gz/c4b64c7513cd7c94c19eb2745f721be4bff194de",
+    "sha256": "9e9824ac436cfc48b8b12de6805fa3827ad539b8216e7f681b84ed3e7f1374dc",
+    "file": "windows-winlibs-icu4c-c4b64c7513cd.tar.gz",
+    "revision": "c4b64c7513cd7c94c19eb2745f721be4bff194de",
+    "binaryPackage": "ICU",
+    "binaryVersion": "72.1-1"
   }
 ]

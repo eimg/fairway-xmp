@@ -146,28 +146,47 @@ def collect_plan(stage, refresh=False):
     sdist, = [file for file in certifi['urls'] if file['packagetype'] == 'sdist']
     plan.append(source_input('ca-certificates', sdist['url'], sdist['digests']['sha256']))
     # Windows PHP's SBOM identifies the exact dependency repositories, including
-    # LGPL libraries and their Windows build recipes/patches.
-    php_windows = lock['php-windows']
-    windows_archive, _ = download(php_windows['url'], php_windows['sha256'])
-    windows_metadata = stage / 'windows-php'
-    windows_metadata.mkdir(exist_ok=True)
-    with zipfile.ZipFile(windows_archive) as php:
-        for filename in ['extras/sbom/php.spdx.json', 'extras/sbom/php.cdx.json', 'readme-redist-bins.txt', 'license.txt']:
-            (windows_metadata / Path(filename).name).write_bytes(php.read(filename))
-        sbom = json.loads(php.read('extras/sbom/php.spdx.json'))
+    # LGPL libraries and their Windows build recipes/patches. Older releases
+    # predate the SBOM, so their versioned source refs are pinned separately.
+    legacy = json.loads((ROOT / 'scripts/windows_legacy_sources.json').read_text())
+    shutil.copyfile(ROOT / 'scripts/windows_legacy_sources.json', stage / 'windows_legacy_sources.json')
     seen = set()
-    for package in sbom['packages']:
-        for ref in package.get('externalRefs') or []:
-            match = re.fullmatch(r'git\+https://github.com/([^/]+/[^/]+)\.git@([0-9a-f]{40})', ref.get('referenceLocator', ''))
-            if not match or match.group(0) in seen:
-                continue
-            seen.add(match.group(0))
-            repo, revision = match.groups()
-            # PHP may bundle two versions of one dependency (such as OpenSSL).
-            # Keep their source archives distinct so parallel copies cannot overwrite them.
-            extra = source_input('windows-' + repo.replace('/', '-') + '-' + revision[:12], f'https://codeload.github.com/{repo}/tar.gz/{revision}')
-            extra.update(revision=revision, binaryPackage=package['name'], binaryVersion=package.get('versionInfo'))
-            plan.append(extra)
+    for key in ('php-windows', *(f'php-{minor}-windows' for minor, version in MANIFEST.get('phpVersions', {}).items() if version != MANIFEST['php'])):
+        php_windows = lock[key]
+        windows_archive, _ = download(php_windows['url'], php_windows['sha256'])
+        windows_metadata = stage / key
+        windows_metadata.mkdir(exist_ok=True)
+        with zipfile.ZipFile(windows_archive) as php:
+            for filename in ['extras/sbom/php.spdx.json', 'extras/sbom/php.cdx.json', 'readme-redist-bins.txt', 'license.txt']:
+                if filename in php.namelist():
+                    (windows_metadata / Path(filename).name).write_bytes(php.read(filename))
+            has_sbom = 'extras/sbom/php.spdx.json' in php.namelist()
+            sbom = json.loads(php.read('extras/sbom/php.spdx.json')) if has_sbom else {'packages': []}
+        if not has_sbom:
+            minor = key.removeprefix('php-').removesuffix('-windows')
+            sources = [entry for entry in legacy if minor in entry['php']]
+            if minor not in ('8.0', '8.1') or not sources:
+                raise RuntimeError(f'No Windows dependency source manifest for {key}')
+            for entry in sources:
+                ref = f'git+https://github.com/{entry["repo"]}.git@{entry["revision"]}'
+                if ref in seen:
+                    continue
+                seen.add(ref)
+                extra = source_input('windows-' + entry['repo'].replace('/', '-') + '-' + entry['revision'][:12],
+                                     f'https://codeload.github.com/{entry["repo"]}/tar.gz/{entry["revision"]}')
+                extra.update(revision=entry['revision'], binaryPackage=entry['package'],
+                             sourceTag=entry['tag'], phpVersions=entry['php'])
+                plan.append(extra)
+        for package in sbom['packages']:
+            for ref in package.get('externalRefs') or []:
+                match = re.fullmatch(r'git\+https://github.com/([^/]+/[^/]+)\.git@([0-9a-f]{40})', ref.get('referenceLocator', ''))
+                if not match or match.group(0) in seen:
+                    continue
+                seen.add(match.group(0))
+                repo, revision = match.groups()
+                extra = source_input('windows-' + repo.replace('/', '-') + '-' + revision[:12], f'https://codeload.github.com/{repo}/tar.gz/{revision}')
+                extra.update(revision=revision, binaryPackage=package['name'], binaryVersion=package.get('versionInfo'))
+                plan.append(extra)
     if pinned:
         for item in plan:
             previous = pinned.get(item['name']) or pinned_by_url.get(item['url'])
@@ -268,9 +287,11 @@ bottle folders on the builder; recreate them using the pinned PCRE2/OpenSSL
 inputs. The Mac build uses SDK zlib, stages the executable and MIME types, and
 relocates library load paths with `scripts/prepare_runtime.py`.
 
-`windows-php/` retains the official PHP distribution's software bill of
-materials and notices. Its immutable repository references supply Windows
-dependency sources and build recipes under `upstream/windows-*`.
+`windows-php/` retains the official PHP distribution's notices and, where
+provided, software bill of materials. PHP 8.0 and 8.1 predate the SBOM;
+`windows_legacy_sources.json` maps their dependency packages to pinned,
+version-matched source trees under `upstream/windows-*`. The newer SBOMs'
+immutable repository references supply their dependency source trees there too.
 
 `fairway-xmp-source.tar.gz` contains the application, configuration templates,
 and scripts that stage, relocate, and package the runtimes. Extract it and see

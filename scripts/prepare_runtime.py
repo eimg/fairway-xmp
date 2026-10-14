@@ -160,18 +160,22 @@ def windows(target, lock, refresh):
         'mysql-windows': (f'https://cdn.mysql.com/Downloads/MySQL-{mysql_series}/mysql-{MANIFEST["mysql"]}-winx64.zip', 'mysql'),
         'nginx-windows': (f'https://nginx.org/download/nginx-{MANIFEST["nginx"]}.zip', 'nginx'),
     }
+    for minor, version in MANIFEST.get('phpVersions', {}).items():
+        if version != php:
+            toolset = 'vs16' if minor in ('8.0', '8.1', '8.2', '8.3') else 'vs17'
+            sources[f'php-{minor}-windows'] = (f'https://downloads.php.net/~windows/releases/php-{version}-nts-Win32-{toolset}-x64.zip', f'php-{minor}')
     for name, (url, service) in sources.items():
         archive = lock_download(name, url, refresh=refresh, lock=lock)
         with tempfile.TemporaryDirectory() as folder:
             unpacked = Path(folder)
             safe_extract(archive, unpacked, 'zip')
-            if service == 'php':
+            if service.startswith('php'):
                 # DLLs must be alongside PHP executables; extensions remain separate.
                 for file in unpacked.iterdir():
-                    if file.suffix.lower() in ('.exe', '.dll'): copy(file, target / 'php/bin' / file.name)
-                copy(unpacked / 'ext', target / 'php/ext')
-                for file in unpacked.glob('*LICENSE*'): copy(file, target / 'licenses/php' / file.name)
-                for file in unpacked.glob('*license*'): copy(file, target / 'licenses/php' / file.name)
+                    if file.suffix.lower() in ('.exe', '.dll'): copy(file, target / service / 'bin' / file.name)
+                copy(unpacked / 'ext', target / service / 'ext')
+                for file in unpacked.glob('*LICENSE*'): copy(file, target / 'licenses' / service / file.name)
+                for file in unpacked.glob('*license*'): copy(file, target / 'licenses' / service / file.name)
             elif service == 'nginx':
                 base = next(unpacked.iterdir())
                 copy(base / 'nginx.exe', target / 'nginx/bin/nginx.exe')
@@ -179,7 +183,12 @@ def windows(target, lock, refresh):
                 for file in base.glob('*LICENSE*'): copy(file, target / 'licenses/nginx' / file.name)
             else:
                 base = next(unpacked.iterdir())
-                for directory in ('bin', 'lib', 'share'): copy(base / directory, target / 'mysql' / directory)
+                # PDB debug symbols and .lib linker inputs are not needed by the
+                # shipped executables; together they add almost 900 MiB and can
+                # push the NSIS data block past its size limit.
+                for directory in ('bin', 'lib', 'share'):
+                    shutil.copytree(base / directory, target / 'mysql' / directory,
+                                    dirs_exist_ok=True, ignore=shutil.ignore_patterns('*.pdb', '*.lib'))
                 for file in base.glob('*LICENSE*'): copy(file, target / 'licenses/mysql' / file.name)
     # The Microsoft redistributable is installed by our NSIS hook if required.
     url = 'https://aka.ms/vs/17/release/vc_redist.x64.exe'
@@ -192,12 +201,16 @@ class Bottles:
         self.work, self.lock, self.refresh = work, lock, refresh
         self.kegs = {}
         self.metadata = {}
+        self._indexed_kegs = set()
+        self._files_by_name = {}
 
     def fetch(self, name, required_version=None):
         if name in self.kegs: return self.kegs[name]
         key = f'brew-{name}-arm64-sequoia'
         stored = self.lock.get(key)
-        if stored and (not self.refresh or RESUME_LOCK):
+        # PHP 8.0 and its ICU 73 dependency were removed from Homebrew core.
+        # Keep their archived Sonoma ARM bottles checksum-pinned on refresh.
+        if stored and (not self.refresh or RESUME_LOCK or name in ('php@8.0', 'icu4c')):
             version, url, checksum = stored['version'], stored['url'], stored['sha256']
         else:
             data = read_json(f'https://formulae.brew.sh/api/formula/{urllib.parse.quote(name, safe="")}.json')
@@ -245,10 +258,18 @@ class Bottles:
         if origin and (origin.parent / suffix).exists():
             return (origin.parent / suffix).resolve()
         name = Path(dependency).name
-        matches = {file.resolve() for keg in self.kegs.values() for file in keg.rglob(name) if file.is_file()}
+        # Index each bottle once. Repeating rglob for every load command is
+        # prohibitively slow with six PHP builds and MySQL's large share tree.
+        for formula, keg in self.kegs.items():
+            if formula not in self._indexed_kegs:
+                for file in keg.rglob('*'):
+                    if file.is_file():
+                        self._files_by_name.setdefault(file.name, set()).add(file.resolve())
+                self._indexed_kegs.add(formula)
+        matches = self._files_by_name.get(name, set())
         if len(matches) != 1:
             raise RuntimeError(f'Cannot resolve relative library {dependency}: {len(matches)} candidates')
-        return matches.pop()
+        return next(iter(matches))
 
 
 def macho(path):
@@ -305,12 +326,17 @@ def macos(target, lock, refresh):
         bottles = Bottles(Path(folder), lock, refresh)
         php = bottles.fetch('php', MANIFEST['php'])
         mysql = bottles.fetch('mysql@9.7', MANIFEST['mysql'])
-        for executable in ('php', 'php-cgi'):
-            copy(php / 'bin' / executable, target / 'php/bin' / executable)
-        copy(php / 'sbin/php-fpm', target / 'php/bin/php-fpm')
-        (target / 'php/ext').mkdir(parents=True, exist_ok=True)
-        for extension in php.rglob('*.so'):
-            if 'httpd' not in str(extension): copy(extension, target / 'php/ext' / extension.name)
+        php_builds = [('php', php)]
+        for minor, version in MANIFEST.get('phpVersions', {}).items():
+            if version != MANIFEST['php']:
+                php_builds.append((f'php-{minor}', bottles.fetch(f'php@{minor}', version)))
+        for folder, keg in php_builds:
+            for executable in ('php', 'php-cgi'):
+                copy(keg / 'bin' / executable, target / folder / 'bin' / executable)
+            copy(keg / 'sbin/php-fpm', target / folder / 'bin/php-fpm')
+            (target / folder / 'ext').mkdir(parents=True, exist_ok=True)
+            for extension in keg.rglob('*.so'):
+                if 'httpd' not in str(extension): copy(extension, target / folder / 'ext' / extension.name)
         for directory in ('bin', 'lib', 'share'): copy(mysql / directory, target / 'mysql' / directory)
         build_nginx(target, bottles, lock, refresh)
         relocate(target, bottles)
@@ -362,20 +388,30 @@ def build_nginx(target, bottles, lock, refresh):
 
 def verify(target):
     suffix = '.exe' if platform.system() == 'Windows' else ''
-    php = target / 'php/bin' / ('php' + suffix)
-    ini = target / 'verify.ini'
-    if suffix:
-        ext = (target / 'php/ext').as_posix()
-        ini.write_text(f'extension_dir="{ext}"\n' + '\n'.join(f'extension={name}' for name in
-            ('curl', 'fileinfo', 'gd', 'intl', 'mbstring', 'mysqli', 'openssl', 'pdo_mysql', 'pdo_sqlite', 'sodium', 'sqlite3', 'zip')))
-    else: ini.write_text('')
     env = {**os.environ, 'PHP_INI_SCAN_DIR': '', 'MIBS': ''}
     code = 'echo json_encode(["version"=>PHP_VERSION,"extensions"=>get_loaded_extensions()]);'
-    output = subprocess.check_output([str(php), '-c', str(ini), '-r', code], env=env, text=True)
-    info = json.loads(output)
-    missing = set(MANIFEST['extensions']) - {item.lower() for item in info['extensions']}
-    if info['version'] != MANIFEST['php'] or missing:
-        raise RuntimeError(f'PHP validation failed: version={info["version"]}, missing={sorted(missing)}')
+    php_builds = {'php': MANIFEST['php']}
+    php_builds.update({f'php-{minor}': version for minor, version in MANIFEST.get('phpVersions', {}).items() if version != MANIFEST['php']})
+    for folder, version in php_builds.items():
+        php = target / folder / 'bin' / ('php' + suffix)
+        ini = target / f'verify-{folder}.ini'
+        if suffix:
+            ext = (target / folder / 'ext').as_posix()
+            extensions = ('curl', 'fileinfo', 'gd', 'intl', 'mbstring', 'mysqli', 'openssl',
+                          'pdo_mysql', 'pdo_sqlite', 'sodium', 'sqlite3', 'zip')
+            ini.write_text(f'extension_dir="{ext}"\n' + '\n'.join(
+                f'extension={name}' for name in extensions
+                if (target / folder / 'ext' / f'php_{name}.dll').is_file()))
+        else: ini.write_text('')
+        output = subprocess.check_output([str(php), '-c', str(ini), '-r', code], env=env, text=True)
+        info = json.loads(output)
+        missing = set(MANIFEST['extensions']) - {item.lower() for item in info['extensions']}
+        if info['version'] != version or missing:
+            raise RuntimeError(f'PHP validation failed for {folder}: version={info["version"]}, missing={sorted(missing)}')
+        ini.unlink()
+    php = target / 'php/bin' / ('php' + suffix)
+    ini = target / 'verify.ini'
+    ini.write_text('')
     commands = [
         ([str(php), '-c', str(ini), str(target / 'composer.phar'), '--version'], f'Composer version {MANIFEST["composer"]} '),
         ([str(target / 'nginx/bin' / ('nginx' + suffix)), '-v'], f'nginx/{MANIFEST["nginx"]}'),

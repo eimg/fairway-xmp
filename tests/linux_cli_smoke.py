@@ -101,6 +101,15 @@ def main(installer):
             assert json.loads(response)['error']
             connection.close()
             assert all(s['ready'] for s in json.loads(call('status', '--json').stdout)['services'])
+            # Recover the selected older PHP-FPM, not the default PHP executable.
+            call('shutdown')
+            call('php-version', '8.0')
+            assert call('php', '-r', 'echo PHP_VERSION;').stdout.strip().startswith('8.0.')
+            assert 'Composer version' in call('composer', '--version').stdout
+            call('start')
+            probe.write_text('<?php echo PHP_VERSION;')
+            assert urllib.request.urlopen(f'http://127.0.0.1:{website}/linux-smoke.php', timeout=15).read().startswith(b'8.0.')
+            php_pid = int((data / 'php.pid').read_text())
             # Recover verified MySQL, Nginx and PHP-FPM after a supervisor crash.
             pid = int((data / 'supervisor.lock').read_text())
             os.kill(pid, signal.SIGKILL)
@@ -110,6 +119,23 @@ def main(installer):
                 time.sleep(.05)
             recovered = json.loads(call('status', '--json').stdout)
             assert all(s['ready'] for s in recovered['services']), recovered
+            assert recovered['phpVersion'] == '8.0', recovered
+            call('shutdown')
+            for _ in range(100):
+                state = Path(f'/proc/{php_pid}/stat')
+                if not state.exists() or state.read_text().split(') ', 1)[1].startswith('Z'): break
+                time.sleep(.05)
+            state = Path(f'/proc/{php_pid}/stat')
+            assert not state.exists() or state.read_text().split(') ', 1)[1].startswith('Z'), 'Recovered PHP-FPM survived shutdown'
+            with socket.socket() as listener_probe:
+                assert listener_probe.connect_ex(('127.0.0.1', ports[3])) != 0, 'PHP-FPM is still listening after shutdown'
+            with socket.socket() as freed:
+                # Accepted FastCGI connections can remain in TIME_WAIT after
+                # the listener exits; allow their port to be reused.
+                freed.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                freed.bind(('127.0.0.1', ports[3]))
+            call('start')
+            assert urllib.request.urlopen(f'http://127.0.0.1:{website}/linux-smoke.php', timeout=15).read().startswith(b'8.0.')
             call('stop', 'nginx')
             stopped = json.loads(call('status', '--json').stdout)
             assert all(not s['running'] for s in stopped['services'] if s['id'] in ('nginx', 'php', 'phpmyadmin'))
@@ -119,7 +145,7 @@ def main(installer):
             subprocess.run(['sh', str(installer), '--prefix', str(prefix)], env=env, check=True)
             assert probe.exists() and json.loads(call('ports').stdout)['website'] == ports[0]
             call('start')
-            assert urllib.request.urlopen(f'http://127.0.0.1:{website}/linux-smoke.php', timeout=15).read().strip() == b'42'
+            assert urllib.request.urlopen(f'http://127.0.0.1:{website}/linux-smoke.php', timeout=15).read().startswith(b'8.0.')
             call('uninstall')
             assert not prefix.exists()
             assert probe.exists() and backup.exists() and (data / 'mysql/mysql').is_dir()

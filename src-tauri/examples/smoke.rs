@@ -10,7 +10,21 @@ use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
     path::PathBuf,
+    process::Command,
 };
+
+fn without_startup_warnings(mut command: Command) -> Result<String, String> {
+    let output = command.output().map_err(|error| error.to_string())?;
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if !output.status.success() || stderr.contains("PHP Startup") || stdout.contains("PHP Startup")
+    {
+        return Err(format!(
+            "Command failed or emitted a PHP startup warning: {stdout} {stderr}"
+        ));
+    }
+    Ok(stdout.trim().to_string())
+}
 
 fn http(port: u16, route: &str) -> String {
     let mut socket = TcpStream::connect(("127.0.0.1", port)).unwrap();
@@ -144,6 +158,53 @@ fn main() -> Result<(), String> {
             assert!(http(chosen.website, "/upgrade-check.php").contains("classroom works"));
             manager.stop_all()?;
             println!("PASS: MySQL 8.4 → 9.7 upgrade, original database backup, preserved credentials/data, logical backup, and restart.");
+        }
+        let php_versions = manager.layout.php_versions()?;
+        if php_versions.len() > 1 {
+            let probe = manager.layout.www.join("php-version.php");
+            fs::write(&probe, "<?php echo PHP_VERSION;").map_err(|e| e.to_string())?;
+            for (minor, full) in php_versions {
+                let full = full.as_str().ok_or("Invalid PHP version in manifest")?;
+                manager.save_php_version(minor.clone())?;
+                if cfg!(windows) {
+                    let ini = fs::read_to_string(manager.layout.data.join("config/php.ini"))
+                        .map_err(|e| e.to_string())?;
+                    assert_eq!(
+                        ini.lines().any(|line| line == "extension=zip"),
+                        manager.layout.php_root()?.join("ext/php_zip.dll").is_file(),
+                        "PHP {minor} ZIP configuration does not match its runtime"
+                    );
+                }
+                let mut php = process::command(manager.layout.bin.join(if cfg!(windows) {
+                    "php.cmd"
+                } else {
+                    "php"
+                }));
+                php.args(["-r", "echo PHP_VERSION;"]);
+                assert_eq!(without_startup_warnings(php)?, full);
+                let mut composer = process::command(manager.layout.bin.join(if cfg!(windows) {
+                    "composer.cmd"
+                } else {
+                    "composer"
+                }));
+                composer.arg("--version");
+                assert!(without_startup_warnings(composer)?.contains("Composer version"));
+                manager.start_all()?;
+                assert!(http(chosen.website, "/php-version.php").contains(full));
+                if cfg!(windows) {
+                    let logs = manager.layout.data.join("logs");
+                    for name in ["php.log", "php-process.log"] {
+                        let contents = fs::read_to_string(logs.join(name)).unwrap_or_default();
+                        assert!(!contents.contains("PHP Startup"), "{name}: {contents}");
+                    }
+                }
+                manager.stop_all()?;
+                let resumed = Manager::new(manager.layout.clone())?;
+                assert_eq!(resumed.layout.php_version()?, minor);
+                manager = resumed;
+                println!("PASS: PHP {minor} CLI and web runtime");
+            }
+            manager.save_php_version("8.5".into())?;
         }
         // Settings survive restart; coursework survives removal of PATH integration.
         assert_eq!(manager.layout.ports()?, chosen);

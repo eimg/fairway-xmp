@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import io
+import json
 from pathlib import Path
 import tempfile
 import tarfile
@@ -13,6 +14,23 @@ SPEC.loader.exec_module(runtime)
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_older_windows_php_dependency_sources_are_pinned(self):
+        manifest = Path(__file__).resolve().parents[1] / 'scripts/windows_legacy_sources.json'
+        sources = json.loads(manifest.read_text())
+        for version in ('8.0', '8.1'):
+            packages = [item['package'] for item in sources if version in item['php']]
+            self.assertGreaterEqual(len(packages), 35)
+            self.assertEqual(len(packages), len(set(packages)))
+            for library in ('glib', 'libenchant2', 'libpq', 'libsasl', 'libsodium', 'libssh2', 'nghttp2', 'openssl', 'sqlite3'):
+                self.assertTrue(any(package.startswith(library + '-') for package in packages),
+                                f'{library} source missing for PHP {version}')
+            if version == '8.0':
+                self.assertIn('glib-2.53.3-vs16-x64.zip', packages)
+                self.assertIn('libiconv-1.16-5-vs16-x64.zip', packages)
+        for item in sources:
+            self.assertRegex(item['revision'], r'^[0-9a-f]{40}$')
+            self.assertIn('/', item['repo'])
+
     def test_windows_archive_cannot_escape_runtime_folder(self):
         for malicious in ('../outside.txt', '/outside.txt', 'C:/outside.txt', '..\\outside.txt'):
             with self.subTest(path=malicious), tempfile.TemporaryDirectory() as folder:

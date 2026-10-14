@@ -31,11 +31,13 @@ export default function App() {
   const [log, setLog] = useState<{ service: ServiceId; text: string } | null>(null);
   const [help, setHelp] = useState(false);
   const [ports, setPorts] = useState<Ports>(preview.ports);
+  const [phpVersion, setPhpVersion] = useState(preview.phpVersion);
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const operation = useRef(false);
   const backendOperation = useRef(false);
   const versions = data.runtimeVersions;
+  const selectedPhp = data.phpVersions[data.phpVersion] ?? versions?.php;
   const allReady = data.services.every(service => service.ready);
   const anyRunning = data.services.some(service => service.running);
   const usable = isDesktop && data.runtimeReady && !busy;
@@ -83,6 +85,7 @@ export default function App() {
   }, []);
 
   useEffect(() => { setPorts(data.ports); }, [data.ports.website, data.ports.phpmyadmin, data.ports.mysql, data.ports.php]);
+  useEffect(() => { setPhpVersion(data.phpVersion); }, [data.phpVersion]);
 
   async function run(label: string, action: () => Promise<void>) {
     if (operation.current || backendOperation.current) return;
@@ -148,7 +151,7 @@ export default function App() {
           <div className="section-heading"><h2>Services <span>4</span></h2><span className="stack-status"><span className={`status-dot ${allReady ? 'running' : ''}`} />{allReady ? 'All services ready' : anyRunning ? 'Environment partially running' : 'All services stopped'}</span></div>
           <div className="services-grid">{(['nginx', 'php', 'mysql', 'phpmyadmin'] as ServiceId[]).map(id => {
             const service = data.services.find(s => s.id === id)!;
-            return <ServiceCard key={id} service={service} version={versions?.[meta[id].version]} disabled={!usable} busy={!!busy} onAction={serviceAction} onOpen={open} onLog={showLog} />;
+            return <ServiceCard key={id} service={service} version={id === 'php' ? selectedPhp : versions?.[meta[id].version]} disabled={!usable} busy={!!busy} onAction={serviceAction} onOpen={open} onLog={showLog} />;
           })}</div>
           {isDesktop && !data.runtimeReady && <div className="notice error" role="alert">Fairway XMP’s PHP or database files are missing. Reinstall Fairway XMP to restore them. Your projects and database data will be kept.</div>}
 
@@ -167,14 +170,18 @@ export default function App() {
 
         {view === 'settings' && <>
           <div className="page-heading"><div><div className="eyebrow">MAKE IT YOURS</div><h1>Environment settings.</h1><p>Predictable defaults, with room to adjust.</p></div></div>
-          <section className="settings-card"><h2>Service ports</h2><p>Stop all services before making changes. Saved ports stay the same across restarts.</p>
-            <form onSubmit={event => { event.preventDefault(); void run('Saving ports…', async () => {
-              setData(await invoke<Snapshot>('save_ports', { ports })); setNotice({ kind: 'success', text: 'Ports saved. Update existing project connection settings if the MySQL port changed.' });
+          <section className="settings-card"><h2>Service Settings</h2><p>Stop all services before changing ports or PHP. Saved settings stay the same across restarts.</p>
+            <form onSubmit={event => { event.preventDefault(); void run('Saving settings…', async () => {
+              const mysqlPortChanged = ports.mysql !== data.ports.mysql;
+              setData(await invoke<Snapshot>('save_settings', { ports, version: phpVersion })); setNotice({ kind: 'success', text: mysqlPortChanged ? 'Settings saved. Update existing project connection settings for the new MySQL port.' : 'Settings saved.' });
             }); }}>
               <div className="port-fields">{([['website', 'Website', 'Nginx'], ['phpmyadmin', 'phpMyAdmin', 'Database browser'], ['mysql', 'MySQL', 'Database connection']] as const).map(([key, label, hint]) => <label key={key}><span>{label}<small>{hint}</small></span><input type="number" min="1024" max="65535" required value={ports[key]} disabled={anyRunning || !!busy} onChange={event => setPorts({ ...ports, [key]: Number(event.target.value) })} /></label>)}</div>
-              <details className="advanced"><summary>Advanced settings</summary><label><span>PHP FastCGI port<small>Internal connection between Nginx and PHP</small></span><input type="number" min="1024" max="65535" required value={ports.php} disabled={anyRunning || !!busy} onChange={event => setPorts({ ...ports, php: Number(event.target.value) })} /></label></details>
-              {anyRunning && <p className="settings-hint">Services are running. Stop all from Environment to edit ports.</p>}
-              <button className="primary" disabled={!isDesktop || anyRunning || !!busy} type="submit">Save ports</button>
+              <details className="advanced"><summary>Advanced settings</summary>
+                <label><span>PHP version<small>For websites, CLI PHP, and Composer. PHP 8.5 is the default.</small></span><select value={phpVersion} disabled={!isDesktop || !!busy || anyRunning || !data.runtimeReady} onChange={event => setPhpVersion(event.target.value)}>{Object.keys(data.phpVersions).sort().map(version => <option key={version} value={version}>PHP {version}</option>)}</select></label>
+                <label><span>PHP FastCGI port<small>Internal connection between Nginx and PHP</small></span><input type="number" min="1024" max="65535" required value={ports.php} disabled={anyRunning || !!busy} onChange={event => setPorts({ ...ports, php: Number(event.target.value) })} /></label>
+              </details>
+              {anyRunning && <p className="settings-hint">Services are running. Stop all from Environment to edit settings.</p>}
+              <button className="primary" disabled={!isDesktop || anyRunning || !!busy || !data.runtimeReady} type="submit">Save</button>
             </form>
           </section>
           <section className="settings-card"><div className="card-title"><h2>Command-line tools</h2><span className={`status-label ${data.pathInstalled ? 'ready' : ''}`}>{data.pathInstalled ? 'Enabled' : 'Not enabled'}</span></div><p>Add PHP and Composer to your user PATH. Restart existing terminals and VS Code after changes.</p><dl className="path-list"><div><dt>Current PHP</dt><dd>{data.pathPhp ?? 'Not found'}</dd></div><div><dt>Current Composer</dt><dd>{data.pathComposer ?? 'Not found'}</dd></div></dl><p className="settings-hint">If an older PHP installation appears here, close and reopen Fairway XMP and your terminal. “Open terminal” uses Fairway XMP’s PHP and Composer.</p><button className="secondary" disabled={!isDesktop || !!busy || (!data.pathInstalled && !data.runtimeReady)} onClick={() => { void run('Updating user PATH…', async () => {
@@ -185,7 +192,7 @@ export default function App() {
 
         {view === 'updates' && <>
           <div className="page-heading"><div><div className="eyebrow">KEEP YOUR TOOLS CURRENT</div><h1>A dependable environment.</h1><p>Find new versions of Fairway XMP and your bundled tools.</p></div></div>
-          <section className="settings-card"><div className="card-title"><h2>Fairway XMP {data.version}</h2><span className="status-label">Installed version</span></div><div className="runtime-list">{['php', 'nginx', 'mysql', 'phpmyadmin', 'composer'].map(name => <div key={name}><span>{name === 'php' ? 'PHP' : name === 'mysql' ? 'MySQL' : name === 'phpmyadmin' ? 'phpMyAdmin' : name === 'nginx' ? 'Nginx' : 'Composer'}</span><code>{versions?.[name] ?? 'Unavailable'}</code></div>)}</div><p>{update?.configured ? 'Updates preserve your projects and database data. Fairway XMP backs up student databases and stops services before installing an update.' : 'Download a newer installer from View downloads. Back up your databases, stop all services, and quit Fairway XMP before installing. Your projects and database data are kept.'}</p><div className="button-row update-actions"><button className="primary" disabled={!isDesktop || !!busy} onClick={() => { void run('Checking for updates…', async () => {
+          <section className="settings-card"><div className="card-title"><h2>Fairway XMP {data.version}</h2><span className="status-label">Installed version</span></div><div className="runtime-list">{['php', 'nginx', 'mysql', 'phpmyadmin', 'composer'].map(name => <div key={name}><span>{name === 'php' ? 'PHP' : name === 'mysql' ? 'MySQL' : name === 'phpmyadmin' ? 'phpMyAdmin' : name === 'nginx' ? 'Nginx' : 'Composer'}</span><code>{name === 'php' ? selectedPhp ?? 'Unavailable' : versions?.[name] ?? 'Unavailable'}</code></div>)}</div><p>{update?.configured ? 'Updates preserve your projects and database data. Fairway XMP backs up student databases and stops services before installing an update.' : 'Download a newer installer from View downloads. Back up your databases, stop all services, and quit Fairway XMP before installing. Your projects and database data are kept.'}</p><div className="button-row update-actions"><button className="primary" disabled={!isDesktop || !!busy} onClick={() => { void run('Checking for updates…', async () => {
             const result = await invoke<UpdateInfo>('check_update'); setUpdate(result);
             if (result.configured && !result.version) setNotice({ kind: 'success', text: 'You’re using the latest available release.' });
             if (!result.configured) setNotice({ kind: 'success', text: 'This version uses manual updates. Choose View downloads to find a newer installer.' });

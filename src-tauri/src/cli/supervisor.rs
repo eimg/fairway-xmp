@@ -314,6 +314,10 @@ fn execute(manager: &mut Manager, request: Request) -> Result<serde_json::Value>
             manager.save_ports(ports)?;
             return serde_json::to_value(&manager.ports).map_err(|e| e.to_string());
         }
+        Request::PhpVersion { version } => {
+            manager.save_php_version(version)?;
+            return Ok(serde_json::json!(manager.layout.php_version()?));
+        }
         Request::Backup => return manager.backup().map(serde_json::Value::String),
         Request::InstallCli => {
             integration::install(&manager.layout)?;

@@ -227,14 +227,15 @@ async fn perform_service_action(
 }
 
 #[tauri::command]
-async fn save_ports(
+async fn save_settings(
     app: tauri::AppHandle,
     state: State<'_, Shared>,
     ports: Ports,
+    version: String,
 ) -> Result<Snapshot> {
-    let _operation = begin_operation(&app, "Saving ports…")?;
+    let _operation = begin_operation(&app, "Saving settings…")?;
     access(state.inner().clone(), move |m| {
-        m.save_ports(ports)?;
+        m.save_settings(ports, version)?;
         Ok(m.snapshot())
     })
     .await
@@ -472,7 +473,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             snapshot,
             service_action,
-            save_ports,
+            save_settings,
             open_target,
             read_log,
             cli_integration,

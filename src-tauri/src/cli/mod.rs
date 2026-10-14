@@ -18,6 +18,7 @@ pub(super) enum Request {
     Restart { service: String },
     Log { service: String },
     Ports { ports: Ports },
+    PhpVersion { version: String },
     Backup,
     InstallCli,
     RemoveCli,
@@ -46,7 +47,7 @@ pub fn run() -> Result<()> {
         args.first().map(String::as_str),
         Some("help" | "--help" | "-h")
     ) {
-        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
+        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway php-version          Show selected PHP version\nfairway php-version 8.0–8.5  Switch PHP after stopping all services\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
         return Ok(());
     }
     if matches!(args.first().map(String::as_str), Some("--version" | "-V")) {
@@ -107,18 +108,11 @@ pub fn run() -> Result<()> {
         let mut tool = if command == "shell" {
             Command::new(env::var_os("SHELL").unwrap_or_else(|| "/bin/sh".into()))
         } else {
-            Command::new(layout.exe(
-                if ["mysql", "mysqldump"].contains(&command) {
-                    "mysql"
-                } else {
-                    "php"
-                },
-                if command == "composer" {
-                    "php"
-                } else {
-                    command
-                },
-            ))
+            Command::new(if ["mysql", "mysqldump"].contains(&command) {
+                layout.exe("mysql", command)
+            } else {
+                layout.php_exe("php")?
+            })
         };
         tool.env("PHP_INI_SCAN_DIR", "")
             .env("MIBS", "")
@@ -152,6 +146,9 @@ pub fn run() -> Result<()> {
     let mut data = supervisor::call(&layout, &request)?;
     if command == "ports" && args.len() == 1 {
         data = data["ports"].clone();
+    }
+    if command == "php-version" && args.len() == 1 {
+        data = data["phpVersion"].clone();
     }
     if command == "status" && args.get(1).is_some_and(|s| s == "--json") {
         println!(
@@ -236,12 +233,15 @@ fn parse(args: &[String]) -> Result<Request> {
             Ok(Request::Ports { ports })
         }
         "backup" if args.len() == 1 => Ok(Request::Backup),
+        "php-version" if args.len() == 2 => Ok(Request::PhpVersion {
+            version: args[1].clone(),
+        }),
         "install-cli" if args.len() == 1 => Ok(Request::InstallCli),
         "remove-cli" if args.len() == 1 => Ok(Request::RemoveCli),
         "status" if args.len() == 1 || (args.len() == 2 && args[1] == "--json") => {
             Ok(Request::Status)
         }
-        "ports" | "tui" if args.len() <= 1 => Ok(Request::Status),
+        "ports" | "php-version" | "tui" if args.len() <= 1 => Ok(Request::Status),
         "php" | "composer" | "mysql" | "mysqldump" | "shell" => Ok(Request::Status),
         _ => Err("Unknown command or arguments. Run fairway --help.".into()),
     }

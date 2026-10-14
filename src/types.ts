@@ -7,6 +7,7 @@ export type ServiceStatus = {
 export type Snapshot = {
   ports: Ports; services: ServiceStatus[]; documentRoot: string; dataDir: string;
   runtimeReady: boolean; runtimeVersions: Record<string, string> | null;
+  phpVersion: string; phpVersions: Record<string, string>;
   pathInstalled: boolean; pathPhp: string | null; pathComposer: string | null; version: string;
 };
 export type UpdateInfo = { configured: boolean; version: string | null; notes: string | null };
