@@ -982,7 +982,7 @@ dependencies = [
 
 [[package]]
 name = "fairway"
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 dependencies = [
  "dirs 6.0.0",
  "libc",

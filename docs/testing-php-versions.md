@@ -66,7 +66,7 @@ Start-Process 'http://127.0.0.1:8800/version.php'
 & (Join-Path $env:FAIRWAY_DEV_DATA 'bin/php.cmd') --version
 ```
 
-The published v0.1.0-alpha.2 installers have PHP 8.5 only. Test this feature from a new build of the feature branch.
+The published alpha 3 installers reuse alpha 2 binaries and have PHP 8.5 only. Test this feature from a new build of the feature branch.
 
 ## Linux terminal edition
 

@@ -1,0 +1,28 @@
+{
+  "releaseVersion": "0.1.0-alpha.3",
+  "embeddedVersion": "0.1.0-alpha.2",
+  "macos": {
+    "asset": "Fairway-XMP-0.1.0-alpha.3-macos-arm64-unsigned.pkg",
+    "sha256": "1c06295aa782c60b5f2cfd1c43feb6f56a84564e87a43c8d073e96582f3c8c1f",
+    "executableSha256": "3b22cc7cd7fddbba55d67bee24493c397dafe6c4e498a6b1dd34dc8586b39a22",
+    "associatedSourceCommit": "d04db65966403952a902ec7cf743b86668be6038",
+    "provenance": "Existing local app tested by release owner; source commit associated with the completed Mac tray changes. Installer repackaged; app not recompiled.",
+    "signed": false
+  },
+  "windows": {
+    "runId": 38512386372,
+    "artifact": "fairway-windows-x64-0.1.0-alpha.2",
+    "commit": "9f18e4f48de1b2672044da3b03a30c2b6f7bb601"
+  },
+  "linux": {
+    "runId": 38523835091,
+    "artifact": "fairway-linux-x86_64",
+    "sourcesArtifact": "fairway-linux-x86_64-sources",
+    "commit": "6572da16a1e1ea5caaf839a77e5932e931d4064e"
+  },
+  "bundledToolSources": {
+    "tag": "v0.1.0-alpha.2",
+    "asset": "Fairway-XMP-0.1.0-alpha.2-bundled-tool-sources.tar.gz",
+    "sha256": "3c086a7a1bd59d3395b4f4d3c9bb59338f51d98f5a598c009252e5fac192d2bb"
+  }
+}

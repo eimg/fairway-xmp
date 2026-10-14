@@ -59,7 +59,7 @@ jobs:
       - name: Package offline installer and corresponding sources
         run: python scripts/package_linux.py
       - name: Test installed CLI, supervisor and terminal dashboard
-        run: python tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-0.1.0-alpha.2-linux-x86_64.run
+        run: python tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-*-linux-x86_64.run
       - uses: actions/upload-artifact@v6
         with:
           name: fairway-linux-x86_64
@@ -100,7 +100,7 @@ jobs:
           name: fairway-linux-x86_64
           path: artifacts
       - name: Extract manual-install bundle
-        run: tar -xzf artifacts/Fairway-XMP-0.1.0-alpha.2-linux-x86_64.tar.gz
+        run: tar -xzf artifacts/Fairway-XMP-*-linux-x86_64.tar.gz
       - name: Verify on a clean distro without installing runtime dependencies
         env:
           TEST_IMAGE: ${{ matrix.image }}

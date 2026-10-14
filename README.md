@@ -6,21 +6,22 @@ A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. 
 
 ## Downloads
 
-Current release: **[v0.1.0-alpha.2](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-alpha.2)**.
+Current release: **[v0.1.0-alpha.3](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-alpha.3)**.
 
 | Computer | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10 22H2 or Windows 11, x64 | [Windows installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.2/Fairway-XMP-0.1.0-alpha.2-windows-x64-setup.exe) |
-| Mac | macOS 15 or later, Apple Silicon (M-series) | [Mac installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.2/Fairway-XMP-0.1.0-alpha.2-macos-arm64-unsigned.pkg) |
+| Windows | Windows 10 22H2 or Windows 11, x64 | [Windows installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-windows-x64-setup.exe) |
+| Mac | macOS 15 or later, Apple Silicon (M-series) | [Mac installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-macos-arm64-unsigned.pkg) |
+| Linux | x86_64, glibc 2.35 or newer | [Terminal installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-linux-x86_64.run) · [Archive](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-linux-x86_64.tar.gz) |
 
-Download the installer for your computer and follow its prompts. The installers are unsigned, so Windows may show an unknown-publisher warning. If macOS blocks the installer or app, follow [Apple’s instructions for opening an app from an unidentified developer](https://support.apple.com/en-us/102445).
+Alpha 3 reuses tested builds; the installed apps still report `0.1.0-alpha.2` internally. Download the installer for your computer and follow its prompts. The installers are unsigned, so Windows may show an unknown-publisher warning. If macOS blocks the installer or app, follow [Apple’s instructions for opening an app from an unidentified developer](https://support.apple.com/en-us/102445).
 
 ## Linux terminal edition
 
-Linux builds are available as artifacts from the [Linux terminal installer workflow](https://github.com/eimg/fairway-xmp/actions/workflows/linux-test-build.yml). Download the `fairway-linux-x86_64` ZIP and extract it. Linux requires x86_64 and glibc 2.35 or newer; Alpine/musl and ARM are not supported. No desktop, root access, distro packages, Docker or systemd service is required.
+Download the Linux `.run` installer or `.tar.gz` archive from the table above. Linux requires x86_64 and glibc 2.35 or newer; Alpine/musl and ARM are not supported. No desktop, root access, distro packages, Docker or systemd service is required.
 
 ```sh
-sh Fairway-XMP-0.1.0-alpha.2-linux-x86_64.run
+sh Fairway-XMP-0.1.0-alpha.3-linux-x86_64.run
 # Reopen your shell after installation:
 fairway                      # terminal dashboard
 fairway start                # start all services
@@ -39,7 +40,7 @@ The installer defaults to `~/.local/share/fairway-xmp`; use `--prefix /absolute/
 
 Alternatively, extract the `.tar.gz` and run `./fairway-xmp/bin/fairway`; `./fairway-xmp/install.sh` installs that extracted bundle. Programs use libraries bundled with their component. Projects remain in `~/fairway/www`; data and backups use `${XDG_DATA_HOME:-~/.local/share}/dev.fairway.environment`.
 
-Re-running the installer backs up an existing student database and stops services before switching versions. `fairway uninstall` removes the installed program and managed shell integration while preserving projects, databases and backups. The separate `fairway-linux-x86_64-sources` artifact includes corresponding runtime sources and distribution patches. This terminal edition uses manual installer updates.
+Re-running the installer backs up an existing student database and stops services before switching versions. `fairway uninstall` removes the installed program and managed shell integration while preserving projects, databases and backups. The release’s Linux source archive includes corresponding runtime sources and distribution patches. This terminal edition uses manual installer updates.
 
 ## What’s included
 
@@ -77,7 +78,7 @@ composer --version
 
 Manage this integration under **Settings → Command-line tools**. You can also use **Open terminal** in the control panel.
 
-Development builds with PHP 8.0 through 8.5 let you switch under **Settings → Service Settings → Advanced settings** after stopping all services. Select the version and click **Save**. The selection controls websites, terminal PHP, and Composer, and is saved for the next launch. On Linux, use `fairway php-version 8.0` through `fairway php-version 8.5` after `fairway stop all`. See the [step by step test guide](docs/testing-php-versions.md). The v0.1.0-alpha.2 installers linked above contain PHP 8.5 only. PHP 8.0 and 8.1 are end of life; use newer versions for internet-facing projects.
+Development builds with PHP 8.0 through 8.5 let you switch under **Settings → Service Settings → Advanced settings** after stopping all services. Select the version and click **Save**. The selection controls websites, terminal PHP, and Composer, and is saved for the next launch. On Linux, use `fairway php-version 8.0` through `fairway php-version 8.5` after `fairway stop all`. See the [step by step test guide](docs/testing-php-versions.md). The published alpha 3 installers reuse alpha 2 binaries and contain PHP 8.5 only. PHP 8.0 and 8.1 are end of life; use newer versions for internet-facing projects.
 
 For projects with their own development server, run the usual command, such as Laravel’s `php artisan serve`.
 
@@ -125,4 +126,4 @@ The uninstaller removes the app and its command-line integration. Your projects 
 
 For problems or suggestions, [open an issue](https://github.com/eimg/fairway-xmp/issues). Include your operating system, what you tried, and any error shown in Fairway XMP.
 
-Fairway XMP’s application code uses the [MIT license](LICENSE). Included tools have [their own licenses](THIRD_PARTY_NOTICES.md). Release checksums and bundled-tool sources are available on the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-alpha.2). For contributing to the app, see [Contributing](CONTRIBUTING.md).
+Fairway XMP’s application code uses the [MIT license](LICENSE). Included tools have [their own licenses](THIRD_PARTY_NOTICES.md). Release checksums and bundled-tool sources are available on the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-alpha.3). For contributing to the app, see [Contributing](CONTRIBUTING.md).

@@ -132,7 +132,9 @@ python3 scripts/prepare_runtime.py --lockfile runtime-linux-downloads.lock.json
 cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --locked
 cargo build --release --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --bin fairway-cli --locked
 python3 scripts/package_linux.py
-python3 tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-0.1.0-alpha.2-linux-x86_64.run
+python3 tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-*-linux-x86_64.run
 ```
 
 Keep `fairway-linux-x86_64-sources` beside the tested binary artifact when publishing. Sources include Ubuntu distribution patches for every copied system library and upstream sources pinned separately from Mac/Windows runtime downloads. No runtime libraries are installed on target machines. Linux services bind only to loopback and run as the current user. Use an isolated `HOME` and `XDG_DATA_HOME` when testing release binaries; the provided smoke script does so automatically.
+
+Alpha 3 reuses tested binaries whose embedded version is alpha 2. `BUILD-INFO.json` records their original commits, runs and checksums. The Mac installer is repackaged from the existing app, without compiling it. The release’s source version is alpha 3 for future builds. `publish-reused-alpha.yml` stages assets on a GitHub runner and validates their hashes before uploading them to a draft release; publication happens after all assets are verified.
