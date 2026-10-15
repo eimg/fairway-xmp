@@ -24,23 +24,37 @@ def archive_git_tree(archive):
         return hashlib.sha1(kind + b' ' + str(len(body)).encode() + b'\0' + body).digest()
 
     root = {}
+    directories = []
     with tarfile.open(archive) as bundle:
         for member in bundle:
-            if member.isdir(): continue
             path = PurePosixPath(member.name)
-            if path.is_absolute() or '..' in path.parts:
+            if path.is_absolute() or '..' in path.parts or '\\' in member.name or ':' in member.name:
                 raise RuntimeError('Unsafe source archive path')
+            permissions = member.mode & 0o7777
+            if member.isdir():
+                if permissions != 0o755: raise RuntimeError('Unsafe source archive directory mode')
+                directories.append(path)
+                continue
             parent = root
             for part in path.parts[:-1]: parent = parent.setdefault(part, {})
             if member.isfile():
+                if permissions not in (0o644, 0o755): raise RuntimeError('Unsafe source archive file mode')
                 body = bundle.extractfile(member).read()
                 mode = b'100755' if member.mode & 0o111 else b'100644'
             elif member.issym():
+                if permissions != 0o777: raise RuntimeError('Unsafe source archive symlink mode')
                 body, mode = member.linkname.encode(), b'120000'
             else:
                 raise RuntimeError('Unexpected source archive member')
             if path.name in parent: raise RuntimeError('Duplicate source archive path')
             parent[path.name] = (mode, object_hash(b'blob', body))
+    for path in directories:
+        folder = root
+        for part in path.parts:
+            if not isinstance(folder, dict) or part not in folder:
+                raise RuntimeError('Source archive directory is outside its Git tree')
+            folder = folder[part]
+        if not isinstance(folder, dict): raise RuntimeError('Source archive directory conflicts with a file')
 
     def tree(folder):
         body = b''
@@ -52,15 +66,29 @@ def archive_git_tree(archive):
 
 
 def verify_gitiles_source(archive, item):
+    tree = archive_git_tree(archive)
+    if pinned_gitiles_source(item):
+        if tree != item['gitTree']:
+            raise RuntimeError(f'Source contents do not match the committed Git tree for {item["name"]}')
+        return
     revision = item['revision']
     url = item['url'].split('/+archive/', 1)[0] + '/+/' + revision + '?format=JSON'
     with request(url) as response:
         data = json.loads(response.read().decode().split('\n', 1)[1])
-    if data['commit'] != revision or archive_git_tree(archive) != data['tree']:
+    if data['commit'] != revision or tree != data['tree']:
         raise RuntimeError(f'Source contents do not match the pinned Git commit for {item["name"]}')
     if item.get('gitTree') and item['gitTree'] != data['tree']:
         raise RuntimeError(f'The pinned source tree changed for {item["name"]}')
     item['gitTree'] = data['tree']
+
+
+def pinned_gitiles_source(item):
+    url = urllib.parse.urlsplit(item['url'])
+    revision = item.get('revision') or ''
+    return bool(url.scheme == 'https' and (url.hostname or '').endswith('.googlesource.com')
+                and re.fullmatch('[0-9a-f]{40}', revision)
+                and url.path.endswith(f'/+archive/{revision}.tar.gz')
+                and re.fullmatch('[0-9a-f]{40}', item.get('gitTree') or ''))
 
 
 def source_input(name, url, sha256=None):
@@ -203,6 +231,8 @@ def collect_plan(stage, refresh=False):
                 if item.get('sha256') and item['sha256'] != previous['sha256']:
                     raise RuntimeError(f'Source checksum changed for {item["name"]}; refused to replace its pin')
                 item['sha256'] = previous['sha256']
+                if previous.get('gitTree') and item.get('revision') == previous.get('revision'):
+                    item['gitTree'] = previous['gitTree']
     if len({item['file'] for item in plan}) != len(plan):
         raise RuntimeError('Source archive filenames must be unique')
     return plan
@@ -214,8 +244,39 @@ def require_locked_plan(plan, locked):
     if len(expected) != len(locked) or len(actual) != len(plan) or set(actual) != set(expected):
         raise RuntimeError('Source inputs changed; review and commit the source lock before building a candidate')
     for name, item in actual.items():
-        if not item.get('sha256') or any(item.get(key) != expected[name].get(key) for key in ('url', 'sha256')):
+        pin = expected[name]
+        if (not item.get('sha256')
+                or any(item.get(key) != pin.get(key) for key in ('url', 'revision', 'gitTree'))
+                or (item['sha256'] != pin['sha256'] and not pinned_gitiles_source(pin))):
             raise RuntimeError(f'Unreviewed source input for {name}; candidate builds require the committed source lock')
+
+
+def fetch_source(item, sources):
+    failure = None
+    archive = None
+    # Gitiles can recompress a snapshot without changing its files or modes.
+    # Its committed Git tree is authoritative; record the transport SHA below.
+    expected_sha = None if pinned_gitiles_source(item) else item['sha256']
+    for url in [item['url'], *item.get('mirrors', [])]:
+        for attempt in range(3):
+            try:
+                archive, sha = download(url, expected_sha)
+                break
+            except RuntimeError as error:
+                if 'Checksum mismatch' not in str(error) or attempt == 2:
+                    raise
+            except (OSError, http.client.HTTPException) as error:
+                failure = error
+        if archive is not None:
+            break
+    if archive is None:
+        raise RuntimeError(f'Cannot obtain source for {item["name"]}') from failure
+    if item.get('revision') and '.googlesource.com/' in item['url']:
+        verify_gitiles_source(archive, item)
+    destination = sources / item['file']
+    shutil.copyfile(archive, destination)
+    print(f'Verified {item["name"]}: {destination.stat().st_size / 1024**2:.1f} MiB', flush=True)
+    return {**item, 'sha256': sha}
 
 
 def main():
@@ -240,34 +301,8 @@ def main():
     sources = stage / 'upstream'
     sources.mkdir(exist_ok=True)
 
-    def fetch(item):
-        failure = None
-        archive = None
-        for url in [item['url'], *item.get('mirrors', [])]:
-            for attempt in range(3):
-                try:
-                    archive, sha = download(url, item['sha256'])
-                    break
-                except RuntimeError as error:
-                    if 'Checksum mismatch' not in str(error) or attempt == 2:
-                        raise
-                    # A corrupt transfer is discarded; the retry must still match
-                    # the original reviewed checksum. Never accept a new digest.
-                except (OSError, http.client.HTTPException) as error:
-                    failure = error
-            if archive is not None:
-                break
-        if archive is None:
-            raise RuntimeError(f'Cannot obtain source for {item["name"]}') from failure
-        if item.get('revision') and '.googlesource.com/' in item['url']:
-            verify_gitiles_source(archive, item)
-        destination = sources / item['file']
-        shutil.copyfile(archive, destination)
-        print(f'Verified {item["name"]}: {destination.stat().st_size / 1024**2:.1f} MiB', flush=True)
-        return {**item, 'sha256': sha}
-
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
-        verified = list(pool.map(fetch, plan))
+        verified = list(pool.map(lambda item: fetch_source(item, sources), plan))
     expected_files = {item['file'] for item in verified}
     for obsolete in sources.iterdir():
         if obsolete.is_file() and obsolete.name not in expected_files:
@@ -291,6 +326,9 @@ Fairway XMP source commit: {commit}.
 MySQL (also used by the official Windows distribution), Nginx, phpMyAdmin, Composer,
 and the certificate bundle. `source-inputs.json` maps each archive to its URL,
 SHA-256, and matching macOS bottle when applicable.
+Gitiles snapshots also record their pinned revision and full Git tree. Their
+archive compression may change; every file, symlink and executable mode must
+still reproduce the committed tree. SHA-256 records the actual shipped archive.
 
 `homebrew/` contains the exact recipes and available build metadata from the pinned
 bottles. Recipes include inline patches; externally downloaded patches and

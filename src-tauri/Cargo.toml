@@ -1,6 +1,6 @@
 [package]
 name = "fairway"
-version = "0.1.0-alpha.3"
+version = "0.1.0-beta.1"
 description = "A consistent PHP development environment for the classroom"
 edition = "2021"
 rust-version = "1.90"
