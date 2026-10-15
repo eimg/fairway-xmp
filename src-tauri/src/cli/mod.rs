@@ -21,6 +21,7 @@ pub(super) enum Request {
     PhpVersion { version: String },
     Backup,
     RefreshProjects,
+    ProjectSsl { name: String, enabled: bool },
     InstallCli,
     RemoveCli,
     ShellTools,
@@ -47,11 +48,25 @@ pub fn run() -> Result<()> {
     if args.first().is_some_and(|value| value == "__sync-hosts") {
         return crate::hosts::apply(&args[1..]);
     }
+    #[cfg(target_os = "linux")]
+    if args.first().is_some_and(|value| value == "__trust-ca") {
+        return crate::tls::apply_linux_trust(
+            std::path::Path::new(args.get(1).ok_or("Missing certificate path.")?),
+            false,
+        );
+    }
+    #[cfg(target_os = "linux")]
+    if args.first().is_some_and(|value| value == "__remove-ca") {
+        return crate::tls::apply_linux_trust(
+            std::path::Path::new(args.get(1).ok_or("Missing certificate path.")?),
+            true,
+        );
+    }
     if matches!(
         args.first().map(String::as_str),
         Some("help" | "--help" | "-h")
     ) {
-        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway refresh-projects     Apply project folders to Nginx\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway php-version          Show selected PHP version\nfairway php-version 8.0–8.5  Switch PHP after stopping all services\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
+        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway refresh-projects     Apply project folders to Nginx\nfairway https NAME on|off     Toggle HTTPS for one project (:8443)\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway php-version          Show selected PHP version\nfairway php-version 8.0–8.5  Switch PHP after stopping all services\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
         return Ok(());
     }
     if matches!(args.first().map(String::as_str), Some("--version" | "-V")) {
@@ -72,6 +87,9 @@ pub fn run() -> Result<()> {
     }
     if args.first().is_some_and(|s| s == "clear-domains") {
         return crate::hosts::ensure(&[], "__sync-hosts");
+    }
+    if args.first().is_some_and(|s| s == "clear-https-trust") {
+        return crate::tls::remove_trust(&layout);
     }
     if args.first().is_some_and(|s| s == "uninstall") {
         let status = Command::new("sh")
@@ -104,6 +122,9 @@ pub fn run() -> Result<()> {
     }
     let request = parse(&args)?;
     supervisor::ensure(&layout)?;
+    if matches!(request, Request::ProjectSsl { enabled: true, .. }) {
+        crate::tls::ensure_trust(&layout)?;
+    }
     if command == "tui" {
         if !std::io::stdin().is_terminal() || !std::io::stdout().is_terminal() {
             return Err("The dashboard needs an interactive terminal. Use fairway status --json for scripts.".into());
@@ -205,7 +226,12 @@ pub fn run() -> Result<()> {
             if let Some(message) = project.message {
                 println!("{}: {message}", project.name);
             } else {
-                println!("{}: {} ({})", project.name, project.url, project.kind);
+                println!(
+                    "{}: {} ({})",
+                    project.name,
+                    project.https_url.unwrap_or(project.url),
+                    project.kind
+                );
             }
         }
     } else if let Some(text) = data.as_str() {
@@ -262,6 +288,16 @@ fn parse(args: &[String]) -> Result<Request> {
         }
         "backup" if args.len() == 1 => Ok(Request::Backup),
         "refresh-projects" if args.len() == 1 => Ok(Request::RefreshProjects),
+        "https"
+            if args.len() == 3
+                && crate::config::valid_project_name(&args[1])
+                && ["on", "off"].contains(&args[2].as_str()) =>
+        {
+            Ok(Request::ProjectSsl {
+                name: args[1].clone(),
+                enabled: args[2] == "on",
+            })
+        }
         "php-version" if args.len() == 2 => Ok(Request::PhpVersion {
             version: args[1].clone(),
         }),

@@ -56,6 +56,8 @@ pub struct Layout {
 pub struct Project {
     pub name: String,
     pub url: String,
+    pub https_url: Option<String>,
+    pub ssl_enabled: bool,
     pub kind: String,
     pub message: Option<String>,
     pub root: PathBuf,
@@ -78,6 +80,7 @@ pub fn valid_project_name(name: &str) -> bool {
 
 impl Layout {
     pub fn projects(&self, port: u16) -> Result<Vec<Project>> {
+        let secure = crate::tls::enabled_names(self)?;
         let mut projects = Vec::new();
         for entry in fs::read_dir(&self.www).map_err(|e| e.to_string())? {
             let entry = entry.map_err(|e| e.to_string())?;
@@ -89,12 +92,16 @@ impl Layout {
             let path = entry.path();
             let laravel = path.join("artisan").is_file();
             let incomplete = laravel && !path.join("public/index.php").is_file();
+            let ssl_enabled = valid && !incomplete && secure.contains(&name);
             projects.push(Project {
                 url: if valid && !incomplete {
                     format!("http://{name}.test:{port}/")
                 } else {
                     String::new()
                 },
+                https_url: ssl_enabled
+                    .then(|| format!("https://{name}.test:{}/", crate::tls::HTTPS_PORT)),
+                ssl_enabled,
                 kind: if !valid {
                     "invalid"
                 } else if incomplete {
@@ -299,7 +306,18 @@ impl Layout {
             "[global]\npid={}\nerror_log={}\ndaemonize=no\n[www]\nlisten=127.0.0.1:{}\nlisten.allowed_clients=127.0.0.1\npm=ondemand\npm.max_children=4\npm.process_idle_timeout=10s\ncatch_workers_output=yes\nclear_env=no\n",
             ini(&self.data.join("php.pid")), ini(&self.data.join("logs/php-fpm.log")), ports.php);
         atomic_write(&conf.join("php-fpm.conf"), fpm.as_bytes())?;
-        let nginx = nginx_config(self, ports, &self.projects(ports.website)?);
+        let projects = self.projects(ports.website)?;
+        if projects.iter().any(|project| project.ssl_enabled) {
+            if [ports.website, ports.phpmyadmin, ports.mysql, ports.php]
+                .contains(&crate::tls::HTTPS_PORT)
+            {
+                return Err(
+                    "Port 8443 is reserved for project HTTPS. Choose another service port.".into(),
+                );
+            }
+            crate::tls::ensure_certificate(self)?;
+        }
+        let nginx = nginx_config(self, ports, &projects);
         atomic_write(&conf.join("nginx.conf"), nginx.as_bytes())?;
         let mysql = format!(
             "[mysqld]\nbasedir={}\ndatadir={}\nport={}\nbind-address=127.0.0.1\nlower_case_table_names=1\nmysqlx=OFF\nlocal-infile=OFF\ncharacter-set-server=utf8mb4\ncollation-server=utf8mb4_unicode_ci\nmax_connections=40\ninnodb_buffer_pool_size=64M\nlog-error={}\npid-file={}\nsocket={}\nsecure-file-priv={}\n",
@@ -416,8 +434,15 @@ fn nginx_config(layout: &Layout, ports: &Ports, projects: &[Project]) -> String 
         } else {
             format!("location / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {fastcgi} }}")
         };
-        format!("server {{ listen 127.0.0.1:{}; server_name {}.test; root {}; index index.php index.html;\nlocation ~ /\\. {{ deny all; }}\n{}\n}}\n",
-            ports.website, project.name, nginx_path(&project.root), locations)
+        let http = format!("server {{ listen 127.0.0.1:{}; server_name {}.test; root {}; index index.php index.html;\nlocation ~ /\\. {{ deny all; }}\n{}\n}}\n",
+            ports.website, project.name, nginx_path(&project.root), locations);
+        if !project.ssl_enabled {
+            return http;
+        }
+        let https = format!("server {{ listen 127.0.0.1:{} ssl; server_name {}.test; root {}; index index.php index.html;\nssl_certificate {};\nssl_certificate_key {};\nlocation ~ /\\. {{ deny all; }}\n{}\n}}\n",
+            crate::tls::HTTPS_PORT, project.name, nginx_path(&project.root),
+            nginx_path(&crate::tls::certificate(layout)), nginx_path(&crate::tls::private_key(layout)), locations);
+        format!("{http}{https}")
     }).collect::<String>();
     format!(
         "worker_processes 1;\npid {};\nerror_log {};\nevents {{ worker_connections 256; }}\nhttp {{\ninclude {};\ndefault_type application/octet-stream;\naccess_log {};\nclient_max_body_size 64m;\nclient_body_temp_path {};\nfastcgi_temp_path {};\nproxy_temp_path {};\nuwsgi_temp_path {};\nscgi_temp_path {};\nserver {{ listen 127.0.0.1:{}; server_name localhost; root {}; index index.php index.html;\nlocation = /__fairway_health {{ access_log off; default_type text/plain; return 200 'fairway'; }}\nlocation ~ /\\. {{ deny all; }}\nlocation / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {} }}\n}}\nserver {{ listen 127.0.0.1:{}; server_name localhost; root {}; index index.php;\nlocation = /__fairway_health {{ access_log off; default_type text/plain; return 200 'fairway'; }}\nlocation ~ /\\. {{ deny all; }}\nlocation = /config.inc.php {{ deny all; }}\nlocation ~ ^/(libraries|templates|vendor|setup)/ {{ deny all; }}\nlocation / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {} }}\n}}\n{}\n}}\n",

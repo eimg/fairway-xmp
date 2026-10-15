@@ -4,6 +4,7 @@ pub mod hosts;
 pub mod integration;
 pub mod manager;
 pub mod process;
+pub mod tls;
 
 #[cfg(all(feature = "cli", unix))]
 pub mod cli;

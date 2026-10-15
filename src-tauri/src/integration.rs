@@ -305,7 +305,7 @@ pub fn open(layout: &Layout, target: &str, website: u16, admin: u16) -> Result<(
             .projects(website)?
             .into_iter()
             .find(|project| project.name == name[8..] && project.message.is_none())
-            .map(|project| project.url)
+            .map(|project| project.https_url.unwrap_or(project.url))
             .ok_or("Project site is unavailable. Refresh projects first.")?,
         "coursework" => layout.www.to_string_lossy().into(),
         "logs" => layout.data.join("logs").to_string_lossy().into(),

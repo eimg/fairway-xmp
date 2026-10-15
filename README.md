@@ -71,6 +71,10 @@ Each direct folder in `~/fairway/www` can also have its own address. Create a fo
 
 For a Laravel project, Fairway detects its `artisan` file and serves only `public/`. If `public/index.php` is missing, Fairway shows a warning and does not serve that project. Ordinary PHP folders are served from their folder root. Existing `127.0.0.1:8800/folder/` addresses still work. Fairway removes its managed hosts entries when you uninstall it. The website port is still required in `.test` addresses; portless addresses need separate port 80 support.
 
+Each project row has an optional **HTTPS** switch. The first time you enable it, Fairway creates a local certificate authority and asks your operating system to trust it. Enabled projects open at `https://folder.test:8443/`; the HTTP address on port 8800 remains available. The certificate authority and private key stay in Fairway's application data and must not be shared or copied to another device. Fairway removes its local certificate trust during uninstall. For Laravel, set `APP_URL` to the HTTPS address when you want Laravel to generate secure links.
+
+On Linux, use `fairway https folder on` or `fairway https folder off` after `fairway refresh-projects`. The first enable command asks for administrator permission to trust the local certificate. Browser trust stores can differ on Linux; if a browser still warns, check its certificate settings rather than bypassing the warning.
+
 Closing or minimizing the window keeps Fairway XMP and its services running. Use its macOS menu bar or Windows system tray icon to reopen the panel, start/stop all services or individual Nginx/MySQL services, open phpMyAdmin, or **Quit**. Nginx automatically manages its PHP worker; PHP CLI works without starting services. Quit gracefully stops all services before exiting.
 
 ## PHP and Composer in your terminal

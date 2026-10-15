@@ -7,6 +7,7 @@
 .project-list{margin-top:13px}.project-row{display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #eef0ef;padding:11px 0}
 .project-row>div{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;min-width:0}.project-row strong{font-size:11px}.project-row span{font-size:9px;color:#829086}.project-row code{font-size:10px;color:var(--green);overflow-wrap:anywhere}.project-row small{width:100%;font-size:9px;color:#a15142}
 .project-row .secondary{flex-shrink:0}
+.project-actions{display:flex;align-items:center;gap:10px;flex-shrink:0}.ssl-toggle{display:inline-flex;align-items:center;gap:5px;font-size:9px;color:#6b7d71;cursor:pointer;white-space:nowrap}.ssl-toggle input{appearance:none;width:25px;height:15px;margin:0;border:1px solid #a8b8ad;border-radius:20px;background:#cbd5ce;cursor:inherit;transition:background .15s}.ssl-toggle input:before{content:"";display:block;width:11px;height:11px;margin:1px;border-radius:50%;background:white;box-shadow:0 1px 2px #0002;transition:transform .15s}.ssl-toggle input:checked{background:var(--green);border-color:var(--green)}.ssl-toggle input:checked:before{transform:translateX(10px)}.ssl-toggle input:focus-visible{outline:2px solid var(--green);outline-offset:2px}.ssl-toggle:has(input:disabled){opacity:.45;cursor:not-allowed}
 
 .brand-name{position:relative;line-height:1.1;padding-bottom:16px}.brand-edition{position:absolute;bottom:0;left:1px;font-size:10px;font-weight:650;letter-spacing:2.5px;color:var(--green)}@media(max-width:650px){.brand-edition{display:none}}
 

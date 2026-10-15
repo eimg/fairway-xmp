@@ -263,6 +263,55 @@ async fn refresh_projects(app: tauri::AppHandle, state: State<'_, Shared>) -> Re
 }
 
 #[tauri::command]
+async fn set_project_ssl(
+    app: tauri::AppHandle,
+    state: State<'_, Shared>,
+    name: String,
+    enabled: bool,
+) -> Result<Snapshot> {
+    let _operation = begin_operation(&app, "Updating project HTTPS…")?;
+    let shared = state.inner().clone();
+    let layout = access(shared.clone(), {
+        let name = name.clone();
+        move |m| {
+            if enabled
+                && [
+                    m.ports.website,
+                    m.ports.phpmyadmin,
+                    m.ports.mysql,
+                    m.ports.php,
+                ]
+                .contains(&crate::tls::HTTPS_PORT)
+            {
+                return Err(
+                    "Port 8443 is reserved for project HTTPS. Choose another service port.".into(),
+                );
+            }
+            if !m
+                .layout
+                .projects(m.ports.website)?
+                .iter()
+                .any(|project| project.name == name && project.message.is_none())
+            {
+                return Err("This project is unavailable. Refresh projects first.".into());
+            }
+            Ok(m.layout.clone())
+        }
+    })
+    .await?;
+    if enabled {
+        tauri::async_runtime::spawn_blocking(move || crate::tls::ensure_trust(&layout))
+            .await
+            .map_err(|e| e.to_string())??;
+    }
+    access(shared, move |m| {
+        m.set_project_ssl(&name, enabled)?;
+        Ok(m.snapshot())
+    })
+    .await
+}
+
+#[tauri::command]
 async fn open_target(state: State<'_, Shared>, target: String) -> Result<()> {
     access(state.inner().clone(), move |m| {
         integration::open(&m.layout, &target, m.ports.website, m.ports.phpmyadmin)
@@ -378,10 +427,27 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
         crate::hosts::apply(&args[2..])?;
         return Ok(true);
     }
+    #[cfg(target_os = "linux")]
+    if action == "--trust-ca" {
+        crate::tls::apply_linux_trust(
+            std::path::Path::new(args.get(2).ok_or("Missing certificate path.")?),
+            false,
+        )?;
+        return Ok(true);
+    }
+    #[cfg(target_os = "linux")]
+    if action == "--remove-ca" {
+        crate::tls::apply_linux_trust(
+            std::path::Path::new(args.get(2).ok_or("Missing certificate path.")?),
+            true,
+        )?;
+        return Ok(true);
+    }
     if ![
         "--install-cli",
         "--remove-cli",
         "--remove-domains",
+        "--remove-https-trust",
         "--remove-data",
         "--remove-coursework",
         "--prepare-uninstall",
@@ -418,6 +484,7 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
         "--install-cli" => integration::install(&layout)?,
         "--remove-cli" => integration::remove(&layout)?,
         "--remove-domains" => crate::hosts::ensure(&[], "--sync-hosts")?,
+        "--remove-https-trust" => crate::tls::remove_trust(&layout)?,
         "--remove-data" => {
             integration::remove(&layout)?;
             // Refuse cleanup while an owned server may still be using the data directory.
@@ -502,6 +569,7 @@ pub fn run() {
             service_action,
             save_settings,
             refresh_projects,
+            set_project_ssl,
             open_target,
             read_log,
             cli_integration,

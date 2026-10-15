@@ -51,6 +51,11 @@
     MessageBox MB_ICONSTOP "Fairway XMP could not remove its local project domains. Approve the Windows prompt, then retry uninstalling."
     Abort
   ${EndIf}
+  ExecWait '"$INSTDIR\fairway.exe" --remove-https-trust' $0
+  ${If} $0 != 0
+    MessageBox MB_ICONSTOP "Fairway XMP could not remove its local HTTPS trust. Retry uninstalling after closing Fairway XMP."
+    Abort
+  ${EndIf}
   ExecWait '"$INSTDIR\fairway.exe" --remove-cli' $0
   ${If} $0 != 0
     MessageBox MB_ICONSTOP "Fairway XMP could not remove its PATH integration. Open Fairway XMP Settings and remove command-line integration, then retry uninstalling."

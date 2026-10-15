@@ -320,6 +320,7 @@ fn execute(manager: &mut Manager, request: Request) -> Result<serde_json::Value>
         }
         Request::Backup => return manager.backup().map(serde_json::Value::String),
         Request::RefreshProjects => manager.refresh_projects()?,
+        Request::ProjectSsl { name, enabled } => manager.set_project_ssl(&name, enabled)?,
         Request::InstallCli => {
             integration::install(&manager.layout)?;
             let path = manager.layout.bin.join("fairway");

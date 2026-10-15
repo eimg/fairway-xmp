@@ -41,6 +41,24 @@ fn http_host(port: u16, route: &str, host: &str) -> String {
     String::from_utf8_lossy(&bytes).into()
 }
 
+fn https(layout: &Layout, host: &str) -> Result<String, String> {
+    let mut command = process::command("curl");
+    command
+        .args([
+            "--silent",
+            "--show-error",
+            "--fail",
+            "--noproxy",
+            "*",
+            "--resolve",
+        ])
+        .arg(format!("{host}:8443:127.0.0.1"))
+        .arg("--cacert")
+        .arg(layout.data.join("tls/root-ca.pem"))
+        .arg(format!("https://{host}:8443/"));
+    process::output(command)
+}
+
 fn main() -> Result<(), String> {
     let root = PathBuf::from(
         std::env::args()
@@ -141,6 +159,38 @@ fn main() -> Result<(), String> {
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
         assert!(refreshed, "Nginx did not reload the new project site");
+        manager.set_project_ssl("new-project", true)?;
+        let mut tls_ready = false;
+        for _ in 0..20 {
+            if https(&manager.layout, "new-project.test")
+                .is_ok_and(|body| body.contains("refreshed project"))
+            {
+                tls_ready = true;
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        if !tls_ready {
+            return Err("HTTPS project did not serve a trusted certificate".into());
+        }
+        manager.set_project_ssl("plain-project", true)?;
+        for _ in 0..20 {
+            if https(&manager.layout, "plain-project.test")
+                .is_ok_and(|body| body.contains("plain project"))
+                && https(&manager.layout, "new-project.test")
+                    .is_ok_and(|body| body.contains("refreshed project"))
+            {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        if !https(&manager.layout, "plain-project.test")
+            .is_ok_and(|body| body.contains("plain project"))
+        {
+            return Err("The second HTTPS project did not receive a valid certificate".into());
+        }
+        manager.set_project_ssl("new-project", false)?;
+        manager.set_project_ssl("plain-project", false)?;
         let probe = manager.layout.www.join("smoke.php");
         fs::write(&probe, format!("<?php $pdo = new PDO('mysql:host=127.0.0.1;port={};dbname=fairway','fairway','fairway'); $pdo->exec('CREATE TABLE IF NOT EXISTS smoke (id INT PRIMARY KEY, title VARCHAR(30))'); $pdo->exec(\"REPLACE INTO smoke VALUES (1, 'classroom works')\"); echo $pdo->query('SELECT title FROM smoke WHERE id=1')->fetchColumn();", chosen.mysql)).map_err(|e| e.to_string())?;
         let result = http(chosen.website, "/smoke.php");

@@ -14,6 +14,7 @@ fi
 CONFIRM=$(/usr/bin/osascript -e 'button returned of (display dialog "Uninstall Fairway XMP and remove its command-line integration? Your projects and databases are kept unless you choose to delete them next." buttons {"Cancel", "Uninstall"} default button "Cancel")')
 [ "$CONFIRM" = Uninstall ] || exit 0
 "$EXE" --remove-domains
+"$EXE" --remove-https-trust
 "$EXE" --remove-cli
 DATA=$(/usr/bin/osascript -e 'button returned of (display dialog "Delete Fairway XMP databases, backups, settings, and caches?" buttons {"Keep data", "Delete data"} default button "Keep data")')
 if [ "$DATA" = 'Delete data' ]; then "$EXE" --remove-data; fi

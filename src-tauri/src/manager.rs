@@ -230,6 +230,47 @@ impl Manager {
         Ok(())
     }
 
+    pub fn set_project_ssl(&mut self, name: &str, enabled: bool) -> Result<()> {
+        if enabled
+            && [
+                self.ports.website,
+                self.ports.phpmyadmin,
+                self.ports.mysql,
+                self.ports.php,
+            ]
+            .contains(&crate::tls::HTTPS_PORT)
+        {
+            return Err(
+                "Port 8443 is reserved for project HTTPS. Choose another service port.".into(),
+            );
+        }
+        let project = self
+            .layout
+            .projects(self.ports.website)?
+            .into_iter()
+            .find(|project| project.name == name && project.message.is_none())
+            .ok_or("This project is unavailable. Refresh projects first.")?;
+        let previous = crate::tls::enabled_names(&self.layout)?;
+        if project.ssl_enabled == enabled {
+            return Ok(());
+        }
+        if enabled && previous.is_empty() && self.processes.contains_key("nginx") {
+            process::ensure_port(crate::tls::HTTPS_PORT, "Project HTTPS", &[])?;
+        }
+        let mut next = previous.clone();
+        if enabled {
+            next.insert(name.to_string());
+        } else {
+            next.remove(name);
+        }
+        crate::tls::save_enabled_names(&self.layout, &next)?;
+        if let Err(error) = self.refresh_projects() {
+            crate::tls::save_enabled_names(&self.layout, &previous)?;
+            return Err(error);
+        }
+        Ok(())
+    }
+
     pub fn save_settings(&mut self, ports: Ports, version: String) -> Result<()> {
         if !self.processes.is_empty() {
             return Err("Stop all services before changing settings.".into());
@@ -339,6 +380,7 @@ impl Manager {
             self.ports.phpmyadmin,
             self.ports.mysql,
             self.ports.php,
+            crate::tls::HTTPS_PORT,
         ];
         for id in ids {
             if self.processes.contains_key(*id) {
@@ -348,6 +390,9 @@ impl Manager {
                 "nginx" => {
                     process::ensure_port(self.ports.website, "Website", &excluded)?;
                     process::ensure_port(self.ports.phpmyadmin, "phpMyAdmin", &excluded)?;
+                    if !crate::tls::enabled_names(&self.layout)?.is_empty() {
+                        process::ensure_port(crate::tls::HTTPS_PORT, "Project HTTPS", &excluded)?;
+                    }
                 }
                 "mysql" => process::ensure_port(self.ports.mysql, "MySQL", &excluded)?,
                 "php" => process::ensure_port(self.ports.php, "PHP", &excluded)?,

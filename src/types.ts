@@ -4,7 +4,7 @@ export type ServiceStatus = {
   id: ServiceId; running: boolean; ready: boolean; port: number;
   pid: number | null; message: string | null;
 };
-export type Project = { name: string; url: string; kind: 'php' | 'laravel' | 'incomplete' | 'invalid'; message: string | null; root: string };
+export type Project = { name: string; url: string; httpsUrl: string | null; sslEnabled: boolean; kind: 'php' | 'laravel' | 'incomplete' | 'invalid'; message: string | null; root: string };
 export type Snapshot = {
   ports: Ports; services: ServiceStatus[]; documentRoot: string; projects: Project[]; domainsReady: boolean; dataDir: string;
   runtimeReady: boolean; runtimeVersions: Record<string, string> | null;
