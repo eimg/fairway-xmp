@@ -169,25 +169,47 @@ fn run(mut command: Command) -> Result<()> {
     }
 }
 
+#[cfg(target_os = "macos")]
+fn macos_keychain(layout: &Layout) -> PathBuf {
+    layout.home.join("Library/Keychains/login.keychain-db")
+}
+
+#[cfg(target_os = "macos")]
+fn verify_macos_trust(layout: &Layout) -> Result<()> {
+    let mut verify = Command::new("/usr/bin/security");
+    verify
+        .args(["verify-cert", "-c"])
+        .arg(certificate(layout))
+        .args(["-p", "ssl", "-n", "fairway.test", "-k"])
+        .arg(macos_keychain(layout));
+    run(verify)
+}
+
 pub fn ensure_trust(layout: &Layout) -> Result<()> {
     ensure_certificate(layout)?;
     let root = root_certificate(layout);
     #[cfg(target_os = "macos")]
     {
-        let mut verify = Command::new("/usr/bin/security");
-        verify
-            .args(["verify-cert", "-c"])
-            .arg(certificate(layout))
-            .args(["-p", "ssl", "-s", "fairway.test"]);
-        if run(verify).is_ok() {
+        if verify_macos_trust(layout).is_ok() {
             atomic_write(&trust_marker(layout), b"trusted")?;
             return Ok(());
         }
+        let keychain = macos_keychain(layout);
+        if !keychain.is_file() {
+            return Err(
+                "Your macOS login keychain is unavailable. Open Keychain Access and try again."
+                    .into(),
+            );
+        }
         let mut install = Command::new("/usr/bin/security");
         install
-            .args(["add-trusted-cert", "-r", "trustRoot", "-p", "ssl"])
+            .args(["add-trusted-cert", "-r", "trustRoot", "-p", "ssl", "-k"])
+            .arg(keychain)
             .arg(root);
         run(install).map_err(|e| format!("Could not trust Fairway's local certificate: {e}"))?;
+        verify_macos_trust(layout).map_err(|e| {
+            format!("macOS did not trust Fairway's local certificate after installation: {e}")
+        })?;
     }
     #[cfg(windows)]
     {
@@ -220,7 +242,11 @@ pub fn remove_trust(layout: &Layout) -> Result<()> {
     #[cfg(target_os = "macos")]
     {
         let mut remove = Command::new("/usr/bin/security");
-        remove.arg("remove-trusted-cert").arg(root);
+        remove
+            .arg("remove-trusted-cert")
+            .arg("-k")
+            .arg(macos_keychain(layout))
+            .arg(root);
         run(remove)
             .map_err(|e| format!("Could not remove Fairway's local certificate trust: {e}"))?;
     }
