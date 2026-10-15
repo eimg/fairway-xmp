@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ArrowDownToLine, ArrowUpRight, Check, ChevronRight, CircleHelp, Clipboard, Code2,
+  ArrowDownToLine, ArrowUpRight, Check, ChevronDown, ChevronRight, CircleHelp, Clipboard, Code2,
   Database, Download, ExternalLink, FolderOpen, Globe, Leaf, LoaderCircle, Play,
   RefreshCw, ScrollText, Settings2, ShieldCheck, Square, Terminal, X,
 } from 'lucide-react';
@@ -34,6 +34,7 @@ export default function App() {
   const [phpVersion, setPhpVersion] = useState(preview.phpVersion);
   const [update, setUpdate] = useState<UpdateInfo | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
   const operation = useRef(false);
   const backendOperation = useRef(false);
   const versions = data.runtimeVersions;
@@ -162,11 +163,13 @@ export default function App() {
           </div>
 
           <section className="project-card">
-            <div className="card-title"><h2><Globe size={17} />Project sites</h2><button className="secondary" disabled={!usable} onClick={() => { void run('Refreshing projects…', async () => { setData(await invoke<Snapshot>('refresh_projects')); setNotice({ kind: 'success', text: 'Project sites and local addresses are ready.' }); }); }}><RefreshCw size={14} />Refresh projects</button></div>
-            <p>Each folder in your project workspace gets its own .test address. Refresh after adding or removing a folder. Enable HTTPS for projects that need a secure local URL.</p>
-            {data.projects.length === 0 && <p className="settings-hint">Create a folder inside your project workspace to see it here.</p>}
-            {data.projects.length > 0 && !data.domainsReady && <p className="settings-hint">Choose Refresh projects to set up the local addresses. Your computer may ask for administrator permission.</p>}
-            <div className="project-list">{data.projects.map(project => <div key={project.name} className="project-row"><div><strong>{project.name}</strong><span>{project.kind === 'laravel' ? 'Laravel' : project.kind === 'php' ? 'PHP' : 'Needs attention'}</span><code>{project.httpsUrl || project.url || 'No .test address'}</code>{project.message && <small>{project.message}</small>}</div><div className="project-actions"><label className="ssl-toggle"><input type="checkbox" role="switch" checked={project.sslEnabled} disabled={!usable || !data.domainsReady || !!project.message} onChange={event => { const enabled = event.target.checked; void run('Updating project HTTPS…', async () => { setData(await invoke<Snapshot>('set_project_ssl', { name: project.name, enabled })); setNotice({ kind: 'success', text: enabled ? `HTTPS is enabled for ${project.name}.test on port 8443.` : `HTTPS is off for ${project.name}.test.` }); }); }} /><span>HTTPS</span></label><button className="secondary" disabled={!data.domainsReady || !data.services.find(service => service.id === 'nginx')?.ready || !!busy || !!project.message} onClick={() => open(`project:${project.name}`)}>Open<ExternalLink size={13} /></button></div></div>)}</div>
+            <div className="card-title"><h2><Globe size={17} />Project sites</h2><div className="project-heading-actions"><button className="secondary" disabled={!usable} onClick={() => { void run('Refreshing projects…', async () => { setData(await invoke<Snapshot>('refresh_projects')); setNotice({ kind: 'success', text: 'Project sites and local addresses are ready.' }); }); }}><RefreshCw size={14} />Refresh projects</button><button className="secondary project-collapse" aria-label={projectsExpanded ? 'Collapse project sites' : 'Expand project sites'} aria-controls="project-sites-content" aria-expanded={projectsExpanded} onClick={() => setProjectsExpanded(expanded => !expanded)}><ChevronDown size={16} className={projectsExpanded ? 'expanded' : ''} /></button></div></div>
+            <div id="project-sites-content" hidden={!projectsExpanded}>
+              <p>Each folder in your project workspace gets its own .test address. Refresh after adding or removing a folder. Enable HTTPS for projects that need a secure local URL.</p>
+              {data.projects.length === 0 && <p className="settings-hint">Create a folder inside your project workspace to see it here.</p>}
+              {data.projects.length > 0 && !data.domainsReady && <p className="settings-hint">Choose Refresh projects to set up the local addresses. Your computer may ask for administrator permission.</p>}
+              <div className="project-list">{data.projects.map(project => <div key={project.name} className="project-row"><div><strong>{project.name}</strong><span>{project.kind === 'laravel' ? 'Laravel' : project.kind === 'php' ? 'PHP' : 'Needs attention'}</span><code>{project.httpsUrl || project.url || 'No .test address'}</code>{project.message && <small>{project.message}</small>}</div><div className="project-actions"><label className="ssl-toggle"><input type="checkbox" role="switch" aria-label={`HTTPS for ${project.name}`} checked={project.sslEnabled} disabled={!usable || !data.domainsReady || !!project.message} onChange={event => { const enabled = event.target.checked; void run('Updating project HTTPS…', async () => { setData(await invoke<Snapshot>('set_project_ssl', { name: project.name, enabled })); setNotice({ kind: 'success', text: enabled ? `HTTPS is enabled for ${project.name}.test on port 8443.` : `HTTPS is off for ${project.name}.test.` }); }); }} /><span className="ssl-track" aria-hidden="true" /><span>HTTPS</span></label><button className="secondary" disabled={!data.domainsReady || !data.services.find(service => service.id === 'nginx')?.ready || !!busy || !!project.message} onClick={() => open(`project:${project.name}`)}>Open<ExternalLink size={13} /></button></div></div>)}</div>
+            </div>
           </section>
 
           <div className="bottom-grid">

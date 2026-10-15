@@ -100,7 +100,7 @@ impl Layout {
                     String::new()
                 },
                 https_url: ssl_enabled
-                    .then(|| format!("https://{name}.test:{}/", crate::tls::HTTPS_PORT)),
+                    .then(|| format!("https://{name}.test:{}/", crate::tls::https_port())),
                 ssl_enabled,
                 kind: if !valid {
                     "invalid"
@@ -309,11 +309,12 @@ impl Layout {
         let projects = self.projects(ports.website)?;
         if projects.iter().any(|project| project.ssl_enabled) {
             if [ports.website, ports.phpmyadmin, ports.mysql, ports.php]
-                .contains(&crate::tls::HTTPS_PORT)
+                .contains(&crate::tls::https_port())
             {
-                return Err(
-                    "Port 8443 is reserved for project HTTPS. Choose another service port.".into(),
-                );
+                return Err(format!(
+                    "Port {} is reserved for project HTTPS. Choose another service port.",
+                    crate::tls::https_port()
+                ));
             }
             crate::tls::ensure_certificate(self)?;
         }
@@ -440,7 +441,7 @@ fn nginx_config(layout: &Layout, ports: &Ports, projects: &[Project]) -> String 
             return http;
         }
         let https = format!("server {{ listen 127.0.0.1:{} ssl; server_name {}.test; root {}; index index.php index.html;\nssl_certificate {};\nssl_certificate_key {};\nlocation ~ /\\. {{ deny all; }}\n{}\n}}\n",
-            crate::tls::HTTPS_PORT, project.name, nginx_path(&project.root),
+            crate::tls::https_port(), project.name, nginx_path(&project.root),
             nginx_path(&crate::tls::certificate(layout)), nginx_path(&crate::tls::private_key(layout)), locations);
         format!("{http}{https}")
     }).collect::<String>();

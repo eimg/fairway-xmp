@@ -281,11 +281,12 @@ async fn set_project_ssl(
                     m.ports.mysql,
                     m.ports.php,
                 ]
-                .contains(&crate::tls::HTTPS_PORT)
+                .contains(&crate::tls::https_port())
             {
-                return Err(
-                    "Port 8443 is reserved for project HTTPS. Choose another service port.".into(),
-                );
+                return Err(format!(
+                    "Port {} is reserved for project HTTPS. Choose another service port.",
+                    crate::tls::https_port()
+                ));
             }
             if !m
                 .layout

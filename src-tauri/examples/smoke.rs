@@ -42,6 +42,7 @@ fn http_host(port: u16, route: &str, host: &str) -> String {
 }
 
 fn https(layout: &Layout, host: &str) -> Result<String, String> {
+    let port = fairway_core::tls::https_port();
     let mut command = process::command("curl");
     command
         .args([
@@ -52,10 +53,10 @@ fn https(layout: &Layout, host: &str) -> Result<String, String> {
             "*",
             "--resolve",
         ])
-        .arg(format!("{host}:8443:127.0.0.1"))
+        .arg(format!("{host}:{port}:127.0.0.1"))
         .arg("--cacert")
         .arg(layout.data.join("tls/root-ca.pem"))
-        .arg(format!("https://{host}:8443/"));
+        .arg(format!("https://{host}:{port}/"));
     process::output(command)
 }
 
@@ -75,14 +76,15 @@ fn main() -> Result<(), String> {
         root.join("student data"),
         runtime,
     );
-    let mut manager = Manager::new(layout)?;
-    let listeners: Vec<_> = (0..4)
+    let listeners: Vec<_> = (0..5)
         .map(|_| TcpListener::bind(("127.0.0.1", 0)).unwrap())
         .collect();
     let ports: Vec<_> = listeners
         .iter()
         .map(|l| l.local_addr().unwrap().port())
         .collect();
+    std::env::set_var("FAIRWAY_DEV_HTTPS_PORT", ports[4].to_string());
+    let mut manager = Manager::new(layout)?;
     let chosen = Ports {
         website: ports[0],
         phpmyadmin: ports[1],

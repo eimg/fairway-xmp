@@ -238,11 +238,12 @@ impl Manager {
                 self.ports.mysql,
                 self.ports.php,
             ]
-            .contains(&crate::tls::HTTPS_PORT)
+            .contains(&crate::tls::https_port())
         {
-            return Err(
-                "Port 8443 is reserved for project HTTPS. Choose another service port.".into(),
-            );
+            return Err(format!(
+                "Port {} is reserved for project HTTPS. Choose another service port.",
+                crate::tls::https_port()
+            ));
         }
         let project = self
             .layout
@@ -255,7 +256,7 @@ impl Manager {
             return Ok(());
         }
         if enabled && previous.is_empty() && self.processes.contains_key("nginx") {
-            process::ensure_port(crate::tls::HTTPS_PORT, "Project HTTPS", &[])?;
+            process::ensure_port(crate::tls::https_port(), "Project HTTPS", &[])?;
         }
         let mut next = previous.clone();
         if enabled {
@@ -380,7 +381,7 @@ impl Manager {
             self.ports.phpmyadmin,
             self.ports.mysql,
             self.ports.php,
-            crate::tls::HTTPS_PORT,
+            crate::tls::https_port(),
         ];
         for id in ids {
             if self.processes.contains_key(*id) {
@@ -391,7 +392,7 @@ impl Manager {
                     process::ensure_port(self.ports.website, "Website", &excluded)?;
                     process::ensure_port(self.ports.phpmyadmin, "phpMyAdmin", &excluded)?;
                     if !crate::tls::enabled_names(&self.layout)?.is_empty() {
-                        process::ensure_port(crate::tls::HTTPS_PORT, "Project HTTPS", &excluded)?;
+                        process::ensure_port(crate::tls::https_port(), "Project HTTPS", &excluded)?;
                     }
                 }
                 "mysql" => process::ensure_port(self.ports.mysql, "MySQL", &excluded)?,

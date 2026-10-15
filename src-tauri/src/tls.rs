@@ -10,6 +10,18 @@ use time::OffsetDateTime;
 
 pub const HTTPS_PORT: u16 = 8443;
 
+pub fn https_port() -> u16 {
+    #[cfg(debug_assertions)]
+    if let Ok(port) = std::env::var("FAIRWAY_DEV_HTTPS_PORT") {
+        if let Ok(port) = port.parse::<u16>() {
+            if port >= 1024 {
+                return port;
+            }
+        }
+    }
+    HTTPS_PORT
+}
+
 fn directory(layout: &Layout) -> PathBuf {
     layout.data.join("tls")
 }
