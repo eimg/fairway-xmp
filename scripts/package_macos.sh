@@ -4,6 +4,7 @@ ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 APP="$ROOT/src-tauri/target/release/bundle/macos/Fairway XMP.app"
 ARTIFACTS="$ROOT/artifacts"
 STAGE="$ROOT/.runtime-work/pkg-root"
+COMPONENTS="$ROOT/.runtime-work/fairway-components.plist"
 [ -d "$APP" ] || { echo 'Build the Tauri application bundle first.' >&2; exit 1; }
 mkdir -p "$ARTIFACTS"
 rm -rf "$STAGE"
@@ -16,7 +17,12 @@ if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
   python3 "$ROOT/scripts/sign_macos.py" "$STAGE/Applications/Fairway XMP.app" "$APPLE_SIGNING_IDENTITY"
 fi
 VERSION=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1])).version)' "$ROOT/package.json")
-pkgbuild --root "$STAGE" --identifier dev.fairway.environment --version "$VERSION" --install-location / --scripts "$ROOT/packaging/macos/scripts" "$ARTIFACTS/Fairway-XMP-$VERSION-arm64-unsigned.pkg"
+pkgbuild --analyze --root "$STAGE" "$COMPONENTS"
+# Keep the app in /Applications even when macOS finds a build copy with the same bundle ID.
+plutil -replace '0.BundleIsRelocatable' -bool NO "$COMPONENTS"
+pkgbuild --root "$STAGE" --component-plist "$COMPONENTS" --identifier dev.fairway.environment --version "$VERSION" --install-location / --scripts "$ROOT/packaging/macos/scripts" "$ARTIFACTS/Fairway-XMP-$VERSION-arm64-unsigned.pkg"
+rm -rf "$STAGE"
+rm -f "$COMPONENTS"
 if [ -n "${APPLE_INSTALLER_IDENTITY:-}" ]; then
   productsign --sign "$APPLE_INSTALLER_IDENTITY" "$ARTIFACTS/Fairway-XMP-$VERSION-arm64-unsigned.pkg" "$ARTIFACTS/Fairway-XMP-$VERSION-arm64.pkg"
 fi
