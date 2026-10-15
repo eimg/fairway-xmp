@@ -2,6 +2,7 @@
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 "$ROOT/bin/fairway" shutdown
+"$ROOT/bin/fairway" clear-domains
 "$ROOT/bin/fairway" remove-cli
 "$ROOT/bin/fairway" shutdown
 PREFIX=$(dirname -- "$(dirname -- "$ROOT")")

@@ -27,11 +27,15 @@ fn without_startup_warnings(mut command: Command) -> Result<String, String> {
 }
 
 fn http(port: u16, route: &str) -> String {
+    http_host(port, route, "localhost")
+}
+
+fn http_host(port: u16, route: &str, host: &str) -> String {
     let mut socket = TcpStream::connect(("127.0.0.1", port)).unwrap();
     socket
         .set_read_timeout(Some(std::time::Duration::from_secs(15)))
         .unwrap();
-    write!(socket, "GET {route} HTTP/1.0\r\nHost: localhost\r\n\r\n").unwrap();
+    write!(socket, "GET {route} HTTP/1.0\r\nHost: {host}\r\n\r\n").unwrap();
     let mut bytes = Vec::new();
     socket.read_to_end(&mut bytes).unwrap();
     String::from_utf8_lossy(&bytes).into()
@@ -69,6 +73,25 @@ fn main() -> Result<(), String> {
     };
     drop(listeners);
     manager.save_ports(chosen.clone())?;
+    fs::create_dir_all(manager.layout.www.join("plain-project")).map_err(|e| e.to_string())?;
+    fs::write(
+        manager.layout.www.join("plain-project/index.php"),
+        "<?php echo 'plain project';",
+    )
+    .map_err(|e| e.to_string())?;
+    fs::create_dir_all(manager.layout.www.join("laravel-project/public"))
+        .map_err(|e| e.to_string())?;
+    fs::write(manager.layout.www.join("laravel-project/artisan"), "").map_err(|e| e.to_string())?;
+    fs::write(
+        manager.layout.www.join("laravel-project/secret.txt"),
+        "private project file",
+    )
+    .map_err(|e| e.to_string())?;
+    fs::write(
+        manager.layout.www.join("laravel-project/public/index.php"),
+        "<?php echo 'laravel route ', $_SERVER['REQUEST_URI'];",
+    )
+    .map_err(|e| e.to_string())?;
     integration::install(&manager.layout)?;
     let result = (|| -> Result<(), String> {
         let mut php = process::command(manager.layout.bin.join(if cfg!(windows) {
@@ -93,6 +116,31 @@ fn main() -> Result<(), String> {
         assert!(manager.snapshot().services.iter().all(|s| s.ready));
         let page = http(chosen.website, "/");
         assert!(page.contains("Your environment"), "{page}");
+        assert!(http_host(chosen.website, "/", "plain-project.test").contains("plain project"));
+        assert!(
+            http_host(chosen.website, "/courses/1", "laravel-project.test")
+                .contains("laravel route /courses/1")
+        );
+        assert!(
+            !http_host(chosen.website, "/secret.txt", "laravel-project.test")
+                .contains("private project file")
+        );
+        fs::create_dir_all(manager.layout.www.join("new-project")).map_err(|e| e.to_string())?;
+        fs::write(
+            manager.layout.www.join("new-project/index.php"),
+            "<?php echo 'refreshed project';",
+        )
+        .map_err(|e| e.to_string())?;
+        manager.refresh_projects()?;
+        let mut refreshed = false;
+        for _ in 0..20 {
+            if http_host(chosen.website, "/", "new-project.test").contains("refreshed project") {
+                refreshed = true;
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        assert!(refreshed, "Nginx did not reload the new project site");
         let probe = manager.layout.www.join("smoke.php");
         fs::write(&probe, format!("<?php $pdo = new PDO('mysql:host=127.0.0.1;port={};dbname=fairway','fairway','fairway'); $pdo->exec('CREATE TABLE IF NOT EXISTS smoke (id INT PRIMARY KEY, title VARCHAR(30))'); $pdo->exec(\"REPLACE INTO smoke VALUES (1, 'classroom works')\"); echo $pdo->query('SELECT title FROM smoke WHERE id=1')->fetchColumn();", chosen.mysql)).map_err(|e| e.to_string())?;
         let result = http(chosen.website, "/smoke.php");

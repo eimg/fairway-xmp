@@ -46,6 +46,11 @@
     MessageBox MB_ICONSTOP "Open Fairway XMP, stop all services, and quit the app before uninstalling."
     Abort
   ${EndIf}
+  ExecWait '"$INSTDIR\fairway.exe" --remove-domains' $0
+  ${If} $0 != 0
+    MessageBox MB_ICONSTOP "Fairway XMP could not remove its local project domains. Approve the Windows prompt, then retry uninstalling."
+    Abort
+  ${EndIf}
   ExecWait '"$INSTDIR\fairway.exe" --remove-cli' $0
   ${If} $0 != 0
     MessageBox MB_ICONSTOP "Fairway XMP could not remove its PATH integration. Open Fairway XMP Settings and remove command-line integration, then retry uninstalling."

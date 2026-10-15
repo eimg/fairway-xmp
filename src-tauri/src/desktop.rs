@@ -242,6 +242,27 @@ async fn save_settings(
 }
 
 #[tauri::command]
+async fn refresh_projects(app: tauri::AppHandle, state: State<'_, Shared>) -> Result<Snapshot> {
+    let _operation = begin_operation(&app, "Refreshing projects…")?;
+    let state = state.inner().clone();
+    let snapshot = access(state.clone(), |m| {
+        m.refresh_projects()?;
+        Ok(m.snapshot())
+    })
+    .await?;
+    let names = snapshot
+        .projects
+        .iter()
+        .filter(|project| project.message.is_none())
+        .map(|project| project.name.clone())
+        .collect::<Vec<_>>();
+    tauri::async_runtime::spawn_blocking(move || crate::hosts::ensure(&names, "--sync-hosts"))
+        .await
+        .map_err(|e| e.to_string())??;
+    access(state, |m| Ok(m.snapshot())).await
+}
+
+#[tauri::command]
 async fn open_target(state: State<'_, Shared>, target: String) -> Result<()> {
     access(state.inner().clone(), move |m| {
         integration::open(&m.layout, &target, m.ports.website, m.ports.phpmyadmin)
@@ -353,9 +374,14 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
     let Some(action) = args.get(1) else {
         return Ok(false);
     };
+    if action == "--sync-hosts" {
+        crate::hosts::apply(&args[2..])?;
+        return Ok(true);
+    }
     if ![
         "--install-cli",
         "--remove-cli",
+        "--remove-domains",
         "--remove-data",
         "--remove-coursework",
         "--prepare-uninstall",
@@ -391,6 +417,7 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
     match action.as_str() {
         "--install-cli" => integration::install(&layout)?,
         "--remove-cli" => integration::remove(&layout)?,
+        "--remove-domains" => crate::hosts::ensure(&[], "--sync-hosts")?,
         "--remove-data" => {
             integration::remove(&layout)?;
             // Refuse cleanup while an owned server may still be using the data directory.
@@ -474,6 +501,7 @@ pub fn run() {
             snapshot,
             service_action,
             save_settings,
+            refresh_projects,
             open_target,
             read_log,
             cli_integration,

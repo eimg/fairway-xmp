@@ -20,6 +20,7 @@ pub(super) enum Request {
     Ports { ports: Ports },
     PhpVersion { version: String },
     Backup,
+    RefreshProjects,
     InstallCli,
     RemoveCli,
     ShellTools,
@@ -43,11 +44,14 @@ pub(super) struct Response {
 
 pub fn run() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
+    if args.first().is_some_and(|value| value == "__sync-hosts") {
+        return crate::hosts::apply(&args[1..]);
+    }
     if matches!(
         args.first().map(String::as_str),
         Some("help" | "--help" | "-h")
     ) {
-        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway php-version          Show selected PHP version\nfairway php-version 8.0–8.5  Switch PHP after stopping all services\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
+        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway refresh-projects     Apply project folders to Nginx\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway php-version          Show selected PHP version\nfairway php-version 8.0–8.5  Switch PHP after stopping all services\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
         return Ok(());
     }
     if matches!(args.first().map(String::as_str), Some("--version" | "-V")) {
@@ -65,6 +69,9 @@ pub fn run() -> Result<()> {
     let layout = Layout::new(root.join("runtime"))?;
     if args.first().is_some_and(|s| s == "__serve") {
         return supervisor::serve(&layout);
+    }
+    if args.first().is_some_and(|s| s == "clear-domains") {
+        return crate::hosts::ensure(&[], "__sync-hosts");
     }
     if args.first().is_some_and(|s| s == "uninstall") {
         let status = Command::new("sh")
@@ -144,6 +151,20 @@ pub fn run() -> Result<()> {
         std::process::exit(status.code().unwrap_or(1));
     }
     let mut data = supervisor::call(&layout, &request)?;
+    if command == "refresh-projects" {
+        let snapshot: Snapshot =
+            serde_json::from_value(supervisor::call(&layout, &Request::Status)?)
+                .map_err(|e| e.to_string())?;
+        let names = snapshot
+            .projects
+            .iter()
+            .filter(|project| project.message.is_none())
+            .map(|project| project.name.clone())
+            .collect::<Vec<_>>();
+        crate::hosts::ensure(&names, "__sync-hosts")?;
+        println!("Project sites and local domains refreshed.");
+        return Ok(());
+    }
     if command == "ports" && args.len() == 1 {
         data = data["ports"].clone();
     }
@@ -180,6 +201,13 @@ pub fn run() -> Result<()> {
             "Projects: {}\nData: {}",
             snapshot.document_root, snapshot.data_dir
         );
+        for project in snapshot.projects {
+            if let Some(message) = project.message {
+                println!("{}: {message}", project.name);
+            } else {
+                println!("{}: {} ({})", project.name, project.url, project.kind);
+            }
+        }
     } else if let Some(text) = data.as_str() {
         println!("{text}");
     } else {
@@ -233,6 +261,7 @@ fn parse(args: &[String]) -> Result<Request> {
             Ok(Request::Ports { ports })
         }
         "backup" if args.len() == 1 => Ok(Request::Backup),
+        "refresh-projects" if args.len() == 1 => Ok(Request::RefreshProjects),
         "php-version" if args.len() == 2 => Ok(Request::PhpVersion {
             version: args[1].clone(),
         }),

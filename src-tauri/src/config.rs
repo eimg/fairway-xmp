@@ -51,7 +51,77 @@ pub struct Layout {
     pub bin: PathBuf,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Project {
+    pub name: String,
+    pub url: String,
+    pub kind: String,
+    pub message: Option<String>,
+    pub root: PathBuf,
+}
+
+pub fn valid_project_name(name: &str) -> bool {
+    name.len() <= 63
+        && name
+            .bytes()
+            .next()
+            .is_some_and(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+        && name
+            .bytes()
+            .last()
+            .is_some_and(|b| b.is_ascii_lowercase() || b.is_ascii_digit())
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+}
+
 impl Layout {
+    pub fn projects(&self, port: u16) -> Result<Vec<Project>> {
+        let mut projects = Vec::new();
+        for entry in fs::read_dir(&self.www).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            if !entry.file_type().map_err(|e| e.to_string())?.is_dir() {
+                continue;
+            }
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let valid = valid_project_name(&name);
+            let path = entry.path();
+            let laravel = path.join("artisan").is_file();
+            let incomplete = laravel && !path.join("public/index.php").is_file();
+            projects.push(Project {
+                url: if valid && !incomplete {
+                    format!("http://{name}.test:{port}/")
+                } else {
+                    String::new()
+                },
+                kind: if !valid {
+                    "invalid"
+                } else if incomplete {
+                    "incomplete"
+                } else if laravel {
+                    "laravel"
+                } else {
+                    "php"
+                }
+                .into(),
+                message: if !valid {
+                    Some("Use lowercase letters, numbers, and hyphens for the folder name.".into())
+                } else if incomplete {
+                    Some(
+                        "Laravel's public/index.php is missing. This project is not being served."
+                            .into(),
+                    )
+                } else {
+                    None
+                },
+                root: if laravel { path.join("public") } else { path },
+                name,
+            });
+        }
+        projects.sort_by(|a, b| a.name.cmp(&b.name));
+        Ok(projects)
+    }
     pub fn new(runtime: PathBuf) -> Result<Self> {
         #[cfg(debug_assertions)]
         if let (Some(home), Some(data)) = (
@@ -229,7 +299,7 @@ impl Layout {
             "[global]\npid={}\nerror_log={}\ndaemonize=no\n[www]\nlisten=127.0.0.1:{}\nlisten.allowed_clients=127.0.0.1\npm=ondemand\npm.max_children=4\npm.process_idle_timeout=10s\ncatch_workers_output=yes\nclear_env=no\n",
             ini(&self.data.join("php.pid")), ini(&self.data.join("logs/php-fpm.log")), ports.php);
         atomic_write(&conf.join("php-fpm.conf"), fpm.as_bytes())?;
-        let nginx = nginx_config(self, ports);
+        let nginx = nginx_config(self, ports, &self.projects(ports.website)?);
         atomic_write(&conf.join("nginx.conf"), nginx.as_bytes())?;
         let mysql = format!(
             "[mysqld]\nbasedir={}\ndatadir={}\nport={}\nbind-address=127.0.0.1\nlower_case_table_names=1\nmysqlx=OFF\nlocal-infile=OFF\ncharacter-set-server=utf8mb4\ncollation-server=utf8mb4_unicode_ci\nmax_connections=40\ninnodb_buffer_pool_size=64M\nlog-error={}\npid-file={}\nsocket={}\nsecure-file-priv={}\n",
@@ -337,17 +407,26 @@ pub fn private_file(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn nginx_config(layout: &Layout, ports: &Ports) -> String {
+fn nginx_config(layout: &Layout, ports: &Ports, projects: &[Project]) -> String {
     let fastcgi = format!(
         "fastcgi_pass 127.0.0.1:{};\nfastcgi_param QUERY_STRING $query_string;\nfastcgi_param REQUEST_METHOD $request_method;\nfastcgi_param CONTENT_TYPE $content_type;\nfastcgi_param CONTENT_LENGTH $content_length;\nfastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\nfastcgi_param SCRIPT_NAME $fastcgi_script_name;\nfastcgi_param REQUEST_URI $request_uri;\nfastcgi_param DOCUMENT_URI $document_uri;\nfastcgi_param DOCUMENT_ROOT $document_root;\nfastcgi_param SERVER_PROTOCOL $server_protocol;\nfastcgi_param REQUEST_SCHEME $scheme;\nfastcgi_param GATEWAY_INTERFACE CGI/1.1;\nfastcgi_param SERVER_SOFTWARE nginx;\nfastcgi_param REMOTE_ADDR $remote_addr;\nfastcgi_param REMOTE_PORT $remote_port;\nfastcgi_param SERVER_ADDR $server_addr;\nfastcgi_param SERVER_PORT $server_port;\nfastcgi_param SERVER_NAME $server_name;\nfastcgi_param REDIRECT_STATUS 200;\nfastcgi_param HTTP_PROXY \"\";\n", ports.php);
+    let project_servers = projects.iter().filter(|project| !project.url.is_empty() && project.message.is_none()).map(|project| {
+        let locations = if project.kind == "laravel" {
+            format!("location / {{ try_files $uri $uri/ /index.php?$query_string; }}\nlocation = /index.php {{ try_files $uri =404; {fastcgi} }}\nlocation ~ \\.php$ {{ return 404; }}")
+        } else {
+            format!("location / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {fastcgi} }}")
+        };
+        format!("server {{ listen 127.0.0.1:{}; server_name {}.test; root {}; index index.php index.html;\nlocation ~ /\\. {{ deny all; }}\n{}\n}}\n",
+            ports.website, project.name, nginx_path(&project.root), locations)
+    }).collect::<String>();
     format!(
-        "worker_processes 1;\npid {};\nerror_log {};\nevents {{ worker_connections 256; }}\nhttp {{\ninclude {};\ndefault_type application/octet-stream;\naccess_log {};\nclient_max_body_size 64m;\nclient_body_temp_path {};\nfastcgi_temp_path {};\nproxy_temp_path {};\nuwsgi_temp_path {};\nscgi_temp_path {};\nserver {{ listen 127.0.0.1:{}; server_name localhost; root {}; index index.php index.html;\nlocation = /__fairway_health {{ access_log off; default_type text/plain; return 200 'fairway'; }}\nlocation ~ /\\. {{ deny all; }}\nlocation / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {} }}\n}}\nserver {{ listen 127.0.0.1:{}; server_name localhost; root {}; index index.php;\nlocation = /__fairway_health {{ access_log off; default_type text/plain; return 200 'fairway'; }}\nlocation ~ /\\. {{ deny all; }}\nlocation = /config.inc.php {{ deny all; }}\nlocation ~ ^/(libraries|templates|vendor|setup)/ {{ deny all; }}\nlocation / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {} }}\n}}\n}}\n",
+        "worker_processes 1;\npid {};\nerror_log {};\nevents {{ worker_connections 256; }}\nhttp {{\ninclude {};\ndefault_type application/octet-stream;\naccess_log {};\nclient_max_body_size 64m;\nclient_body_temp_path {};\nfastcgi_temp_path {};\nproxy_temp_path {};\nuwsgi_temp_path {};\nscgi_temp_path {};\nserver {{ listen 127.0.0.1:{}; server_name localhost; root {}; index index.php index.html;\nlocation = /__fairway_health {{ access_log off; default_type text/plain; return 200 'fairway'; }}\nlocation ~ /\\. {{ deny all; }}\nlocation / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {} }}\n}}\nserver {{ listen 127.0.0.1:{}; server_name localhost; root {}; index index.php;\nlocation = /__fairway_health {{ access_log off; default_type text/plain; return 200 'fairway'; }}\nlocation ~ /\\. {{ deny all; }}\nlocation = /config.inc.php {{ deny all; }}\nlocation ~ ^/(libraries|templates|vendor|setup)/ {{ deny all; }}\nlocation / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {} }}\n}}\n{}\n}}\n",
         nginx_path(&layout.data.join("nginx.pid")), nginx_path(&layout.data.join("logs/nginx.log")),
         nginx_path(&layout.runtime.join("nginx/conf/mime.types")), nginx_path(&layout.data.join("logs/access.log")),
         nginx_path(&layout.data.join("tmp/client")), nginx_path(&layout.data.join("tmp/fastcgi")),
         nginx_path(&layout.data.join("tmp/proxy")), nginx_path(&layout.data.join("tmp/uwsgi")), nginx_path(&layout.data.join("tmp/scgi")),
         ports.website, nginx_path(&layout.www), fastcgi, ports.phpmyadmin,
-        nginx_path(&layout.data.join("phpmyadmin")), fastcgi)
+        nginx_path(&layout.data.join("phpmyadmin")), fastcgi, project_servers)
 }
 
 fn windows_php_extensions(php_root: &Path) -> String {
@@ -386,12 +465,50 @@ mod tests {
             PathBuf::from("/tmp/runtime"),
         );
         assert_eq!(layout.www, PathBuf::from("/Users/A $name/fairway/www"));
-        let nginx = nginx_config(&layout, &Ports::default());
+        let nginx = nginx_config(&layout, &Ports::default(), &[]);
         assert!(nginx.contains("/Users/A \\$name/fairway/www"));
         assert!(nginx.contains("listen 127.0.0.1:8801"));
         assert!(nginx.contains("/tmp/data/phpmyadmin"));
         assert!(!nginx.contains("listen 0.0.0.0"));
         assert_eq!(php_string("a'b\\c"), "'a\\'b\\\\c'");
+    }
+
+    #[test]
+    fn project_sites_use_laravel_public_and_skip_incomplete_or_invalid_folders() {
+        let root = std::env::temp_dir().join(format!(
+            "fairway-sites-{}-{}",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+        layout.initialize().unwrap();
+        fs::create_dir_all(layout.www.join("plain")).unwrap();
+        fs::write(layout.www.join("plain/index.php"), "plain").unwrap();
+        fs::create_dir_all(layout.www.join("laravel/public")).unwrap();
+        fs::write(layout.www.join("laravel/artisan"), "").unwrap();
+        fs::write(layout.www.join("laravel/public/index.php"), "laravel").unwrap();
+        fs::create_dir_all(layout.www.join("broken")).unwrap();
+        fs::write(layout.www.join("broken/artisan"), "").unwrap();
+        fs::create_dir_all(layout.www.join("bad_name")).unwrap();
+        let projects = layout.projects(8800).unwrap();
+        assert_eq!(projects.len(), 4);
+        assert_eq!(
+            projects.iter().find(|p| p.name == "laravel").unwrap().root,
+            layout.www.join("laravel/public")
+        );
+        assert!(projects
+            .iter()
+            .find(|p| p.name == "broken")
+            .unwrap()
+            .message
+            .is_some());
+        let nginx = nginx_config(&layout, &Ports::default(), &projects);
+        assert!(nginx.contains("server_name plain.test"));
+        assert!(nginx.contains("server_name laravel.test"));
+        assert!(nginx.contains("try_files $uri $uri/ /index.php?$query_string"));
+        assert!(!nginx.contains("server_name broken.test"));
+        assert!(!nginx.contains("server_name bad_name.test"));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]

@@ -319,6 +319,7 @@ fn execute(manager: &mut Manager, request: Request) -> Result<serde_json::Value>
             return Ok(serde_json::json!(manager.layout.php_version()?));
         }
         Request::Backup => return manager.backup().map(serde_json::Value::String),
+        Request::RefreshProjects => manager.refresh_projects()?,
         Request::InstallCli => {
             integration::install(&manager.layout)?;
             let path = manager.layout.bin.join("fairway");

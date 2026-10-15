@@ -65,6 +65,12 @@ The control panel provides service controls, port settings, logs, and database b
 
 4. Open [http://127.0.0.1:8800/hello/](http://127.0.0.1:8800/hello/) in your browser.
 
+### Project addresses
+
+Each direct folder in `~/fairway/www` can also have its own address. Create a folder with a lowercase name containing letters, numbers, or hyphens, then choose **Refresh projects** in the control panel. Fairway asks for your computer's administrator permission to add its `.test` addresses to the local hosts file. The example above then opens at `http://hello.test:8800/`. Refresh again after adding, renaming, or removing folders. On Linux, run `fairway refresh-projects` instead.
+
+For a Laravel project, Fairway detects its `artisan` file and serves only `public/`. If `public/index.php` is missing, Fairway shows a warning and does not serve that project. Ordinary PHP folders are served from their folder root. Existing `127.0.0.1:8800/folder/` addresses still work. Fairway removes its managed hosts entries when you uninstall it. The website port is still required in `.test` addresses; portless addresses need separate port 80 support.
+
 Closing or minimizing the window keeps Fairway XMP and its services running. Use its macOS menu bar or Windows system tray icon to reopen the panel, start/stop all services or individual Nginx/MySQL services, open phpMyAdmin, or **Quit**. Nginx automatically manages its PHP worker; PHP CLI works without starting services. Quit gracefully stops all services before exiting.
 
 ## PHP and Composer in your terminal

@@ -1,5 +1,5 @@
 use crate::{
-    config::{atomic_write, Layout, Ports, Result},
+    config::{atomic_write, Layout, Ports, Project, Result},
     process::{self, OwnedProcess},
 };
 use serde::Serialize;
@@ -29,6 +29,8 @@ pub struct Snapshot {
     pub ports: Ports,
     pub services: Vec<ServiceStatus>,
     pub document_root: String,
+    pub projects: Vec<Project>,
+    pub domains_ready: bool,
     pub data_dir: String,
     pub runtime_ready: bool,
     pub runtime_versions: serde_json::Value,
@@ -148,10 +150,18 @@ impl Manager {
             }
         })
         .collect();
+        let projects = self.layout.projects(self.ports.website).unwrap_or_default();
+        let names = projects
+            .iter()
+            .filter(|project| project.message.is_none())
+            .map(|project| project.name.clone())
+            .collect::<Vec<_>>();
         Snapshot {
             ports: self.ports.clone(),
             services,
             document_root: self.layout.www.to_string_lossy().into(),
+            projects,
+            domains_ready: crate::hosts::current(&names).unwrap_or(false),
             data_dir: self.layout.data.to_string_lossy().into(),
             runtime_ready: self.runtime_ready(),
             runtime_versions: fs::read(self.layout.runtime.join("manifest.json"))
@@ -182,6 +192,41 @@ impl Manager {
         self.layout.save_ports(&ports)?;
         self.ports = ports;
         self.errors.clear();
+        Ok(())
+    }
+
+    pub fn refresh_projects(&mut self) -> Result<()> {
+        let _ = self.snapshot();
+        if !self.runtime_ready() {
+            return Err("The bundled web runtime is missing. Reinstall Fairway XMP.".into());
+        }
+        let config = self.layout.data.join("config/nginx.conf");
+        let previous = fs::read(&config).map_err(|e| e.to_string())?;
+        if let Err(error) = self.layout.write_configs(&self.ports) {
+            atomic_write(&config, &previous)?;
+            return Err(error);
+        }
+        let control = |args: &[&str]| {
+            let mut cmd = process::command(self.layout.exe("nginx", "nginx"));
+            cmd.arg("-e")
+                .arg(self.layout.data.join("logs/nginx.log"))
+                .arg("-p")
+                .arg(&self.layout.data)
+                .arg("-c")
+                .arg(&config)
+                .args(args);
+            process::output(cmd)
+        };
+        let result = control(&["-t"]).and_then(|_| {
+            if self.processes.contains_key("nginx") {
+                control(&["-s", "reload"])?;
+            }
+            Ok(())
+        });
+        if let Err(error) = result {
+            atomic_write(&config, &previous)?;
+            return Err(format!("Could not apply project sites: {error}"));
+        }
         Ok(())
     }
 
