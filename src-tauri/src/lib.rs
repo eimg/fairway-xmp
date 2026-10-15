@@ -1,5 +1,6 @@
 pub mod config;
 pub mod database;
+pub mod diagnostics;
 pub mod hosts;
 pub mod integration;
 pub mod manager;

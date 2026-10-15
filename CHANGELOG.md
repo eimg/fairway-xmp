@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Full backup restore verification against a fresh database, unique export filenames, and cleanup after export errors.
+- Shareable diagnostic reports with embedded build identity and no filesystem paths, logs, or credentials.
+- PHP 8.0/8.1 labeled as unsupported legacy options.
+- An unsigned release-candidate workflow tying platform installers, installed upgrade/removal/reinstall checks, browser reports, and human acceptance to one commit and exact file hashes. Signing remains deferred.
+
 ## 0.1.0-alpha.3 — 2026-10-14
 
 - Linux x86_64 terminal dashboard and CLI, with a detached user supervisor and offline `.run`/`.tar.gz` installers for glibc 2.35+ systems.

@@ -7,6 +7,8 @@ src-tauri/resources/runtime/*
 .runtime-cache/
 .runtime-work/
 artifacts/
+playwright-report/
+test-results/
 .DS_Store
 *.log
 __pycache__/

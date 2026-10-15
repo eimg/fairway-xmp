@@ -9,6 +9,9 @@ permissions:
   contents: read
 
 jobs:
+  ui-review:
+    uses: ./.github/workflows/ui-review.yml
+
   verify:
     strategy:
       fail-fast: false

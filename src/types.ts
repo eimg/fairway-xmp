@@ -9,6 +9,7 @@ export type Snapshot = {
   ports: Ports; services: ServiceStatus[]; documentRoot: string; projects: Project[]; domainsReady: boolean; dataDir: string;
   runtimeReady: boolean; runtimeVersions: Record<string, string> | null;
   phpVersion: string; phpVersions: Record<string, string>;
-  pathInstalled: boolean; pathPhp: string | null; pathComposer: string | null; version: string;
+  pathInstalled: boolean; cliPhp: string | null; cliComposer: string | null;
+  pathPhp: string | null; pathComposer: string | null; version: string;
 };
 export type UpdateInfo = { configured: boolean; version: string | null; notes: string | null };

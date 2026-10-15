@@ -110,6 +110,8 @@ You can create additional databases in phpMyAdmin. Services accept connections f
 
 To save a SQL backup, click **Back up databases**. Find saved backups under **Settings → Open backups**, and import them through phpMyAdmin when needed.
 
+For complete database recovery, including routines and triggers, follow the [backup and restore guide](docs/backup-and-restore.md). Support reports are available under **Settings → Help and diagnostics** or with `fairway diagnostics` on Linux.
+
 ## Ports
 
 | Service | Default port |

@@ -1,6 +1,7 @@
 name: Linux terminal installer
 
 on:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -26,6 +27,8 @@ jobs:
           awk '$1 == "deb" { $1="deb-src"; print }' /etc/apt/sources.list | sudo tee /etc/apt/sources.list.d/fairway-sources.list > /dev/null
           sudo apt-get update
           sudo apt-get install -y build-essential autoconf bison re2c pkg-config patchelf libxml2-dev libssl-dev libcurl4-openssl-dev libsqlite3-dev libonig-dev libzip-dev libsodium-dev libicu-dev libpng-dev libjpeg-dev libwebp-dev libfreetype6-dev libpcre2-dev zlib1g-dev libaio1 libnuma1 libncurses5
+      - name: Verify application version consistency
+        run: python scripts/release_candidate.py version
       - name: Packaging tests
         run: python -m unittest discover -s tests -v
       - name: Rust format, tests and lint
@@ -58,8 +61,17 @@ jobs:
         run: cargo run --manifest-path src-tauri/Cargo.toml --example smoke --no-default-features --locked -- "$PWD/.runtime-work/linux-smoke"
       - name: Package offline installer and corresponding sources
         run: python scripts/package_linux.py
-      - name: Test installed CLI, supervisor and terminal dashboard
-        run: python tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-*-linux-x86_64.run
+      - name: Test installed CLI, alpha upgrade, supervisor and terminal dashboard
+        run: |
+          python scripts/fetch_installer_baseline.py linux --output .runtime-work/baseline-linux.run
+          python tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-*-linux-x86_64.run --baseline .runtime-work/baseline-linux.run --report .runtime-work/linux-lifecycle/lifecycle.json
+          python scripts/release_candidate.py record --target linux-x86_64 --directory artifacts/linux-installer --artifact fairway-linux-x86_64 --lifecycle .runtime-work/linux-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-linux-x86_64.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: candidate-metadata-linux-x86_64
+          path: artifacts/candidate-metadata/
+          if-no-files-found: error
+          retention-days: 90
       - uses: actions/upload-artifact@v6
         with:
           name: fairway-linux-x86_64
@@ -68,6 +80,7 @@ jobs:
             artifacts/linux-installer/Fairway-XMP-*-x86_64.tar.gz
             artifacts/linux-installer/SHA256SUMS.txt
             artifacts/linux-installer/build-info.json
+            artifacts/linux-installer/candidate-info.json
           if-no-files-found: error
           retention-days: 90
       - uses: actions/upload-artifact@v6

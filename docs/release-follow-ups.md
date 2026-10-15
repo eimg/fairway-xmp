@@ -4,6 +4,12 @@ PR #1 was merged as `2114689`. The simpler Advanced settings dropdown, selected-
 
 The remaining work is for the next release. The published alpha 3 installers contain PHP 8.5 only, so these follow-ups do not require changing that release.
 
+## Legacy PHP scope for beta
+
+Signing is deferred while beta recovery/release/support work is completed. PHP 8.0/8.1 remain legacy compatibility options, labeled in Advanced settings and CLI help; PHP 8.5 stays the default. No additional legacy runtime expansion or source-mapping research is scheduled in this pass. The provenance work below remains open and is disclosed in candidate metadata; labeling a runtime legacy does not verify its dependency sources.
+
+The new [beta acceptance process](beta-acceptance.md) covers candidate identity, native lifecycle checks, restore verification, diagnostic reports, and final human review. A green browser run does not complete the remaining native checklist.
+
 ## Verify older Windows dependency sources
 
 **Open before publishing a Windows installer with PHP 8.0/8.1.** Those official PHP ZIPs have no embedded SBOM identifying exact dependency build commits. `scripts/windows_legacy_sources.json` supplies 49 pinned source entries, and `runtime-sources.lock.json` records archive hashes. This verifies which source files are collected; it does not prove that their build recipes and patches match the distributed binaries.

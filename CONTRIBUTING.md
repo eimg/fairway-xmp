@@ -1,6 +1,6 @@
 # Contributing to Fairway XMP
 
-The application uses Tauri 2, Rust, React, and TypeScript. Source checks run on Windows and macOS. A separate manual workflow builds Windows installers as Actions artifacts; CI does not publish GitHub Releases. After testing, publish the exact downloaded installer rather than rebuilding it.
+The application uses Tauri 2, Rust, React, and TypeScript. Source checks run on Windows and macOS. Manual/reusable workflows build platform installers as Actions artifacts; the unsigned candidate workflow combines them without publishing GitHub Releases. After testing, publish the exact downloaded installer rather than rebuilding it.
 
 ## Development
 
@@ -14,6 +14,30 @@ cargo tauri dev               # native app; real services require staged runtime
 ```
 
 The browser preview explicitly labels itself and never simulates service success.
+
+## Visual UI review in the browser
+
+Run `npm run dev:ui` and open `http://127.0.0.1:1420`. This uses the desktop app's React screens with a development-only, in-memory backend. The amber **UI test · Simulated data** toolbar offers stopped, running, partially running, port-conflict, missing-runtime, and update scenarios. Example Windows/macOS paths use the sample username `Student May` and include spaces. Choose a scenario, then use the ordinary controls to review pending states, service actions, logs, backup messages, PHP selection, settings validation, and update failures.
+
+The example platform defaults to macOS on a Mac and Windows otherwise; it can be changed in the toolbar. CLI scenarios also cover installed commands missing from the app's inherited PATH, another PHP installation on PATH, and disabled integration. The main Command-line tools section displays Fairway's own installed commands. Expand **Command detection details** to inspect inherited PATH resolution; on macOS, a GUI app can inherit a different PATH from a new terminal. Windows fixtures use backslashes and `.cmd` launcher names.
+
+All service, backup, settings, PATH, and update results in this mode are simulated. Open-folder/browser/terminal actions display what would be opened. Reload or **Reset test** restores the initial state; nothing is persisted and no native services or files are changed. Changing a scenario resets its data, notices, and update results. Ordinary `npm run dev` and production browser builds retain the disabled preview; the simulation is only enabled by the dedicated Vite development mode.
+
+For repeatable checks and a visual review gallery:
+
+```sh
+npx playwright install chromium webkit  # once; on Linux add --with-deps
+npm run test:ui                        # starts its own servers on 1421/1422
+npm run test:ui:report                 # opens the HTML report
+```
+
+The tests exercise Chromium and WebKit at 1080×760 and the desktop minimum 820×650. Each scenario attaches Environment, Settings, Updates, and Help screenshots to the HTML report, including Windows/macOS example paths. Interaction tests cover pending states, logs, backups, settings validation/PHP selection, and recovery from a port conflict. Failures retain screenshots, video, and traces. These are human-review screenshots and behavior assertions; there is no approved pixel-diff baseline yet. `scripts/check_ui.mjs` remains an optional legacy check for the ordinary disabled preview.
+
+The **ui-review** Actions job runs these checks on each push/PR and uploads `ui-visual-review-COMMIT` even when tests fail. Download and extract that artifact, then run `npx playwright show-report /absolute/path/to/playwright-report` to review it in your browser. A passing test run still needs your visual judgment. The candidate UI and native service checks must refer to the same source commit.
+
+The full Windows/Linux service smoke checks currently run in their manually dispatched installer workflows. The regular Windows/macOS verification job builds and runs source checks; a green regular build alone does not confirm the full service smoke checks ran.
+
+Browser review plus platform CI is the normal development loop. Browser engines and example paths do not reproduce an OS or its native WebView exactly. The Linux terminal dashboard, installers, tray menus, native dialogs, PATH integration, and database upgrades remain covered by their separate checks and targeted native testing when those areas change. See the [Playwright browser documentation](https://playwright.dev/docs/browsers) for engine differences.
 
 To stage native runtime resources (Python 3.12+):
 
@@ -97,6 +121,8 @@ cargo tauri build --config artifacts/tauri.release.json
 Set Tauri's signing key environment variables on the builder. Updater signatures are separate from Apple/Windows distribution certificates. The release owner supplies the public key. The default feed is `https://github.com/eimg/fairway-xmp/releases/latest/download/latest.json`; unsigned builds link to the releases page for manual downloads. Ship all runtime resources with every release, preserve the application resource location, and verify installer/updater behavior on both OSes.
 
 ## Publishing a release
+
+For new unsigned candidates, use the [beta candidate and acceptance process](docs/beta-acceptance.md). The **Unsigned release candidate** workflow orchestrates all platforms plus browser review from one commit, exercises actual installer upgrades/removal/reinstallation, verifies embedded identity, and generates an acceptance template for the exact hashes. It does not publish. Signing remains deferred; PHP 8.0/8.1 are legacy compatibility options, and their existing Windows source-verification follow-up remains open.
 
 For an unsigned x64 Windows installer, dispatch the **Windows installer** workflow with `gh workflow run windows-test-build.yml --ref main`. It checks the source, stages the pinned runtime, exercises real services and cleanup, and verifies an 8.4 → 9.7 database upgrade before building an NSIS installer. Confirm the resulting run uses the intended source commit before accepting its installer. The alpha 1 migration fixtures retain its exact Windows versions and download checksums; the preparer stages them into a separate folder without replacing the current runtime.
 

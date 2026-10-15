@@ -265,7 +265,7 @@ fn handle_connection(
         }
         let request = envelope.request;
         // Read-only clients must not freeze a dashboard behind a long startup/backup.
-        let mut manager = if matches!(request, Request::Status | Request::Log { .. }) {
+        let mut manager = if matches!(request, Request::Status | Request::Diagnostics | Request::Log { .. }) {
             let deadline = Instant::now() + Duration::from_millis(250);
             loop {
                 match manager.try_lock() {
@@ -303,6 +303,7 @@ fn execute(manager: &mut Manager, request: Request) -> Result<serde_json::Value>
         Request::Status => {
             return serde_json::to_value(manager.snapshot()).map_err(|e| e.to_string())
         }
+        Request::Diagnostics => return Ok(crate::diagnostics::report(&manager.snapshot())),
         Request::Start { service } => service_action(manager, &service, true)?,
         Request::Stop { service } => service_action(manager, &service, false)?,
         Request::Restart { service } => {

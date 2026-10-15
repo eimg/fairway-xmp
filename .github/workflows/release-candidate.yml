@@ -1,0 +1,58 @@
+name: Unsigned release candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python scripts/release_candidate.py version
+  ui:
+    needs: identity
+    uses: ./.github/workflows/ui-review.yml
+  windows:
+    needs: identity
+    uses: ./.github/workflows/windows-test-build.yml
+  macos:
+    needs: identity
+    uses: ./.github/workflows/macos-test-build.yml
+  linux:
+    needs: identity
+    uses: ./.github/workflows/linux-test-build.yml
+  acceptance:
+    needs: [ui, windows, macos, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: candidate-metadata-*
+          path: artifacts/candidate-metadata
+          merge-multiple: true
+      - name: Verify identity and assemble exact-installer acceptance records
+        run: python scripts/release_candidate.py assemble --inputs artifacts/candidate-metadata --output artifacts/release-candidate/candidate-manifest.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: unsigned-candidate-acceptance-${{ github.sha }}
+          path: artifacts/release-candidate/
+          if-no-files-found: error
+          retention-days: 90
+      - name: Explain the remaining human review
+        run: |
+          echo "All platform builds, runtime/restore checks, installer lifecycles and browser checks passed for $GITHUB_SHA." >> "$GITHUB_STEP_SUMMARY"
+          echo "Download the exact installers and UI report from this run. Complete acceptance-template.json using docs/beta-acceptance.md. Signing is deferred. This workflow does not publish a release or mark human checks complete." >> "$GITHUB_STEP_SUMMARY"

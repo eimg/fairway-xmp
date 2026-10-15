@@ -60,6 +60,75 @@ fn https(layout: &Layout, host: &str) -> Result<String, String> {
     process::output(command)
 }
 
+fn free_ports() -> Result<Ports, String> {
+    let listeners = (0..4)
+        .map(|_| TcpListener::bind(("127.0.0.1", 0)))
+        .collect::<std::io::Result<Vec<_>>>()
+        .map_err(|e| e.to_string())?;
+    let ports = listeners
+        .iter()
+        .map(|listener| listener.local_addr().unwrap().port())
+        .collect::<Vec<_>>();
+    Ok(Ports {
+        website: ports[0],
+        phpmyadmin: ports[1],
+        mysql: ports[2],
+        php: ports[3],
+    })
+}
+
+fn admin(manager: &Manager) -> Command {
+    let mut command = process::command(manager.layout.exe("mysql", "mysql"));
+    command
+        .arg(format!(
+            "--defaults-file={}",
+            manager.layout.data.join("config/admin.cnf").display()
+        ))
+        .args([
+            "--batch",
+            "--skip-column-names",
+            "--default-character-set=utf8mb4",
+        ]);
+    command
+}
+
+fn verify_restore(source: &Manager, root: &std::path::Path, backup: &str) -> Result<(), String> {
+    let layout = Layout::at(
+        root.join("restored home"),
+        root.join("restored data"),
+        source.layout.runtime.clone(),
+    );
+    let mut restored = Manager::new(layout)?;
+    restored.save_ports(free_ports()?)?;
+    let result = (|| -> Result<(), String> {
+        restored.start_all()?;
+        process::sql(
+            admin(&restored),
+            &fs::read_to_string(backup).map_err(|e| e.to_string())?,
+        )?;
+        let mut query = admin(&restored);
+        query.args(["-e", "SELECT name FROM beta_school.student_names WHERE id=1; SELECT COUNT(*) FROM beta_archive.enrolments; CALL beta_school.student_count(); SELECT beta_school.plus_one(1); SELECT COUNT(*) FROM information_schema.EVENTS WHERE EVENT_SCHEMA='beta_school' AND EVENT_NAME='disabled_cleanup' AND STATUS='DISABLED'; INSERT INTO beta_archive.enrolments VALUES (2,1); SELECT COUNT(*) FROM beta_school.audit;"]);
+        let output = process::output(query)?;
+        assert_eq!(
+            output.lines().collect::<Vec<_>>(),
+            ["Student May", "1", "1", "2", "1", "2"]
+        );
+        let mut invalid = admin(&restored);
+        invalid.args(["-e", "INSERT INTO beta_archive.enrolments VALUES (3,999);"]);
+        assert!(
+            process::output(invalid).is_err(),
+            "Restored foreign key must reject an unknown student"
+        );
+        fs::write(restored.layout.www.join("restore.php"), format!("<?php $pdo = new PDO('mysql:host=127.0.0.1;port={};dbname=beta_school','fairway','fairway'); echo $pdo->query('SELECT name FROM student_names WHERE id=1')->fetchColumn();", restored.ports.mysql)).map_err(|e| e.to_string())?;
+        assert!(http(restored.ports.website, "/restore.php").contains("Student May"));
+        Ok(())
+    })();
+    let shutdown = restored.stop_all();
+    result.and(shutdown)?;
+    println!("PASS: backup restored into a fresh database; multiple databases, data, view, foreign key, trigger, procedure, function, event and PHP response verified.");
+    Ok(())
+}
+
 fn main() -> Result<(), String> {
     let root = PathBuf::from(
         std::env::args()
@@ -114,6 +183,16 @@ fn main() -> Result<(), String> {
     .map_err(|e| e.to_string())?;
     integration::install(&manager.layout)?;
     let result = (|| -> Result<(), String> {
+        let snapshot = manager.snapshot();
+        assert!(snapshot.path_installed);
+        assert_eq!(
+            snapshot.cli_php,
+            integration::launcher(&manager.layout, "php")
+        );
+        assert_eq!(
+            snapshot.cli_composer,
+            integration::launcher(&manager.layout, "composer")
+        );
         let mut php = process::command(manager.layout.bin.join(if cfg!(windows) {
             "php.cmd"
         } else {
@@ -218,10 +297,29 @@ fn main() -> Result<(), String> {
         drop(previous);
         manager.start("nginx")?;
         assert!(http(chosen.website, "/smoke.php").contains("classroom works"));
+        process::sql(admin(&manager), "CREATE DATABASE beta_school; CREATE DATABASE beta_archive; CREATE TABLE beta_school.students (id INT PRIMARY KEY, name VARCHAR(100)); CREATE TABLE beta_school.audit (enrolment_id INT); CREATE TABLE beta_archive.enrolments (id INT PRIMARY KEY, student_id INT, FOREIGN KEY (student_id) REFERENCES beta_school.students(id)); CREATE TRIGGER beta_archive.enrolment_insert AFTER INSERT ON beta_archive.enrolments FOR EACH ROW INSERT INTO beta_school.audit VALUES (NEW.id); CREATE VIEW beta_school.student_names AS SELECT id,name FROM beta_school.students; CREATE PROCEDURE beta_school.student_count() SELECT COUNT(*) FROM beta_school.students; CREATE FUNCTION beta_school.plus_one(n INT) RETURNS INT DETERMINISTIC RETURN n+1; CREATE EVENT beta_school.disabled_cleanup ON SCHEDULE EVERY 1 DAY DISABLE DO DELETE FROM beta_school.audit WHERE enrolment_id<0; INSERT INTO beta_school.students VALUES (1,'Student May'); INSERT INTO beta_archive.enrolments VALUES (1,1);")?;
         let backup = manager.backup()?;
         let sql = fs::read_to_string(&backup).map_err(|e| e.to_string())?;
         assert!(sql.contains("classroom works"));
+        let second = manager.backup()?;
+        assert_ne!(backup, second);
+        assert_eq!(fs::read_to_string(&backup).map_err(|e| e.to_string())?, sql);
+        // Failed dump setup must not leave a partial file or a completed backup.
+        let config = manager.layout.data.join("config/admin.cnf");
+        let saved = config.with_extension("saved");
+        fs::rename(&config, &saved).map_err(|e| e.to_string())?;
+        let failed = manager.backup();
+        fs::rename(&saved, &config).map_err(|e| e.to_string())?;
+        assert!(failed.is_err());
+        assert!(!fs::read_dir(manager.layout.data.join("backups"))
+            .map_err(|e| e.to_string())?
+            .any(|entry| entry
+                .unwrap()
+                .path()
+                .extension()
+                .is_some_and(|extension| extension == "partial")));
         manager.stop_all()?;
+        verify_restore(&manager, &root, &backup)?;
         assert!(manager.snapshot().services.iter().all(|s| !s.running));
         assert!(process::available(chosen.website) && process::available(chosen.mysql));
         if let Some(runtime) = upgrade_runtime {
@@ -309,6 +407,9 @@ fn main() -> Result<(), String> {
         // Settings survive restart; coursework survives removal of PATH integration.
         assert_eq!(manager.layout.ports()?, chosen);
         integration::remove(&manager.layout)?;
+        let snapshot = manager.snapshot();
+        assert!(!snapshot.path_installed);
+        assert!(snapshot.cli_php.is_none() && snapshot.cli_composer.is_none());
         assert!(probe.exists());
         assert!(!manager
             .layout

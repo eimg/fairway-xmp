@@ -6,10 +6,18 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
-from package_sources import archive_git_tree
+from package_sources import archive_git_tree, require_locked_plan
 
 
 class SourceTreeTests(unittest.TestCase):
+    def test_candidate_source_inputs_must_already_be_pinned(self):
+        locked = [{'name': 'php', 'url': 'https://example.test/php.tar.gz', 'sha256': 'a' * 64}]
+        require_locked_plan(locked, locked)
+        for bad in [[], [{'name': 'extra', 'url': 'https://example.test/extra', 'sha256': 'a' * 64}],
+                    [{'name': 'php', 'url': locked[0]['url'], 'sha256': None}],
+                    [{'name': 'php', 'url': locked[0]['url'], 'sha256': 'b' * 64}]]:
+            with self.assertRaises(RuntimeError): require_locked_plan(bad, locked)
+
     def archive(self, root, filename, content=b'original source', mode=0o644, mtime=0, names=None):
         path = root / filename
         with tarfile.open(path, 'w:gz') as bundle:

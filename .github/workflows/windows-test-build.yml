@@ -1,6 +1,11 @@
 name: Windows installer
 
 on:
+  workflow_call:
+    inputs:
+      record_runtime_checksums:
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       record_runtime_checksums:
@@ -14,7 +19,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 60
+    timeout-minutes: 90
     defaults:
       run:
         shell: pwsh
@@ -44,7 +49,8 @@ jobs:
       - name: Record release version
         id: metadata
         run: |
-          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $version = python scripts/release_candidate.py version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           "version=$version" >> $env:GITHUB_OUTPUT
       - name: Prepare Windows runtime
         run: |
@@ -102,6 +108,25 @@ jobs:
             checks = @('frontend build', 'packaging tests', 'Rust tests and clippy', 'fresh runtime smoke', 'MySQL 8.4 to 9.7 upgrade, backup and restart')
             purpose = 'Release candidate installer; reuse this exact file after testing'
           } | ConvertTo-Json -Depth 8 | Set-Content "$output/build-info.json" -Encoding utf8
+      - name: Verify the real installed alpha upgrade and reinstall lifecycle
+        if: inputs.record_runtime_checksums != true
+        run: |
+          python scripts/fetch_installer_baseline.py windows --output .runtime-work/baseline-windows.exe
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          cargo build --release --example installer_probe --manifest-path src-tauri/Cargo.toml --no-default-features --target x86_64-pc-windows-msvc --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $installer = (Get-ChildItem 'artifacts/windows-installer/*-setup.exe').FullName
+          python tests/installer_lifecycle.py --installer $installer --baseline .runtime-work/baseline-windows.exe --probe src-tauri/target/x86_64-pc-windows-msvc/release/examples/installer_probe.exe --output .runtime-work/windows-lifecycle --allow-user-profile-changes
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/release_candidate.py record --target windows-x64 --directory artifacts/windows-installer --artifact fairway-windows-x64-${{ steps.metadata.outputs.version }} --lifecycle .runtime-work/windows-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-windows-x64.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: actions/upload-artifact@v6
+        if: inputs.record_runtime_checksums != true
+        with:
+          name: candidate-metadata-windows-x64
+          path: artifacts/candidate-metadata/
+          if-no-files-found: error
+          retention-days: 90
       - uses: actions/upload-artifact@v6
         with:
           name: fairway-windows-x64-${{ steps.metadata.outputs.version }}

@@ -61,14 +61,14 @@
     MessageBox MB_ICONSTOP "Fairway XMP could not remove its PATH integration. Open Fairway XMP Settings and remove command-line integration, then retry uninstalling."
     Abort
   ${EndIf}
-  MessageBox MB_YESNO|MB_DEFBUTTON2 "Also delete Fairway XMP's databases, backups, settings, and caches? Your coursework will remain unless you choose to remove it next." IDNO keep_data
+  MessageBox MB_YESNO|MB_DEFBUTTON2 "Also delete Fairway XMP's databases, backups, settings, and caches? Your coursework will remain unless you choose to remove it next." /SD IDNO IDNO keep_data
     ExecWait '"$INSTDIR\fairway.exe" --remove-data' $0
     ${If} $0 != 0
       MessageBox MB_ICONSTOP "Data cleanup failed. Your remaining files have been preserved."
       Abort
     ${EndIf}
   keep_data:
-  MessageBox MB_YESNO|MB_DEFBUTTON2 "Also permanently delete all coursework in your fairway\www folder? Choose No to keep your projects." IDNO keep_coursework
+  MessageBox MB_YESNO|MB_DEFBUTTON2 "Also permanently delete all coursework in your fairway\www folder? Choose No to keep your projects." /SD IDNO IDNO keep_coursework
     ExecWait '"$INSTDIR\fairway.exe" --remove-coursework' $0
     ${If} $0 != 0
       MessageBox MB_ICONSTOP "Coursework cleanup failed. Your remaining files have been preserved."

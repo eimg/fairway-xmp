@@ -37,10 +37,20 @@ pub fn resolve(name: &str) -> Option<String> {
 
 pub fn installed(layout: &Layout) -> bool {
     layout.data.join("cli-installed").exists()
-        && layout
-            .bin
-            .join(if cfg!(windows) { "php.cmd" } else { "php" })
-            .is_file()
+        && launcher(layout, "php").is_some()
+        && launcher(layout, "composer").is_some()
+}
+
+// These paths describe Fairway's own commands, independently of the desktop
+// process's inherited PATH (which often excludes shell profiles on macOS).
+pub fn launcher(layout: &Layout, name: &str) -> Option<String> {
+    let filename = if cfg!(windows) {
+        format!("{name}.cmd")
+    } else {
+        name.to_string()
+    };
+    let path = layout.bin.join(filename);
+    path.is_file().then(|| path.to_string_lossy().into())
 }
 
 #[cfg(unix)]
@@ -375,6 +385,43 @@ pub fn open(layout: &Layout, target: &str, website: u16, admin: u16) -> Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn installed_commands_do_not_depend_on_inherited_path() {
+        let root = env::temp_dir().join(format!(
+            "fairway-cli-paths-{}-{} Student May",
+            std::process::id(),
+            rand::random::<u64>()
+        ));
+        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+        fs::create_dir_all(&layout.bin).unwrap();
+        assert!(launcher(&layout, "php").is_none());
+        assert!(!installed(&layout));
+        fs::write(layout.data.join("cli-installed"), "1").unwrap();
+        let php = layout
+            .bin
+            .join(if cfg!(windows) { "php.cmd" } else { "php" });
+        let composer = layout.bin.join(if cfg!(windows) {
+            "composer.cmd"
+        } else {
+            "composer"
+        });
+        fs::write(&php, "test launcher").unwrap();
+        assert!(!installed(&layout), "Composer must be installed too");
+        fs::write(&composer, "test launcher").unwrap();
+        assert!(installed(&layout));
+        assert_eq!(launcher(&layout, "php"), Some(php.to_string_lossy().into()));
+        assert_eq!(
+            launcher(&layout, "composer"),
+            Some(composer.to_string_lossy().into())
+        );
+        fs::remove_file(layout.data.join("cli-installed")).unwrap();
+        assert!(
+            !installed(&layout),
+            "Launchers alone do not add PATH integration"
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
     #[test]
     fn profile_changes_are_idempotent_and_preserve_unrelated_edits() {
         let original = "export PATH=/custom:$PATH\n# my settings\n";

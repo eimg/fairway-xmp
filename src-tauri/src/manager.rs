@@ -37,6 +37,8 @@ pub struct Snapshot {
     pub php_version: String,
     pub php_versions: BTreeMap<String, String>,
     pub path_installed: bool,
+    pub cli_php: Option<String>,
+    pub cli_composer: Option<String>,
     pub path_php: Option<String>,
     pub path_composer: Option<String>,
     pub version: String,
@@ -177,6 +179,8 @@ impl Manager {
                 .filter_map(|(minor, full)| full.as_str().map(|version| (minor, version.into())))
                 .collect(),
             path_installed: crate::integration::installed(&self.layout),
+            cli_php: crate::integration::launcher(&self.layout, "php"),
+            cli_composer: crate::integration::launcher(&self.layout, "composer"),
             path_php: crate::integration::resolve("php"),
             path_composer: crate::integration::resolve("composer"),
             version: env!("CARGO_PKG_VERSION").into(),
@@ -732,49 +736,72 @@ impl Manager {
         if !self.processes.contains_key("mysql") {
             return Err("Start MySQL before making a backup.".into());
         }
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_err(|e| e.to_string())?
-            .as_secs();
-        let path = self
-            .layout
-            .data
-            .join(format!("backups/fairway-{stamp}.sql"));
-        let partial = path.with_extension("sql.partial");
-        let output = fs::File::create(&partial).map_err(|e| e.to_string())?;
-        let mut cmd = self.database_command("mysqldump", true);
-        // Back up student databases, not MySQL's version-dependent system schema.
-        let mut list = self.database_command("mysql", true);
-        list.args(["--batch", "--skip-column-names", "-e", "SHOW DATABASES"]);
-        let names: Vec<_> = process::output(list)?
-            .lines()
-            .filter(|name| {
-                !["mysql", "sys", "information_schema", "performance_schema"].contains(name)
-            })
-            .map(String::from)
-            .collect();
-        if names.is_empty() {
-            return Err("There are no student databases to back up.".into());
+        let (path, partial, output) = reserve_backup(&self.layout.data.join("backups"))?;
+        let result = (|| {
+            let mut cmd = self.database_command("mysqldump", true);
+            // Back up student databases, not MySQL's version-dependent system schema.
+            let mut list = self.database_command("mysql", true);
+            list.args(["--batch", "--skip-column-names", "-e", "SHOW DATABASES"]);
+            let names: Vec<_> = process::output(list)?
+                .lines()
+                .filter(|name| {
+                    !["mysql", "sys", "information_schema", "performance_schema"].contains(name)
+                })
+                .map(String::from)
+                .collect();
+            if names.is_empty() {
+                return Err("There are no student databases to back up.".into());
+            }
+            cmd.args([
+                "--single-transaction",
+                "--routines",
+                "--events",
+                "--triggers",
+                "--set-gtid-purged=OFF",
+                "--databases",
+            ])
+            .args(names)
+            .stdout(Stdio::from(output))
+            .stderr(Stdio::piped());
+            let result = cmd.output().map_err(|e| e.to_string())?;
+            if !result.status.success() {
+                return Err(String::from_utf8_lossy(&result.stderr).into());
+            }
+            fs::rename(&partial, &path).map_err(|e| e.to_string())?;
+            Ok(path.to_string_lossy().into())
+        })();
+        if result.is_err() {
+            let _ = fs::remove_file(&partial);
         }
-        cmd.args([
-            "--single-transaction",
-            "--routines",
-            "--events",
-            "--triggers",
-            "--set-gtid-purged=OFF",
-            "--databases",
-        ])
-        .args(names)
-        .stdout(Stdio::from(output))
-        .stderr(Stdio::piped());
-        let result = cmd.output().map_err(|e| e.to_string())?;
-        if !result.status.success() {
-            let _ = fs::remove_file(partial);
-            return Err(String::from_utf8_lossy(&result.stderr).into());
-        }
-        fs::rename(partial, &path).map_err(|e| e.to_string())?;
-        Ok(path.to_string_lossy().into())
+        result
     }
+}
+
+fn reserve_backup(directory: &Path) -> Result<(std::path::PathBuf, std::path::PathBuf, fs::File)> {
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_nanos();
+    for _ in 0..16 {
+        let path = directory.join(format!(
+            "fairway-{stamp}-{:032x}.sql",
+            rand::random::<u128>()
+        ));
+        let partial = path.with_extension("sql.partial");
+        if path.exists() {
+            continue;
+        }
+        match fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&partial)
+        {
+            Ok(file) => return Ok((path, partial, file)),
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => continue,
+            Err(error) => return Err(error.to_string()),
+        }
+    }
+    Err("Could not reserve a unique backup file. Try again.".into())
 }
 
 fn copy_tree(source: &Path, target: &Path) -> Result<()> {

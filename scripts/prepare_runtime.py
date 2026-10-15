@@ -288,8 +288,9 @@ def relocate(target, bottles):
         binary = queue.pop()
         if binary in seen: continue
         seen.add(binary)
-        # Bottle signatures become invalid when load commands change.
-        subprocess.run(['codesign', '--remove-signature', str(binary)], capture_output=True)
+        # Keep the existing signature until relocation finishes. Removing it
+        # first can leave a __LINKEDIT layout older macOS tools cannot process.
+        # Load-command edits invalidate it; the final ad-hoc signature replaces it.
         output = subprocess.check_output(['otool', '-L', str(binary)], text=True)
         for line in output.splitlines()[1:]:
             original = line.strip().split(' (')[0]

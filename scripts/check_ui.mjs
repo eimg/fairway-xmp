@@ -17,7 +17,7 @@ try {
   assert(await page.getByRole('button', { name: 'Start all', exact: true }).isDisabled());
   await page.screenshot({ path: 'artifacts/control-panel.png', fullPage: true });
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
-  assert.equal(await page.getByLabel('Website', { exact: false }).inputValue(), '8800');
+  assert.equal(await page.getByRole('spinbutton', { name: /^Website/ }).inputValue(), '8800');
   await page.getByRole('button', { name: 'Updates', exact: true }).click();
   await page.getByRole('heading', { name: 'A dependable environment.' }).waitFor();
   await page.getByRole('button', { name: /Getting started/ }).click();

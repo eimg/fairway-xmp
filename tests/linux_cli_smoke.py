@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Exercise the installed CLI/supervisor/TUI against the real bundled runtime."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import pty
@@ -13,7 +14,9 @@ import time
 import urllib.request
 
 
-def main(installer):
+def main(installer, baseline=None, report=None):
+    with installer.open('rb') as stream:
+        installer_sha256 = hashlib.file_digest(stream, 'sha256').hexdigest()
     with tempfile.TemporaryDirectory(prefix='fw-linux-') as directory:
         root = Path(directory)
         home = root / "student's home ä"
@@ -21,6 +24,15 @@ def main(installer):
         prefix = home / 'installation'
         data = home / '.local/share/dev.fairway.environment'
         env = {**os.environ, 'HOME': str(home), 'XDG_DATA_HOME': str(home / '.local/share'), 'ZDOTDIR': str(home), 'TERM': 'xterm-256color'}
+        if baseline:
+            subprocess.run(['sh', str(baseline), '--prefix', str(prefix)], env=env, check=True)
+            old_cli = prefix / 'current/bin/fairway'
+            try:
+                subprocess.run([str(old_cli), 'start'], env=env, check=True, timeout=240)
+                subprocess.run([str(old_cli), 'mysql', '-e', "CREATE DATABASE beta_lifecycle; CREATE TABLE beta_lifecycle.coursework (id INT PRIMARY KEY); INSERT INTO beta_lifecycle.coursework VALUES (42);"], env=env, check=True, timeout=30)
+                (home / 'fairway/www/baseline.php').write_text("<?php echo 'Student May coursework retained';")
+            finally:
+                subprocess.run([str(old_cli), 'shutdown'], env=env, check=True, timeout=120)
         subprocess.run(['sh', str(installer), '--prefix', str(prefix)], env=env, check=True)
         cli = prefix / 'current/bin/fairway'
         def call(*args, check=True):
@@ -29,6 +41,16 @@ def main(installer):
             return result
         try:
             call('shutdown')
+            build = json.loads(call('--build-info').stdout)
+            runtime_manifest = json.loads((prefix / 'current/runtime/manifest.json').read_text())
+            if baseline:
+                call('start')
+                assert call('mysql', '--batch', '--skip-column-names', '-e', 'SELECT id FROM beta_lifecycle.coursework;').stdout.strip() == '42'
+                assert (home / 'fairway/www/baseline.php').read_text() == "<?php echo 'Student May coursework retained';"
+                call('shutdown')
+            diagnostics = json.loads(call('diagnostics').stdout)
+            assert diagnostics['build']['commit'] == build['commit']
+            assert 'filesystem paths' in diagnostics['excluded']
             # Simultaneous first clients must share one supervisor.
             clients = [subprocess.Popen([str(cli), 'status', '--json'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True) for _ in range(4)]
             for client in clients:
@@ -153,11 +175,30 @@ def main(installer):
             assert not (data / 'bin/fairway').exists()
             for profile in ('.bashrc', '.bash_profile', '.zshrc', '.zprofile'):
                 if (home / profile).exists(): assert '>>> fairway' not in (home / profile).read_text()
+            # Reinstall after complete removal must reopen the same student database.
+            subprocess.run(['sh', str(installer), '--prefix', str(prefix)], env=env, check=True)
+            call('start')
+            assert call('mysql', '--batch', '--skip-column-names', '-e', 'SELECT id FROM fairway.linux_smoke;').stdout.strip() == '42'
+            assert probe.exists() and backup.exists()
+            call('uninstall')
+            if report:
+                with installer.open('rb') as stream:
+                    assert hashlib.file_digest(stream, 'sha256').hexdigest() == installer_sha256, 'Installer changed during lifecycle testing'
+                Path(report).parent.mkdir(parents=True, exist_ok=True)
+                Path(report).write_text(json.dumps({'schema': 1, 'status': 'passed', 'build': build, 'runtime': runtime_manifest,
+                    'installer': installer.name, 'installerSha256': installer_sha256,
+                    'baseline': '0.1.0-alpha.3' if baseline else None,
+                    'checks': ['offline-install', 'alpha-upgrade' if baseline else 'same-version-reinstall', 'real-project-and-database', 'backup', 'crash-recovery', 'uninstall-preserves-data', 'reinstall-opens-preserved-database']}, indent=2) + '\n')
             print('PASS: offline install, concurrent clients, PHP/Composer, TUI detach, PHP → MySQL → HTTP, backup, crash recovery, port protection, reinstall and data-preserving uninstall.')
         finally:
             if cli.exists(): call('shutdown', check=False)
 
 
 if __name__ == '__main__':
-    import sys
-    main(Path(sys.argv[1]).resolve())
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('installer', type=Path)
+    parser.add_argument('--baseline', type=Path)
+    parser.add_argument('--report', type=Path)
+    args = parser.parse_args()
+    main(args.installer.resolve(), args.baseline.resolve() if args.baseline else None, args.report)

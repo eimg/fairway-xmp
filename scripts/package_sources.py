@@ -208,16 +208,30 @@ def collect_plan(stage, refresh=False):
     return plan
 
 
+def require_locked_plan(plan, locked):
+    expected = {item['name']: item for item in locked}
+    actual = {item['name']: item for item in plan}
+    if len(expected) != len(locked) or len(actual) != len(plan) or set(actual) != set(expected):
+        raise RuntimeError('Source inputs changed; review and commit the source lock before building a candidate')
+    for name, item in actual.items():
+        if not item.get('sha256') or any(item.get(key) != expected[name].get(key) for key in ('url', 'sha256')):
+            raise RuntimeError(f'Unreviewed source input for {name}; candidate builds require the committed source lock')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan-only', action='store_true', help='Write recipes and download plan without fetching source archives')
     parser.add_argument('--source-ref', default='HEAD', help='Application source revision matching the installers')
     parser.add_argument('--refresh-lock', action='store_true', help='Allow reviewed version changes while retaining unchanged source pins')
+    parser.add_argument('--locked', action='store_true', help='Require committed source pins and never rewrite the source lock')
     args = parser.parse_args()
+    if args.locked and args.refresh_lock: parser.error('--locked cannot be combined with --refresh-lock')
     version = json.loads((ROOT / 'package.json').read_text())['version']
     stage = ROOT / '.runtime-work' / f'sources-{version}'
     stage.mkdir(parents=True, exist_ok=True)
     plan = collect_plan(stage, refresh=args.refresh_lock)
+    locked = json.loads((ROOT / 'runtime-sources.lock.json').read_text()) if args.locked else None
+    if args.locked: require_locked_plan(plan, locked)
     plan_path = stage / 'source-inputs.json'
     plan_path.write_text(json.dumps(plan, indent=2) + '\n')
     if args.plan_only:
@@ -259,7 +273,10 @@ def main():
         if obsolete.is_file() and obsolete.name not in expected_files:
             obsolete.unlink()
     plan_path.write_text(json.dumps(verified, indent=2) + '\n')
-    (ROOT / 'runtime-sources.lock.json').write_text(json.dumps(verified, indent=2) + '\n')
+    if args.locked:
+        require_locked_plan(verified, locked)
+    else:
+        (ROOT / 'runtime-sources.lock.json').write_text(json.dumps(verified, indent=2) + '\n')
     commit = subprocess.check_output(['git', 'rev-parse', args.source_ref], cwd=ROOT, text=True).strip()
     subprocess.run(['git', 'archive', '--format=tar.gz', f'--output={stage / "fairway-xmp-source.tar.gz"}', commit], cwd=ROOT, check=True)
     shutil.copyfile(LOCK_PATH, stage / LOCK_PATH.name)

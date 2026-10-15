@@ -13,6 +13,10 @@ declare global {
 }
 
 export const isDesktop = !!window.__TAURI_INTERNALS__;
+// Only the dedicated Vite development mode can load the simulated backend.
+export const isUiTest = import.meta.env.DEV && import.meta.env.MODE === 'ui-test' && !isDesktop;
+export const canControl = isDesktop || isUiTest;
+const simulation = isUiTest ? import('./ui-test/backend') : null;
 
 // Browser previews deliberately do not pretend to start real services.
 export const preview: Snapshot = {
@@ -29,15 +33,17 @@ export const preview: Snapshot = {
     phpmyadmin: manifest.phpmyadmin, composer: manifest.composer,
   }, pathInstalled: false,
   phpVersion: manifest.php.split('.').slice(0, 2).join('.'), phpVersions: manifest.phpVersions,
-  pathPhp: null, pathComposer: null, version,
+  cliPhp: null, cliComposer: null, pathPhp: null, pathComposer: null, version,
 };
 
 export function invoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
+  if (simulation) return simulation.then(module => module.invoke<T>(command, args));
   if (!window.__TAURI_INTERNALS__) return Promise.reject(new Error('Open the Fairway XMP desktop app to use this control.'));
   return window.__TAURI_INTERNALS__.invoke<T>(command, args);
 }
 
 export async function listen(event: string, callback: (payload: unknown) => void): Promise<() => void> {
+  if (simulation) return (await simulation).listen(event, callback);
   const api = window.__TAURI_INTERNALS__;
   if (!api) return () => {};
   const handler = api.transformCallback(e => callback(e.payload));

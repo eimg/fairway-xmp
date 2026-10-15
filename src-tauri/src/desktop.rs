@@ -174,6 +174,15 @@ async fn snapshot(state: State<'_, Shared>) -> Result<Snapshot> {
 }
 
 #[tauri::command]
+async fn diagnostic_report(state: State<'_, Shared>) -> Result<String> {
+    access(state.inner().clone(), |m| {
+        serde_json::to_string_pretty(&crate::diagnostics::report(&m.snapshot()))
+            .map_err(|e| e.to_string())
+    })
+    .await
+}
+
+#[tauri::command]
 async fn service_action(
     app: tauri::AppHandle,
     state: State<'_, Shared>,
@@ -444,6 +453,10 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
         )?;
         return Ok(true);
     }
+    if action == "--build-info" {
+        println!("{}", crate::diagnostics::build_identity());
+        return Ok(true);
+    }
     if ![
         "--install-cli",
         "--remove-cli",
@@ -567,6 +580,7 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             snapshot,
+            diagnostic_report,
             service_action,
             save_settings,
             refresh_projects,

@@ -36,3 +36,7 @@
   .advanced input,.advanced select{max-width:none}
   .operation-status{max-width:calc(100vw - 90px)}
 }
+
+.ui-test-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;padding:14px;margin-bottom:20px;border:1px solid #d4b46b;border-radius:8px;background:#fff8e5;color:#72591f;font-size:11px}.ui-test-toolbar>span{flex-basis:100%;line-height:1.6}.ui-test-toolbar label{display:flex;flex:1;min-width:150px;flex-direction:column;gap:6px}.ui-test-toolbar select{background:#fff;font-size:11px}
+
+.cli-paths>div{gap:6px;margin-bottom:17px}.cli-tools dd{line-height:1.7;min-width:0;max-width:100%;white-space:pre-wrap;overflow-wrap:anywhere}.cli-tools .card-title{flex-wrap:wrap}.cli-diagnostics{margin-top:20px;padding-top:16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)}.cli-diagnostics summary{cursor:pointer}.cli-diagnostics .path-list{margin-top:14px}.cli-diagnostics .path-list>div:last-child{margin-bottom:0}

@@ -1,0 +1,84 @@
+name: macOS installer
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Verify target and application versions
+        id: metadata
+        run: |
+          test "$(uname -m)" = arm64
+          xcodebuild -version
+          version=$(python scripts/release_candidate.py version)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run test:scripts
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --locked
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - name: Stage verified macOS runtimes
+        run: python scripts/prepare_runtime.py
+      - name: Exercise real services, backup restoration and PHP versions
+        run: cargo run --manifest-path src-tauri/Cargo.toml --example smoke --no-default-features --locked -- "$PWD/.runtime-work/macos-smoke"
+      - name: Build unsigned app and installer
+        run: |
+          npm exec --yes --package @tauri-apps/cli@2.12.2 -- tauri build --bundles app
+          sh scripts/package_macos.sh
+          mkdir -p artifacts/macos-installer
+          mv "artifacts/Fairway-XMP-${{ steps.metadata.outputs.version }}-arm64-unsigned.pkg" "artifacts/macos-installer/Fairway-XMP-${{ steps.metadata.outputs.version }}-macos-arm64-unsigned.pkg"
+      - name: Test actual installer, alpha upgrade and data-preserving removal
+        run: |
+          python scripts/fetch_installer_baseline.py macos --output .runtime-work/baseline-macos.pkg
+          cargo build --release --example installer_probe --manifest-path src-tauri/Cargo.toml --no-default-features --locked
+          python tests/installer_lifecycle.py --installer "artifacts/macos-installer/Fairway-XMP-${{ steps.metadata.outputs.version }}-macos-arm64-unsigned.pkg" --baseline .runtime-work/baseline-macos.pkg --probe src-tauri/target/release/examples/installer_probe --output .runtime-work/macos-lifecycle --allow-user-profile-changes
+      - name: Collect exact application and bundled-tool sources
+        run: |
+          python scripts/package_sources.py --locked
+          cp "artifacts/alpha-${{ steps.metadata.outputs.version }}/Fairway-XMP-${{ steps.metadata.outputs.version }}-bundled-tool-sources.tar.gz" artifacts/macos-installer/
+          git archive --format=tar.gz --output="artifacts/macos-installer/fairway-xmp-build-source.tar.gz" HEAD
+          cp LICENSE THIRD_PARTY_NOTICES.md runtime-manifest.json runtime-downloads.lock.json artifacts/macos-installer/
+          python scripts/release_candidate.py record --target macos-arm64 --directory artifacts/macos-installer --artifact fairway-macos-arm64-${{ steps.metadata.outputs.version }} --lifecycle .runtime-work/macos-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-macos-arm64.json
+      - uses: actions/upload-artifact@v6
+        with:
+          name: fairway-macos-arm64-${{ steps.metadata.outputs.version }}
+          path: artifacts/macos-installer/
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v6
+        with:
+          name: candidate-metadata-macos-arm64
+          path: artifacts/candidate-metadata/
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: macos-build-diagnostics
+          path: |
+            .runtime-work/macos-smoke/student data/logs/*.log
+            .runtime-work/macos-lifecycle/lifecycle.json
+          if-no-files-found: ignore
+          retention-days: 7

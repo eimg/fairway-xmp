@@ -1,0 +1,32 @@
+name: Browser UI review
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run test:ui
+      - name: Save visual review report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: ui-visual-review-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: warn
+          retention-days: 30
+
