@@ -149,6 +149,7 @@ export async function invoke<T>(command: string, args: Record<string, unknown> =
     }
     case 'remove_project':
       data.projects = data.projects.filter(item => item.domain !== args.domain);
+      if (!data.projects.some(item => item.https)) data.httpsTrusted = false;
       result = structuredClone(data); break;
     case 'sync_domains': syncDomains(); result = structuredClone(data); break;
     case 'set_project_https': {

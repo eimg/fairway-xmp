@@ -56,6 +56,20 @@ test('projects are added, edited, and removed explicitly', async ({ page }, info
   await expect(page.getByText('No projects yet.')).toBeVisible();
 });
 
+test('removing the last HTTPS project also removes certificate trust', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Remove Blog' }).click();
+  const blog = page.getByRole('dialog', { name: 'Remove Blog?' });
+  await expect(blog).not.toContainText('certificate trust');
+  await blog.getByRole('button', { name: 'Remove project' }).click();
+  await page.getByRole('button', { name: 'Remove My Shop' }).click();
+  const shop = page.getByRole('dialog', { name: 'Remove My Shop?' });
+  await expect(shop).toContainText('also removes its local certificate trust');
+  await shop.getByRole('button', { name: 'Remove project' }).click();
+  await expect(page.getByText('No projects yet.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove certificate trust' })).toHaveCount(0);
+});
+
 test('invalid project details stay in the form with an error', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Add project' }).click();

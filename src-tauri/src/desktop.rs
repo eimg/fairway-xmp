@@ -386,10 +386,22 @@ async fn remove_project(
 ) -> Result<Snapshot> {
     let _operation = begin_operation(&app, "Removing project…")?;
     let state = state.inner().clone();
-    access(state.clone(), move |m| m.remove_project(&domain)).await?;
+    let unused_trust = access(state.clone(), move |m| {
+        m.remove_project(&domain)?;
+        Ok(m.unused_trust()?.then(|| m.layout.clone()))
+    })
+    .await?;
     sync_hosts(state.clone())
         .await
         .map_err(|e| format!("The project was removed, but the hosts file was not updated: {e}"))?;
+    if let Some(layout) = unused_trust {
+        tauri::async_runtime::spawn_blocking(move || crate::tls::remove_trust(&layout))
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| {
+                format!("The project was removed, but certificate trust was not removed: {e}")
+            })?;
+    }
     access(state, |m| Ok(m.snapshot())).await
 }
 

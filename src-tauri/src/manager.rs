@@ -320,6 +320,12 @@ impl Manager {
         self.apply_projects(projects)
     }
 
+    /// Certificate trust that no project needs any more; removing a project cleans it up.
+    pub fn unused_trust(&self) -> Result<bool> {
+        Ok(crate::tls::trusted(&self.layout)
+            && !self.layout.registered_projects()?.iter().any(|p| p.https))
+    }
+
     pub fn domains(&self) -> Result<Vec<String>> {
         Ok(self
             .layout

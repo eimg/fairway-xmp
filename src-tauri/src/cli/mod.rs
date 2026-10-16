@@ -210,14 +210,18 @@ pub fn run() -> Result<()> {
     }
     let mut data = supervisor::call(&layout, &request)?;
     if command == "project" && args[1] != "https" {
-        let domains = layout
-            .registered_projects()?
-            .into_iter()
-            .map(|p| p.domain)
+        let projects = layout.registered_projects()?;
+        let domains = projects
+            .iter()
+            .map(|p| p.domain.clone())
             .collect::<Vec<_>>();
         crate::hosts::ensure(&domains, "__sync-hosts").map_err(|e| {
             format!("The hosts file was not updated: {e}. Retry with fairway project hosts.")
         })?;
+        if args[1] == "remove" && crate::tls::trusted(&layout) && !projects.iter().any(|p| p.https)
+        {
+            crate::tls::remove_trust(&layout)?;
+        }
         println!("Projects and the hosts file are up to date.");
         return Ok(());
     }
