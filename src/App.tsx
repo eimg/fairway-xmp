@@ -178,7 +178,8 @@ export default function App() {
   }
 
   function saveProject(form: ProjectForm) {
-    const { previous, domainEdited: _edited, error: _error, ...project } = form;
+    const { previous, name, domain, root, https, indexFallback } = form;
+    const project: ProjectConfig = { name, domain, root, https, indexFallback };
     void run('Saving project…', async () => {
       try {
         setData(await invoke<Snapshot>('save_project', { previous, project }));

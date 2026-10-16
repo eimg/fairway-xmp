@@ -137,6 +137,8 @@ export async function invoke<T>(command: string, args: Record<string, unknown> =
     case 'pick_folder': return joinPath(home(), 'Code', 'new-site', 'public') as T;
     case 'save_project': {
       const project = args.project as ProjectConfig;
+      // Match the backend's deny_unknown_fields so the form cannot send display-only fields.
+      if (Object.keys(project).sort().join() !== 'domain,https,indexFallback,name,root') throw new Error(`invalid args \`project\` for command \`save_project\`: ${Object.keys(project).join(', ')}`);
       const others = data.projects.filter(item => item.domain !== args.previous);
       if (!project.name.trim()) throw new Error('Enter a project name up to 80 characters.');
       if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(project.domain) || project.domain === 'fairway') throw new Error(`${project.domain}.test is not available. Use lowercase letters, numbers, and hyphens.`);
