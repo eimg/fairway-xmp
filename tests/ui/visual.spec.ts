@@ -29,7 +29,7 @@ test('projects are added, edited, and removed explicitly', async ({ page }, info
   await dialog.getByLabel('Name').fill('Course Site');
   await expect(dialog.getByLabel('Domain')).toHaveValue('course-site');
   await expect(dialog.getByRole('button', { name: 'Add project' })).toBeDisabled();
-  await dialog.getByRole('button', { name: 'Choose…' }).click();
+  await dialog.getByLabel('Web root folder').click();
   await expect(dialog.getByLabel('Web root folder')).toHaveValue(/new-site.public$/);
   await expect(dialog).toContainText('course-site.test in your computer’s hosts file');
   await dialog.getByLabel('Route missing paths to index.php').check();
