@@ -141,7 +141,7 @@ export async function invoke<T>(command: string, args: Record<string, unknown> =
       if (Object.keys(project).sort().join() !== 'domain,https,indexFallback,name,root') throw new Error(`invalid args \`project\` for command \`save_project\`: ${Object.keys(project).join(', ')}`);
       const others = data.projects.filter(item => item.domain !== args.previous);
       if (!project.name.trim()) throw new Error('Enter a project name up to 80 characters.');
-      if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(project.domain) || project.domain === 'fairway') throw new Error(`${project.domain}.test is not available. Use lowercase letters, numbers, and hyphens.`);
+      if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(project.domain)) throw new Error(`${project.domain}.test is not available. Use lowercase letters, numbers, and hyphens.`);
       if (others.some(item => item.domain === project.domain)) throw new Error(`${project.domain}.test is already used by another project.`);
       const saved = { ...project, available: true, domainReady: true };
       data.projects = args.previous ? data.projects.map(item => item.domain === args.previous ? saved : item) : [...data.projects, saved];

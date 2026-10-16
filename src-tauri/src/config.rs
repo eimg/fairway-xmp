@@ -94,7 +94,7 @@ pub fn validate_projects(projects: &[ProjectConfig]) -> Result<()> {
         if name.is_empty() || name.len() > 80 || name != project.name {
             return Err("Enter a project name up to 80 characters.".into());
         }
-        if !valid_project_name(&project.domain) || project.domain == "fairway" {
+        if !valid_project_name(&project.domain) {
             return Err(format!(
                 "{}.test is not available. Use lowercase letters, numbers, and hyphens.",
                 project.domain
@@ -635,7 +635,6 @@ mod tests {
         for invalid in [
             vec![project("", "shop", shop.clone(), false)],
             vec![project("Shop", "Shop", shop.clone(), false)],
-            vec![project("Shop", "fairway", shop.clone(), false)],
             vec![project("Shop", "shop", "relative".into(), false)],
             vec![
                 projects[0].clone(),
