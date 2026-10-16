@@ -40,12 +40,12 @@ jobs:
         with:
           workspaces: src-tauri
           key: windows-test-installer
+          cache-on-failure: true
       - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: npm run test:scripts
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --locked
-      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --locked
       - name: Record release version
         id: metadata
         run: |
@@ -59,18 +59,31 @@ jobs:
           } else {
             python scripts/prepare_runtime.py
           }
-      - name: Check Windows bundle size
-        run: |
-          $runtimeFiles = @(Get-ChildItem 'src-tauri/resources/runtime' -File -Recurse)
-          $bytes = ($runtimeFiles | Measure-Object -Property Length -Sum).Sum
-          Write-Host "Bundled runtime: $([math]::Round($bytes / 1MB, 1)) MiB"
-          $debugFiles = @($runtimeFiles | Where-Object { $_.FullName -match '[\\/]mysql[\\/]' -and $_.Extension -in '.pdb', '.lib' })
-          if ($debugFiles.Count -gt 0) { throw 'MySQL debug symbols or linker libraries remain in the bundle.' }
+      - name: Build native terminal test bridge
+        run: cargo build --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --example terminal_bridge --locked
+      - run: npx playwright install --only-shell chromium
+      - name: Exercise native terminal and data browser through browser input
+        env:
+          FAIRWAY_NATIVE_ONLY: '1'
+          FAIRWAY_TEST_RUNTIME: ${{ github.workspace }}/src-tauri/resources/runtime
+        run: npx playwright test tests/ui/terminal-native.spec.ts tests/ui/data-browser-native.spec.ts --project chromium --workers=1
+      - name: Save native desktop browser report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: native-desktop-windows-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Exercise real services, backups, and PATH cleanup
         run: |
           $root = Join-Path (Get-Location) '.runtime-work/windows-smoke'
           cargo run --manifest-path src-tauri/Cargo.toml --example smoke --no-default-features --locked -- $root
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Exercise native data browser and SQL export/import
+        run: cargo run --manifest-path src-tauri/Cargo.toml --example data_browser_smoke --no-default-features --locked -- .runtime-work/data-browser-smoke
       - name: Verify MySQL upgrade from alpha 1
         run: |
           $legacy = Join-Path (Get-Location) '.runtime-work/alpha1-runtime'
@@ -80,6 +93,14 @@ jobs:
           $current = Join-Path (Get-Location) 'src-tauri/resources/runtime'
           cargo run --manifest-path src-tauri/Cargo.toml --example smoke --no-default-features --locked -- $root $legacy $current
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
+      - name: Check Windows bundle size
+        run: |
+          $runtimeFiles = @(Get-ChildItem 'src-tauri/resources/runtime' -File -Recurse)
+          $bytes = ($runtimeFiles | Measure-Object -Property Length -Sum).Sum
+          Write-Host "Bundled runtime: $([math]::Round($bytes / 1MB, 1)) MiB"
+          $debugFiles = @($runtimeFiles | Where-Object { $_.FullName -match '[\\/]mysql[\\/]' -and $_.Extension -in '.pdb', '.lib' })
+          if ($debugFiles.Count -gt 0) { throw 'MySQL debug symbols or linker libraries remain in the bundle.' }
       - name: Build x64 NSIS installer
         run: npm exec --yes --package @tauri-apps/cli@2.12.2 -- tauri build --bundles nsis --target x86_64-pc-windows-msvc
       - name: Collect installer and checksums
@@ -89,12 +110,12 @@ jobs:
           $installers = @(Get-ChildItem 'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/*-setup.exe')
           if ($installers.Count -ne 1) { throw 'Expected exactly one Windows installer.' }
           $version = '${{ steps.metadata.outputs.version }}'
-          $filename = "Fairway-XMP-$version-windows-x64-setup.exe"
+          $filename = "fairway-xmp-$version-windows-x64-setup.exe"
           Copy-Item $installers[0].FullName (Join-Path $output $filename)
           Copy-Item runtime-downloads.lock.json, runtime-manifest.json, LICENSE, THIRD_PARTY_NOTICES.md $output
           $hash = Get-FileHash $installers[0].FullName -Algorithm SHA256
           "$($hash.Hash.ToLower())  $filename" | Set-Content "$output/SHA256SUMS.txt" -Encoding utf8
-          git archive --format=tar.gz --output="$output/fairway-xmp-build-source.tar.gz" HEAD
+          git archive --format=tar.gz --output="$output/fairway-xmp-$version-build-source.tar.gz" HEAD
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           @{
             version = $version
@@ -118,7 +139,7 @@ jobs:
           $installer = (Get-ChildItem 'artifacts/windows-installer/*-setup.exe').FullName
           python tests/installer_lifecycle.py --installer $installer --baseline .runtime-work/baseline-windows.exe --probe src-tauri/target/x86_64-pc-windows-msvc/release/examples/installer_probe.exe --output .runtime-work/windows-lifecycle --allow-user-profile-changes
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python scripts/release_candidate.py record --target windows-x64 --directory artifacts/windows-installer --artifact fairway-windows-x64-${{ steps.metadata.outputs.version }} --lifecycle .runtime-work/windows-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-windows-x64.json
+          python scripts/release_candidate.py record --target windows-x64 --directory artifacts/windows-installer --artifact fairway-xmp-windows-x64-${{ steps.metadata.outputs.version }} --lifecycle .runtime-work/windows-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-windows-x64.json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v6
         if: inputs.record_runtime_checksums != true
@@ -129,7 +150,7 @@ jobs:
           retention-days: 90
       - uses: actions/upload-artifact@v6
         with:
-          name: fairway-windows-x64-${{ steps.metadata.outputs.version }}
+          name: fairway-xmp-windows-x64-${{ steps.metadata.outputs.version }}
           path: artifacts/windows-installer/
           if-no-files-found: error
           retention-days: 90

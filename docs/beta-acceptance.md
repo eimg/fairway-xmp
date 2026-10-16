@@ -19,7 +19,7 @@ The final job runs only when every called workflow passes, including Linux's cle
 - `candidate-manifest.json`: source commit, application/runtime versions, artifact names, exact file SHA256/size, installed lifecycle results, signing status, and known limitations.
 - `acceptance-template.json`: checks still requiring a person, bound to each exact installer's hash. All checks start false.
 
-Installers remain in their platform artifacts in the same workflow run. Mac's artifact also contains the combined Mac/Windows bundled-tool source archive. Linux's corresponding sources are in `fairway-linux-x86_64-sources`; download that artifact alongside the Linux installer artifact when verifying its file inventory.
+Installers remain in their platform artifacts in the same workflow run. Mac's artifact also contains the combined Mac/Windows bundled-tool source archive. Linux's corresponding sources are in `fairway-xmp-linux-x86_64-VERSION-sources`; download that artifact alongside the Linux installer artifact when verifying its file inventory.
 
 ## Review the candidate
 
@@ -39,7 +39,9 @@ For this candidate, perform a short native check on the supported target OS. Rec
 2. **Upgrade with existing work:** retain a small project, database rows, backup, ports, and PHP selection across alpha → candidate installation. Try a supported alternative PHP version and reopen the app.
 3. **Uninstall and reinstall:** choose the default keep-data behavior; reinstall and open the same project/database. Confirm unrelated PHP/MySQL installations and shell settings still work.
 4. **Desktop native controls:** close/reopen the window, use the tray/menu bar, and Quit while an operation is pending. Verify services shut down and no error is hidden. For Linux, review dashboard rendering, `q` detach, and `Q` shutdown instead.
-5. **Desktop visual review:** inspect the same commit's browser screenshots and briefly check the installed app for native WebView differences.
+5. **Desktop data browser and SQL tools:** start MySQL from Data browser, create a database/table, insert/edit/delete a row, check NULL and large numeric values, execute/cancel SQL, export a database and import it using `fairway db`. Confirm a protective backup is created before a destructive schema change. Try a home/project path with spaces and non-ASCII characters.
+6. **Desktop terminal sessions and cleanup:** run PHP and Composer without persistent PATH integration, keep a development server in one tab while working in the other, interrupt it with Ctrl+C, change the new-terminal project folder, search/resize, navigate away and return, then Quit and confirm both shell command trees have ended. On Mac also check command history opt-out in new sessions; Windows uses in-session history.
+7. **Desktop visual review:** inspect the same commit's browser screenshots and briefly check the installed app for native WebView differences.
 
 Set a check to true only after it passed for the exact artifact. Preserve notes/screenshots of failures separately and rebuild after a code/runtime change; old acceptance does not apply to the new hash.
 

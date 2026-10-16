@@ -6,6 +6,44 @@ if [ "$USER_NAME" = root ] || [ "$USER_NAME" = loginwindow ]; then
   echo 'Install Fairway XMP from a logged-in student account.' >&2
   exit 1
 fi
+
+USER_ID=$(/usr/bin/id -u "$USER_NAME")
+USER_HOME=$(/usr/bin/sudo -u "$USER_NAME" -H /usr/bin/printenv HOME)
+DATA="$USER_HOME/Library/Application Support/dev.fairway.environment"
+
+pid_alive() {
+  [ -n "${1:-}" ] || return 1
+  /bin/kill -0 "$1" 2>/dev/null
+}
+
+read_pid() {
+  [ -f "$1" ] || return 0
+  /usr/bin/tr -d '[:space:]' < "$1"
+}
+
+# The installed app and a build copy share this data folder and bundle id.
+app_running() {
+  pid_alive "$(read_pid "$DATA/app.pid")" && return 0
+  /usr/bin/pgrep -f '/Applications/Fairway XMP.app/Contents/MacOS/fairway' >/dev/null 2>&1
+}
+
+# Quit uses the app's existing menu-bar path, which stops MySQL, Nginx, and PHP first.
+if app_running; then
+  echo 'Quitting Fairway XMP so the update can replace it.'
+  /bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$USER_NAME" \
+    /usr/bin/osascript -e 'tell application id "dev.fairway.environment" to quit' >/dev/null 2>&1 &
+  i=0
+  while [ "$i" -lt 60 ]; do
+    app_running || break
+    /bin/sleep 1
+    i=$((i + 1))
+  done
+  if app_running; then
+    echo 'Fairway XMP is still running. Quit it from the menu bar, then run the installer again. Your projects and databases were not changed.' >&2
+    exit 1
+  fi
+fi
+
 if [ -x "$APP" ]; then
   /usr/bin/sudo -u "$USER_NAME" -H "$APP" --prepare-uninstall
 fi

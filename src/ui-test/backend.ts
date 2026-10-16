@@ -1,5 +1,7 @@
 import { preview } from '../bridge';
+import { terminalRequest } from './terminal';
 import type { Ports, ServiceId, Snapshot } from '../types';
+import { cancelData, databaseRequest, resetData } from './data-browser';
 
 // Fixture modules own event subscriptions and state. Reload them together so
 // Fast Refresh cannot keep a screen subscribed to an obsolete simulation.
@@ -51,6 +53,7 @@ function running(id: ServiceId, value: boolean) {
 }
 
 export function select(next: Scenario, os: Platform) {
+  resetData();
   scenario = next; platform = os;
   data = { ...structuredClone(preview), ...paths(), runtimeReady: next !== 'Missing runtime', pathInstalled: true };
   data.projects = [
@@ -80,7 +83,15 @@ export function listen(event: string, callback: (payload: unknown) => void) {
 }
 
 export async function invoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
+  if (command.startsWith('terminal_')) return terminalRequest(command, args, data.documentRoot, data.phpVersions[data.phpVersion], data.runtimeReady) as T;
   if (command === 'snapshot') return structuredClone(data) as T;
+  if (command === 'cancel_data_browser') { cancelData(String(args.id)); return undefined as T; }
+  if (command === 'data_browser') {
+    if (!data.services.find(service => service.id === 'mysql')?.ready) throw new Error('Start MySQL before browsing data.');
+    emit('fairway-operation-started', 'Working with database…');
+    try { return structuredClone(await databaseRequest(String(args.id), args.request as Record<string, unknown>)) as T; }
+    finally { emit('fairway-operation-finished', null); }
+  }
   // Keep pending states visible for human review, and preserve the app's operation guard.
   await new Promise(resolve => window.setTimeout(resolve, 600));
   let result: unknown;

@@ -80,7 +80,7 @@ impl Manager {
                 if process::matches_database(
                     pid,
                     &manager.layout.exe("mysql", "mysqld"),
-                    &manager.layout.data.join("config/mysql.cnf"),
+                    &crate::config::mysql_path(&manager.layout.data.join("config/mysql.cnf")),
                 ) {
                     manager
                         .processes
@@ -510,7 +510,7 @@ impl Manager {
                 let mut cmd = process::command(self.layout.exe("mysql", "mysqld"));
                 cmd.arg(format!(
                     "--defaults-file={}",
-                    self.layout.data.join("config/mysql.cnf").display()
+                    crate::config::mysql_path(&self.layout.data.join("config/mysql.cnf")).display()
                 ));
                 #[cfg(windows)]
                 cmd.arg("--console");
@@ -557,6 +557,13 @@ impl Manager {
 
     fn initialize_database(&self) -> Result<()> {
         let data = self.layout.data.join("mysql");
+        #[cfg(windows)]
+        if [&data, &self.layout.runtime.join("mysql")]
+            .iter()
+            .any(|path| !crate::config::mysql_path_supported(path))
+        {
+            return Err("MySQL cannot use this Windows path: it is not representable in the Windows ANSI code page and no compatible short-name alias is available. Existing data has been kept. See the Windows path guidance in the data browser documentation.".into());
+        }
         if data.join("mysql").exists() {
             return Ok(());
         }
@@ -570,7 +577,7 @@ impl Manager {
         let mut cmd = process::command(self.layout.exe("mysql", "mysqld"));
         cmd.arg(format!(
             "--defaults-file={}",
-            self.layout.data.join("config/mysql.cnf").display()
+            crate::config::mysql_path(&self.layout.data.join("config/mysql.cnf")).display()
         ))
         .arg("--initialize-insecure");
         process::output(cmd)?;
@@ -585,7 +592,7 @@ impl Manager {
         if secure {
             cmd.arg(format!(
                 "--defaults-file={}",
-                self.layout.data.join("config/admin.cnf").display()
+                crate::config::mysql_path(&self.layout.data.join("config/admin.cnf")).display()
             ));
         } else {
             cmd.arg("--no-defaults").args([

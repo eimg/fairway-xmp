@@ -87,7 +87,7 @@ class CandidateTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = root / 'windows'; output.mkdir()
-            installer = output / 'Fairway-XMP-0.1.0-beta.1-windows-x64-setup.exe'
+            installer = output / 'fairway-xmp-0.1.0-beta.1-windows-x64-setup.exe'
             installer.write_bytes(b'exact installed artifact')
             runtime = {'php': '8.5.11'}
             candidate.write(root / 'runtime-manifest.json', runtime)

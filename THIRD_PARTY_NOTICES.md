@@ -12,6 +12,8 @@ Fairway XMP bundles independently licensed software. The Fairway XMP application
 | Tauri | MIT / Apache 2.0; https://github.com/tauri-apps/tauri |
 | React | MIT; https://github.com/facebook/react |
 | Lucide | ISC; https://github.com/lucide-icons/lucide |
+| xterm.js, Fit and Search addons | MIT; https://github.com/xtermjs/xterm.js |
+| portable-pty | MIT; https://github.com/wezterm/wezterm/tree/main/pty |
 
 Runtime staging retains upstream license, notice, and copying files under `runtime/licenses` and within component directories. Microsoft Visual C++ and WebView2 are separately licensed prerequisites and remain on uninstall if shared with other applications.
 

@@ -35,7 +35,7 @@ def package():
     (stage / 'BUILD').write_text(build + '\n')
     output = ROOT / 'artifacts/linux-installer'
     output.mkdir(parents=True, exist_ok=True)
-    stem = f'Fairway-XMP-{app_version}-linux-x86_64'
+    stem = f'fairway-xmp-{app_version}-linux-x86_64'
     archive = output / (stem + '.tar.gz')
     with tarfile.open(archive, 'w:gz', compresslevel=6) as bundle:
         bundle.add(stage, arcname='fairway-xmp')
@@ -61,12 +61,12 @@ __FAIRWAY_ARCHIVE_BELOW__
     source_stage = ROOT / '.runtime-work/linux-source-package'
     if source_stage.exists(): shutil.rmtree(source_stage)
     source_stage.mkdir()
-    subprocess.run(['git', 'archive', '--format=tar.gz', f'--output={source_stage / "fairway-build-source.tar.gz"}', 'HEAD'], cwd=ROOT, check=True)
+    subprocess.run(['git', 'archive', '--format=tar.gz', f'--output={source_stage / "fairway-xmp-build-source.tar.gz"}', 'HEAD'], cwd=ROOT, check=True)
     shutil.copytree(ROOT / '.runtime-work/linux-sources', source_stage / 'runtime-sources')
     for file in ('runtime-linux-downloads.lock.json', 'runtime-manifest.json', 'THIRD_PARTY_NOTICES.md'):
         shutil.copy2(ROOT / file, source_stage / file)
     with tarfile.open(source, 'w:gz', compresslevel=1) as bundle:
-        bundle.add(source_stage, arcname='fairway-sources')
+        bundle.add(source_stage, arcname='fairway-xmp-sources')
     hashes = {file.name: hashlib.file_digest(file.open('rb'), 'sha256').hexdigest() for file in (installer, archive, source)}
     (output / 'SHA256SUMS.txt').write_text(''.join(f'{sha}  {name}\n' for name, sha in hashes.items()))
     (output / 'build-info.json').write_text(json.dumps({'version': app_version, 'commit': commit, 'target': 'x86_64-unknown-linux-gnu', 'minimumGlibc': '2.35', 'runtime': version, 'sha256': hashes, 'run': os.environ.get('GITHUB_SERVER_URL', '') + '/' + os.environ.get('GITHUB_REPOSITORY', '') + '/actions/runs/' + os.environ.get('GITHUB_RUN_ID', '')}, indent=2) + '\n')

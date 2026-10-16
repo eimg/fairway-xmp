@@ -1,0 +1,28 @@
+name: Publish unsigned beta 1
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Upload the tested candidate artifacts without rebuilding
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FAIRWAY_RUN_ID: '38699450419'
+          FAIRWAY_TAG: v0.1.0-beta.1
+          FAIRWAY_SHA: f3cf84da6270038274590860db00c58eda2f1df6
+        run: python scripts/publish_unsigned_release.py

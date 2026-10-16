@@ -1,13 +1,17 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { Activity, lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowDownToLine, ArrowUpRight, Check, ChevronDown, ChevronRight, CircleHelp, Clipboard, Code2,
   Database, Download, ExternalLink, FolderOpen, Globe, Leaf, LoaderCircle, Play,
-  RefreshCw, ScrollText, Settings2, ShieldCheck, Square, Terminal, X,
+  RefreshCw, ScrollText, Settings2, Square, Terminal, X,
 } from 'lucide-react';
 import { canControl, invoke, isDesktop, isUiTest, listen, preview } from './bridge';
 import type { Ports, ServiceId, ServiceStatus, Snapshot, UpdateInfo } from './types';
+import HelpTip from './HelpTip';
+import DataBrowser from './data/DataBrowser';
 
 const UiTestToolbar = isUiTest ? lazy(() => import('./ui-test/Toolbar')) : null;
+const TerminalPage = lazy(() => import('./TerminalPage'));
+const dataBrowserAvailable = isUiTest || isDesktop;
 
 const meta = {
   nginx: { name: 'Nginx', description: 'Your local web server', icon: Globe, version: 'nginx', color: 'green' },
@@ -16,7 +20,7 @@ const meta = {
   phpmyadmin: { name: 'phpMyAdmin', description: 'Manage tables and data', icon: Database, version: 'phpmyadmin', color: 'orange' },
 } as const;
 
-type View = 'environment' | 'settings' | 'updates';
+type View = 'environment' | 'settings' | 'updates' | 'data' | 'terminal';
 type Notice = { text: string; kind: 'error' | 'success' } | null;
 
 function message(error: unknown): string {
@@ -26,9 +30,12 @@ function message(error: unknown): string {
 export default function App() {
   const [data, setData] = useState<Snapshot>(preview);
   const [view, setView] = useState<View>('environment');
+  const [terminalOpened, setTerminalOpened] = useState(false);
+  const [terminalFocus, setTerminalFocus] = useState(0);
   const [localBusy, setBusy] = useState<string | null>(null);
   const [backendBusy, setBackendBusy] = useState<string | null>(null);
   const busy = backendBusy ?? localBusy;
+  const databaseBusy = backendBusy === 'Working with database…';
   const [notice, setNotice] = useState<Notice>(null);
   const [report, setReport] = useState<string | null>(null);
   const [log, setLog] = useState<{ service: ServiceId; text: string } | null>(null);
@@ -45,6 +52,20 @@ export default function App() {
   const allReady = data.services.every(service => service.ready);
   const anyRunning = data.services.some(service => service.running);
   const usable = canControl && data.runtimeReady && !busy;
+  const databaseCliAvailable = isDesktop || isUiTest;
+  const cliTools = databaseCliAvailable ? 'PHP, Composer, and database commands' : 'PHP and Composer commands';
+
+  useEffect(() => {
+    const key = (event: KeyboardEvent) => {
+      if (!event.ctrlKey || event.altKey || event.metaKey || event.code !== 'Backquote') return;
+      if (document.querySelector('[aria-modal="true"]')) return;
+      event.preventDefault(); event.stopPropagation();
+      if (busy && !terminalOpened) return;
+      setTerminalOpened(true); setView('terminal'); setTerminalFocus(value => value + 1);
+    };
+    document.addEventListener('keydown', key, true);
+    return () => document.removeEventListener('keydown', key, true);
+  }, [busy, terminalOpened]);
 
   const refresh = useCallback(async () => {
     if (!canControl || operation.current) return;
@@ -115,6 +136,7 @@ export default function App() {
   }
 
   function open(target: string) {
+    if (target === 'terminal') { setTerminalOpened(true); setView('terminal'); setTerminalFocus(value => value + 1); return; }
     void run('Opening…', () => invoke<void>('open_target', { target }));
   }
 
@@ -136,28 +158,30 @@ export default function App() {
       <a className="brand" href="#" onClick={event => { event.preventDefault(); setView('environment'); }} aria-label="Fairway XMP home">
         <span className="brand-mark"><Leaf size={23} strokeWidth={2.2} /></span><span className="brand-name">fairway<span className="brand-period">.</span><span className="brand-edition">XMP</span></span>
       </a>
-      <div className="sidebar-label">DEVELOPMENT ENVIRONMENT</div>
       <nav aria-label="Main navigation">
         <button className={view === 'environment' ? 'nav-item active' : 'nav-item'} onClick={() => setView('environment')}><Globe size={18} />Environment</button>
+        {dataBrowserAvailable && <button className={view === 'data' ? 'nav-item active' : 'nav-item'} disabled={!!busy && !databaseBusy} onClick={() => setView('data')}><Database size={18} />Data browser</button>}
+        <button className={view === 'terminal' ? 'nav-item active' : 'nav-item'} title="Terminal (Ctrl+`)" disabled={!!busy && !terminalOpened} onClick={() => open('terminal')}><Terminal size={18} />Terminal</button>
         <button className={view === 'settings' ? 'nav-item active' : 'nav-item'} onClick={() => setView('settings')}><Settings2 size={18} />Settings</button>
         <button className={view === 'updates' ? 'nav-item active' : 'nav-item'} onClick={() => setView('updates')}><ArrowDownToLine size={18} />Updates</button>
       </nav>
       <div className="sidebar-bottom">
-        <div className="local-badge"><ShieldCheck size={16} /><div>Made for local learning<span>Everything stays on your computer</span></div></div>
         <button className="help-button" onClick={() => setHelp(true)}><CircleHelp size={17} />Getting started<ArrowUpRight size={14} /></button>
-        <div className="sidebar-footer">FAIRWAY XMP <span>v{data.version}</span></div>
+        <div className="sidebar-footer" aria-label="App version">v{data.version}</div>
       </div>
     </aside>
 
     <main>
-      <header className="topbar"><span>Workspace <ChevronRight size={13} />{view === 'environment' ? 'Environment' : view === 'settings' ? 'Settings' : 'Updates'}</span><span className="local-pill"><span />Local environment</span></header>
+      <header className="topbar"><span>Workspace <ChevronRight size={13} />{view === 'environment' ? 'Environment' : view === 'settings' ? 'Settings' : view === 'data' ? 'Data browser' : view === 'terminal' ? 'Terminal' : 'Updates'}</span><span className="local-pill"><span />Local environment</span></header>
       <div className="main-content">
         {UiTestToolbar && <Suspense fallback={null}><UiTestToolbar busy={!!busy} /></Suspense>}
         {!isDesktop && !isUiTest && <div className="preview-banner"><Code2 size={16} />Interface preview — open the desktop app to manage services.</div>}
         {notice && <div className={`notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}><span>{notice.text}</span><button aria-label="Dismiss message" onClick={() => setNotice(null)}><X size={17} /></button></div>}
+        {terminalOpened && <div hidden={view !== 'terminal'}><Suspense fallback={<p>Loading terminal…</p>}><TerminalPage active={view === 'terminal'} busy={!!busy} focusRequest={terminalFocus} /></Suspense></div>}
+        {dataBrowserAvailable && <Activity mode={view === 'data' ? 'visible' : 'hidden'}><DataBrowser ready={data.services.some(service => service.id === 'mysql' && service.ready)} busy={!!busy && !databaseBusy} start={() => serviceAction('start', 'mysql')} open={open} /></Activity>}
 
         {view === 'environment' && <>
-          <div className="page-heading"><div><div className="eyebrow">YOUR LOCAL WORKSPACE</div><h1>Ready when you are.</h1><p>Everything you need to build with PHP, in one place.</p></div><button className="primary" disabled={anyRunning ? !canControl || !!busy : !usable} onClick={() => serviceAction(anyRunning ? 'stop_all' : 'start_all')}>{busy ? <LoaderCircle className="spin" size={16} /> : anyRunning ? <Square size={14} /> : <Play size={15} fill="currentColor" />}{anyRunning ? 'Stop all' : 'Start all'}</button></div>
+          <div className="page-heading"><div><h1>Ready when you are.</h1><p>Everything you need to build with PHP, in one place.</p></div><button className="primary" disabled={anyRunning ? !canControl || !!busy : !usable} onClick={() => serviceAction(anyRunning ? 'stop_all' : 'start_all')}>{busy ? <LoaderCircle className="spin" size={16} /> : anyRunning ? <Square size={14} /> : <Play size={15} fill="currentColor" />}{anyRunning ? 'Stop all' : 'Start all'}</button></div>
           <div className="section-heading"><h2>Services <span>4</span></h2><span className="stack-status"><span className={`status-dot ${allReady ? 'running' : ''}`} />{allReady ? 'All services ready' : anyRunning ? 'Environment partially running' : 'All services stopped'}</span></div>
           <div className="services-grid">{(['nginx', 'php', 'mysql', 'phpmyadmin'] as ServiceId[]).map(id => {
             const service = data.services.find(s => s.id === id)!;
@@ -183,13 +207,13 @@ export default function App() {
 
           <div className="bottom-grid">
             <section className="connection-card"><div className="card-title"><h2><Database size={17} />Database connection</h2><button className="icon-button" title="Copy database environment settings" aria-label="Copy database environment settings" onClick={() => { void copy(connection, 'database'); }}>{copied === 'database' ? <Check size={16} /> : <Clipboard size={16} />}</button></div><dl><div><dt>Host</dt><dd>127.0.0.1<span className="port-inline">:{data.ports.mysql}</span></dd></div><div><dt>Database</dt><dd>fairway</dd></div><div><dt>Username / password</dt><dd>fairway / fairway</dd></div></dl><button className="text-link" disabled={!data.services.find(s => s.id === 'mysql')?.ready || !!busy} onClick={() => { void run('Backing up databases…', async () => { const path = await invoke<string>('backup_database'); setNotice({ kind: 'success', text: `Database backup saved: ${path}` }); }); }}><Download size={14} />Back up databases</button></section>
-            <section className="terminal-card"><span className="terminal-symbol"><Terminal size={20} /></span><h2>Keep your usual workflow.</h2><p>PHP and Composer, ready in your terminal.<br />Your code. Your editor. Your pace.</p><button className="secondary" disabled={!canControl || !data.pathInstalled || !!busy} onClick={() => open('terminal')}>Open terminal<ArrowUpRight size={15} /></button></section>
+            <section className="terminal-card"><span className="terminal-symbol"><Terminal size={20} /></span><h2>Your tools, right here.</h2><p>Run PHP and Composer in the embedded terminal.<br />Ready in your coursework folder.</p><button className="secondary" disabled={!canControl || !data.runtimeReady || !!busy} onClick={() => open('terminal')}>Open terminal<ChevronRight size={15} /></button></section>
           </div>
           <footer className="content-footer"><span><span className="status-dot running" />127.0.0.1 · Local access only</span><button onClick={() => setView('settings')}>Configure environment<Settings2 size={13} /></button></footer>
         </>}
 
         {view === 'settings' && <>
-          <div className="page-heading"><div><div className="eyebrow">MAKE IT YOURS</div><h1>Environment settings.</h1><p>Predictable defaults, with room to adjust.</p></div></div>
+          <div className="page-heading"><div><h1>Environment settings.</h1><p>Predictable defaults, with room to adjust.</p></div></div>
           <section className="settings-card"><h2>Service Settings</h2><p>Stop all services before changing ports or PHP. Saved settings stay the same across restarts.</p>
             <form onSubmit={event => { event.preventDefault(); void run('Saving settings…', async () => {
               const mysqlPortChanged = ports.mysql !== data.ports.mysql;
@@ -206,17 +230,16 @@ export default function App() {
             </form>
           </section>
           <section className="settings-card cli-tools" aria-label="Command-line tools">
-            <div className="card-title"><h2>Command-line tools</h2><span className={`status-label ${data.pathInstalled ? 'ready' : ''}`}>{data.pathInstalled ? 'Added to PATH' : 'Not added to PATH'}</span></div>
-            <p>{data.pathInstalled ? 'Fairway XMP’s PHP and Composer commands are installed. Open a new terminal or restart VS Code to use them.' : 'Add Fairway XMP’s PHP and Composer to your user PATH to use them in your terminal and editor.'}</p>
-            {data.pathInstalled && <dl className="path-list cli-paths"><div><dt>PHP command</dt><dd>{data.cliPhp ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div><div><dt>Composer command</dt><dd>{data.cliComposer ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div></dl>}
-            {data.pathInstalled && <p className="settings-hint">Check in a new terminal: <code>php --version</code> and <code>composer --version</code>.</p>}
+            <div className="card-title"><h2>Command-line tools</h2><div className="cli-title-actions"><HelpTip label="Command-line tools help"><p>Open a new terminal or restart VS Code after enabling these tools.</p><p>Check with <code>php --version</code>, <code>composer --version</code>{databaseCliAvailable && <>, and <code>fairway db --help</code></>}.</p>{databaseCliAvailable && <p>Database tools support SQL export/import. Start MySQL for database operations. If fairway is missing after an upgrade, disable and enable these tools once.</p>}<p>App detection can differ from your terminal. “Open terminal” uses Fairway XMP’s commands.</p></HelpTip><span className={`status-label ${data.pathInstalled ? 'ready' : ''}`}>{data.pathInstalled ? 'Added to PATH' : 'Not added to PATH'}</span></div></div>
+            <p>{data.pathInstalled ? 'Available in new terminals and restarted editors.' : 'Add these commands to your user PATH.'}</p>
+            <div className="cli-commands" aria-label="Terminal commands"><code>php</code><code>composer</code>{databaseCliAvailable && <code>fairway db</code>}</div>
             <button className="secondary" disabled={!canControl || !!busy || (!data.pathInstalled && !data.runtimeReady)} onClick={() => { void run('Updating user PATH…', async () => {
               const enabled = !data.pathInstalled;
               setData(await invoke<Snapshot>('cli_integration', { enabled }));
-              setNotice({ kind: 'success', text: enabled ? 'PHP and Composer added to your user PATH. Open a new terminal or restart VS Code.' : 'Fairway XMP’s commands removed from your user PATH. Open a new terminal or restart VS Code.' });
-            }); }}>{data.pathInstalled ? 'Remove from user PATH' : 'Enable PHP and Composer'}</button>
-            <details className="cli-diagnostics"><summary>Command detection details</summary>
-              <p>These commands were detected in the app’s PATH, which can differ from your terminal. A missing or different command here does not change Fairway XMP’s installed commands. “Open terminal” uses Fairway XMP’s PHP and Composer.</p>
+              setNotice({ kind: 'success', text: enabled ? `${cliTools} added to your user PATH. Open a new terminal or restart VS Code.` : 'Fairway XMP’s commands removed from your user PATH. Open a new terminal or restart VS Code.' });
+            }); }}>{data.pathInstalled ? 'Remove from user PATH' : 'Enable command-line tools'}</button>
+            <details className="cli-diagnostics"><summary>Command details</summary>
+              {data.pathInstalled && <dl className="path-list cli-paths"><div><dt>PHP command</dt><dd>{data.cliPhp ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div><div><dt>Composer command</dt><dd>{data.cliComposer ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div>{databaseCliAvailable && <div><dt>Database commands</dt><dd>fairway db</dd></div>}</dl>}
               <dl className="path-list"><div><dt>PHP detected by this app</dt><dd>{data.pathPhp ?? 'Not detected in the app’s PATH'}</dd></div><div><dt>Composer detected by this app</dt><dd>{data.pathComposer ?? 'Not detected in the app’s PATH'}</dd></div></dl>
             </details>
           </section>
@@ -225,7 +248,7 @@ export default function App() {
         </>}
 
         {view === 'updates' && <>
-          <div className="page-heading"><div><div className="eyebrow">KEEP YOUR TOOLS CURRENT</div><h1>A dependable environment.</h1><p>Find new versions of Fairway XMP and your bundled tools.</p></div></div>
+          <div className="page-heading"><div><h1>A dependable environment.</h1><p>Find new versions of Fairway XMP and your bundled tools.</p></div></div>
           <section className="settings-card"><div className="card-title"><h2>Fairway XMP {data.version}</h2><span className="status-label">Installed version</span></div><div className="runtime-list">{['php', 'nginx', 'mysql', 'phpmyadmin', 'composer'].map(name => <div key={name}><span>{name === 'php' ? 'PHP' : name === 'mysql' ? 'MySQL' : name === 'phpmyadmin' ? 'phpMyAdmin' : name === 'nginx' ? 'Nginx' : 'Composer'}</span><code>{name === 'php' ? selectedPhp ?? 'Unavailable' : versions?.[name] ?? 'Unavailable'}</code></div>)}</div><p>{update?.configured ? 'Updates preserve your projects and database data. Fairway XMP backs up student databases and stops services before installing an update.' : 'Download a newer installer from View downloads. Back up your databases, stop all services, and quit Fairway XMP before installing. Your projects and database data are kept.'}</p><div className="button-row update-actions"><button className="primary" disabled={!canControl || !!busy} onClick={() => { void run('Checking for updates…', async () => {
             const result = await invoke<UpdateInfo>('check_update'); setUpdate(result);
             if (result.configured && !result.version) setNotice({ kind: 'success', text: 'You’re using the latest available release.' });
@@ -237,7 +260,7 @@ export default function App() {
           </section>
         </>}
       </div>
-      {busy && <div className="operation-status" role="status"><LoaderCircle className="spin" size={16} />{busy}</div>}
+      {busy && !databaseBusy && <div className="operation-status" role="status"><LoaderCircle className="spin" size={16} />{busy}</div>}
     </main>
 
     {report !== null && <Modal title="Diagnostic report" onClose={() => setReport(null)}><p>Copy this report when asking for help. You can review everything included below.</p><pre className="log-output">{report}</pre><button className="secondary" onClick={() => { void copy(report, 'diagnostics'); }}>{copied === 'diagnostics' ? <Check size={14} /> : <Clipboard size={14} />}{copied === 'diagnostics' ? 'Copied' : 'Copy diagnostic report'}</button></Modal>}

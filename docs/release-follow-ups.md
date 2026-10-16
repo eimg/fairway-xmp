@@ -2,7 +2,7 @@
 
 PR #1 was merged as `2114689`. The simpler Advanced settings dropdown, selected-runtime Linux recovery, Windows ZIP configuration, settings rollback, and regression tests are implemented. Repository Mac/Windows checks passed; native Windows/Linux validation exercised all six PHP versions, including Linux recovery and shutdown.
 
-The remaining work is for the next release. The published alpha 3 installers contain PHP 8.5 only, so these follow-ups do not require changing that release.
+Beta 1 is published. The Windows PHP 8.0/8.1 provenance work below remains open and is disclosed with that release. It does not require changing the published beta 1 files.
 
 ## Legacy PHP scope for beta
 
@@ -37,13 +37,13 @@ If an exact mapping cannot be established, use a verifiable runtime input or def
 - [ ] Confirm Save changes the PHP card and selected web/CLI/Composer runtime, and the selection persists after Quit and reopen.
 - [ ] Confirm the normal start/stop, close-window, menu-bar, and Quit experience remains straightforward.
 
-A local Mac test installer was prepared from `2114689`; the release owner is testing it. Automated runtime and build checks passed, but visual-test results have not been recorded yet. See [the PHP testing guide](testing-php-versions.md) for the commands.
+The release owner tested the Mac beta 1 installer on 2026-10-15 and authorized publication. These three visual checks were not recorded individually. See [the PHP testing guide](testing-php-versions.md) for the commands.
 
 ## Publish the feature in a new release
 
-- [ ] Choose a new release label and use installers that actually include the merged PHP-selection behavior. The existing alpha 3 downloads cannot provide this feature.
-- [ ] Confirm each candidate's source/runtime matches its validation results; retain the exact tested files and record original commits, hashes, and embedded versions when reusing them.
-- [ ] Complete the Windows source verification above before shipping the older runtimes; include the matching Mac/Windows and Linux source archives beside the binaries.
-- [ ] Update README downloads and the Linux PHP-version instructions to match the new release's capabilities.
+- [x] Publish `v0.1.0-beta.1` from candidate run 38699450419, commit `f3cf84da6270038274590860db00c58eda2f1df6`. The installers include PHP version selection and report `0.1.0-beta.1`.
+- [x] Upload those candidate files unchanged. `BUILD-INFO.json` records the commit, run, and hashes.
+- [ ] Keep the Windows PHP 8.0/8.1 provenance item above open. Beta 1 discloses it and ships the matching Mac/Windows and Linux source archives beside the binaries.
+- [x] Update README downloads and the Linux PHP-version instructions for beta 1.
 
 See [Contributing](../CONTRIBUTING.md#publishing-a-release) for packaging and publication. Signing/notarization requirements for stable releases remain described there.

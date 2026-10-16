@@ -11,6 +11,8 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     timeout-minutes: 90
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -28,7 +30,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential autoconf bison re2c pkg-config patchelf libxml2-dev libssl-dev libcurl4-openssl-dev libsqlite3-dev libonig-dev libzip-dev libsodium-dev libicu-dev libpng-dev libjpeg-dev libwebp-dev libfreetype6-dev libpcre2-dev zlib1g-dev libaio1 libnuma1 libncurses5
       - name: Verify application version consistency
-        run: python scripts/release_candidate.py version
+        id: metadata
+        run: |
+          version=$(python scripts/release_candidate.py version)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "$version"
       - name: Packaging tests
         run: python -m unittest discover -s tests -v
       - name: Rust format, tests and lint
@@ -64,8 +70,8 @@ jobs:
       - name: Test installed CLI, alpha upgrade, supervisor and terminal dashboard
         run: |
           python scripts/fetch_installer_baseline.py linux --output .runtime-work/baseline-linux.run
-          python tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-*-linux-x86_64.run --baseline .runtime-work/baseline-linux.run --report .runtime-work/linux-lifecycle/lifecycle.json
-          python scripts/release_candidate.py record --target linux-x86_64 --directory artifacts/linux-installer --artifact fairway-linux-x86_64 --lifecycle .runtime-work/linux-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-linux-x86_64.json
+          python tests/linux_cli_smoke.py artifacts/linux-installer/fairway-xmp-*-linux-x86_64.run --baseline .runtime-work/baseline-linux.run --report .runtime-work/linux-lifecycle/lifecycle.json
+          python scripts/release_candidate.py record --target linux-x86_64 --directory artifacts/linux-installer --artifact fairway-xmp-linux-x86_64-${{ steps.metadata.outputs.version }} --lifecycle .runtime-work/linux-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-linux-x86_64.json
       - uses: actions/upload-artifact@v6
         with:
           name: candidate-metadata-linux-x86_64
@@ -74,10 +80,10 @@ jobs:
           retention-days: 90
       - uses: actions/upload-artifact@v6
         with:
-          name: fairway-linux-x86_64
+          name: fairway-xmp-linux-x86_64-${{ steps.metadata.outputs.version }}
           path: |
             artifacts/linux-installer/*.run
-            artifacts/linux-installer/Fairway-XMP-*-x86_64.tar.gz
+            artifacts/linux-installer/fairway-xmp-*-x86_64.tar.gz
             artifacts/linux-installer/SHA256SUMS.txt
             artifacts/linux-installer/build-info.json
             artifacts/linux-installer/candidate-info.json
@@ -85,7 +91,7 @@ jobs:
           retention-days: 90
       - uses: actions/upload-artifact@v6
         with:
-          name: fairway-linux-x86_64-sources
+          name: fairway-xmp-linux-x86_64-${{ steps.metadata.outputs.version }}-sources
           path: artifacts/linux-installer/*-sources.tar.gz
           if-no-files-found: error
           retention-days: 90
@@ -110,10 +116,10 @@ jobs:
     steps:
       - uses: actions/download-artifact@v7
         with:
-          name: fairway-linux-x86_64
+          name: fairway-xmp-linux-x86_64-${{ needs.build.outputs.version }}
           path: artifacts
       - name: Extract manual-install bundle
-        run: tar -xzf artifacts/Fairway-XMP-*-linux-x86_64.tar.gz
+        run: tar -xzf artifacts/fairway-xmp-*-linux-x86_64.tar.gz
       - name: Verify on a clean distro without installing runtime dependencies
         env:
           TEST_IMAGE: ${{ matrix.image }}

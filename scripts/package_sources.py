@@ -362,9 +362,9 @@ paths and ad-hoc signing described by the relocation script before running it.
 ''')
     assets = ROOT / 'artifacts' / f'alpha-{version}'
     assets.mkdir(parents=True, exist_ok=True)
-    output = assets / f'Fairway-XMP-{version}-bundled-tool-sources.tar.gz'
+    output = assets / f'fairway-xmp-{version}-bundled-tool-sources.tar.gz'
     with tarfile.open(output, 'w:gz', compresslevel=1) as bundle:
-        bundle.add(stage, arcname=f'Fairway-XMP-{version}-sources')
+        bundle.add(stage, arcname=f'fairway-xmp-{version}-sources')
     print(f'Source archive ready: {output} ({output.stat().st_size / 1024**2:.1f} MiB)', flush=True)
 
 

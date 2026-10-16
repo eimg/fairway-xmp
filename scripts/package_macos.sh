@@ -20,13 +20,13 @@ VERSION=$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.arg
 pkgbuild --analyze --root "$STAGE" "$COMPONENTS"
 # Keep the app in /Applications even when macOS finds a build copy with the same bundle ID.
 plutil -replace '0.BundleIsRelocatable' -bool NO "$COMPONENTS"
-pkgbuild --root "$STAGE" --component-plist "$COMPONENTS" --identifier dev.fairway.environment --version "$VERSION" --install-location / --scripts "$ROOT/packaging/macos/scripts" "$ARTIFACTS/Fairway-XMP-$VERSION-arm64-unsigned.pkg"
+pkgbuild --root "$STAGE" --component-plist "$COMPONENTS" --identifier dev.fairway.environment --version "$VERSION" --install-location / --scripts "$ROOT/packaging/macos/scripts" "$ARTIFACTS/fairway-xmp-$VERSION-macos-arm64-unsigned.pkg"
 rm -rf "$STAGE"
 rm -f "$COMPONENTS"
 if [ -n "${APPLE_INSTALLER_IDENTITY:-}" ]; then
-  productsign --sign "$APPLE_INSTALLER_IDENTITY" "$ARTIFACTS/Fairway-XMP-$VERSION-arm64-unsigned.pkg" "$ARTIFACTS/Fairway-XMP-$VERSION-arm64.pkg"
+  productsign --sign "$APPLE_INSTALLER_IDENTITY" "$ARTIFACTS/fairway-xmp-$VERSION-macos-arm64-unsigned.pkg" "$ARTIFACTS/fairway-xmp-$VERSION-macos-arm64.pkg"
 fi
 if [ -n "${APPLE_NOTARY_PROFILE:-}" ]; then
-  xcrun notarytool submit "$ARTIFACTS/Fairway-XMP-$VERSION-arm64.pkg" --keychain-profile "$APPLE_NOTARY_PROFILE" --wait
-  xcrun stapler staple "$ARTIFACTS/Fairway-XMP-$VERSION-arm64.pkg"
+  xcrun notarytool submit "$ARTIFACTS/fairway-xmp-$VERSION-macos-arm64.pkg" --keychain-profile "$APPLE_NOTARY_PROFILE" --wait
+  xcrun stapler staple "$ARTIFACTS/fairway-xmp-$VERSION-macos-arm64.pkg"
 fi

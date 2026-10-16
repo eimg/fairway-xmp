@@ -80,6 +80,16 @@ def main():
         install(args.installer); candidate_installed = True
         probe('verify'); completed.append('upgrade-preserves-database-settings-backup-coursework')
         build = json.loads(subprocess.check_output([str(exe), '--build-info'], text=True))
+        help_text = subprocess.check_output([str(exe), 'db', '--help'], text=True)
+        if 'fairway db import DATABASE FILE --yes' not in help_text:
+            raise RuntimeError('Installed database commands are unavailable')
+        launcher = data / 'bin' / ('fairway.cmd' if windows else 'fairway')
+        if not launcher.is_file(): raise RuntimeError('Installed database command launcher is missing')
+        if windows:
+            help_text = subprocess.check_output(['cmd.exe', '/D', '/C', str(launcher), 'db', '--help'], text=True)
+            if 'fairway db export DATABASE' not in help_text:
+                raise RuntimeError('Windows database launcher did not return command output')
+        completed.append('installed-database-cli-and-launcher')
         runtime_manifest = json.loads((runtime / 'manifest.json').read_text())
         expected = json.loads((ROOT / 'runtime-manifest.json').read_text())
         if runtime_manifest != expected: raise RuntimeError('Installed runtime differs from the candidate')

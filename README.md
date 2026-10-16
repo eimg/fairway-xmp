@@ -6,22 +6,22 @@ A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. 
 
 ## Downloads
 
-Current release: **[v0.1.0-alpha.3](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-alpha.3)**.
+Current release: **[v0.1.0-beta.1](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-beta.1)**.
 
 | Computer | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10 22H2 or Windows 11, x64 | [Windows installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-windows-x64-setup.exe) |
-| Mac | macOS 15 or later, Apple Silicon (M-series) | [Mac installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-macos-arm64-unsigned.pkg) |
-| Linux | x86_64, glibc 2.35 or newer | [Terminal installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-linux-x86_64.run) · [Archive](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-alpha.3/Fairway-XMP-0.1.0-alpha.3-linux-x86_64.tar.gz) |
+| Windows | Windows 10 22H2 or Windows 11, x64 | [Windows installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-beta.1/fairway-xmp-0.1.0-beta.1-windows-x64-setup.exe) |
+| Mac | macOS 15 or later, Apple Silicon (M-series) | [Mac installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-beta.1/fairway-xmp-0.1.0-beta.1-macos-arm64-unsigned.pkg) |
+| Linux | x86_64, glibc 2.35 or newer | [Terminal installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-beta.1/fairway-xmp-0.1.0-beta.1-linux-x86_64.run) · [Archive](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0-beta.1/fairway-xmp-0.1.0-beta.1-linux-x86_64.tar.gz) |
 
-Alpha 3 reuses tested builds; the installed apps still report `0.1.0-alpha.2` internally. Download the installer for your computer and follow its prompts. The installers are unsigned, so Windows may show an unknown-publisher warning. If macOS blocks the installer or app, follow [Apple’s instructions for opening an app from an unidentified developer](https://support.apple.com/en-us/102445).
+Beta 1 installs report `0.1.0-beta.1`. Download the installer for your computer and follow its prompts. The installers are unsigned, so Windows may show an unknown-publisher warning. If macOS blocks the installer or app, follow [Apple’s instructions for opening an app from an unidentified developer](https://support.apple.com/en-us/102445).
 
 ## Linux terminal edition
 
 Download the Linux `.run` installer or `.tar.gz` archive from the table above. Linux requires x86_64 and glibc 2.35 or newer; Alpine/musl and ARM are not supported. No desktop, root access, distro packages, Docker or systemd service is required.
 
 ```sh
-sh Fairway-XMP-0.1.0-alpha.3-linux-x86_64.run
+sh fairway-xmp-0.1.0-beta.1-linux-x86_64.run
 # Reopen your shell after installation:
 fairway                      # terminal dashboard
 fairway start                # start all services
@@ -88,7 +88,11 @@ composer --version
 
 Manage this integration under **Settings → Command-line tools**. You can also use **Open terminal** in the control panel.
 
-Development builds with PHP 8.0 through 8.5 let you switch under **Settings → Service Settings → Advanced settings** after stopping all services. Select the version and click **Save**. The selection controls websites, terminal PHP, and Composer, and is saved for the next launch. On Linux, use `fairway php-version 8.0` through `fairway php-version 8.5` after `fairway stop all`. See the [step by step test guide](docs/testing-php-versions.md). The published alpha 3 installers reuse alpha 2 binaries and contain PHP 8.5 only. PHP 8.0 and 8.1 are end of life; use newer versions for internet-facing projects.
+The beta 2 candidate adds an embedded **Terminal** page on macOS and Windows. Press **Ctrl+backtick** to open or focus it. PHP and Composer are ready even when persistent command-line integration is disabled. Use **New terminal** to keep a second shell beside a running development server, and choose a project under **Start in** to open that new shell directly in its folder. Both tabs stay open while switching pages or hiding the window; quitting Fairway ends them. **Restart**, **End session**, and **Close tab** affect only the selected terminal. Find, text-size controls, and an expanded view help with longer output.
+
+On macOS, Fairway remembers roughly 1,000 commands privately on your device, separately from your usual shell history. Start a command with a space to omit it, or turn off **Remember commands in new sessions** before creating or restarting a shell. Windows keeps its normal Command Prompt history within each session. macOS and Windows also add a **Data browser** beside phpMyAdmin, with `fairway db` commands for SQL import/export. Neither feature is in the published beta 1 installers.
+
+Beta 1 includes PHP 8.0 through 8.5. Switch under **Settings → Service Settings → Advanced settings** after stopping all services. Select the version and click **Save**. The selection controls websites, terminal PHP, and Composer, and is saved for the next launch. On Linux, use `fairway php-version 8.0` through `fairway php-version 8.5` after `fairway stop all`. See the [step by step test guide](docs/testing-php-versions.md). PHP 8.5 is the default. PHP 8.0 and 8.1 are end of life; use newer versions for internet-facing projects.
 
 For projects with their own development server, run the usual command, such as Laravel’s `php artisan serve`.
 
@@ -125,7 +129,7 @@ If a port is already in use, Fairway XMP shows the conflict. Stop all services, 
 
 ## Updates and removal
 
-Open **Updates → View downloads** to get a newer installer. Stop all services and quit Fairway XMP before installing it. Your projects and database data are kept.
+Open **Updates → View downloads** to get a newer installer. On a Mac, the installer quits a running Fairway XMP and stops its services before replacing the app. On Windows, quit Fairway XMP from the system tray before installing. Your projects and database data are kept.
 
 To uninstall:
 
@@ -138,4 +142,4 @@ The uninstaller removes the app and its command-line integration. Your projects 
 
 For problems or suggestions, [open an issue](https://github.com/eimg/fairway-xmp/issues). Include your operating system, what you tried, and any error shown in Fairway XMP.
 
-Fairway XMP’s application code uses the [MIT license](LICENSE). Included tools have [their own licenses](THIRD_PARTY_NOTICES.md). Release checksums and bundled-tool sources are available on the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-alpha.3). For contributing to the app, see [Contributing](CONTRIBUTING.md).
+Fairway XMP’s application code uses the [MIT license](LICENSE). Included tools have [their own licenses](THIRD_PARTY_NOTICES.md). Release checksums and bundled-tool sources are available on the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0-beta.1). For contributing to the app, see [Contributing](CONTRIBUTING.md).

@@ -15,6 +15,9 @@ test('production browser preview cannot enable simulated services', async ({ pag
   await expect(page.getByText('Interface preview — open the desktop app to manage services.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start all', exact: true })).toBeDisabled();
   await expect(page.getByRole('region', { name: 'UI test controls' })).toHaveCount(0);
+  await expect(page.locator('.sidebar')).not.toContainText('Made for local learning');
+  await expect(page.locator('.sidebar-footer')).toHaveText(/^v\d+\.\d+\.\d+/);
+  await expect(page.locator('.sidebar-footer')).not.toContainText('FAIRWAY XMP');
 });
 
 test('project sites expand and HTTPS switch updates a site', async ({ page }, info) => {
@@ -140,6 +143,17 @@ for (const platform of ['Windows', 'macOS']) {
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     const tools = page.getByRole('region', { name: 'Command-line tools', exact: true });
     await expect(tools.getByText('Added to PATH', { exact: true })).toBeVisible();
+    await expect(tools.getByText('Database commands', { exact: true })).not.toBeVisible();
+    await expect(tools.locator('.cli-commands code').filter({ hasText: 'fairway db' })).toHaveCount(1);
+    await capture(page, info, 'cli-compact');
+    await tools.getByRole('button', { name: 'Command-line tools help', exact: true }).click();
+    const tooltip = page.getByRole('tooltip');
+    await expect(tooltip).toContainText('Open a new terminal');
+    await expect(tooltip.locator('code').filter({ hasText: 'fairway db --help' })).toHaveCount(1);
+    await capture(page, info, 'cli-help');
+    await page.keyboard.press('Escape');
+    await expect(tooltip).toHaveCount(0);
+    await tools.getByText('Command details', { exact: true }).click();
     const php = tools.locator('.cli-paths dd').nth(0);
     const composer = tools.locator('.cli-paths dd').nth(1);
     const base = platform === 'Windows'
@@ -147,9 +161,9 @@ for (const platform of ['Windows', 'macOS']) {
       : '/Users/Student May/Library/Application Support/dev.fairway.environment/bin/';
     await expect(php).toHaveText(`${base}${platform === 'Windows' ? 'php.cmd' : 'php'}`);
     await expect(composer).toHaveText(`${base}${platform === 'Windows' ? 'composer.cmd' : 'composer'}`);
+    await expect(tools.getByText('Database commands', { exact: true })).toHaveCount(1);
     await expect(tools.getByText('Not found', { exact: true })).toHaveCount(0);
     await capture(page, info, 'cli-installed');
-    await tools.getByText('Command detection details', { exact: true }).click();
     await expect(tools.getByText('Not detected in the app’s PATH', { exact: true })).toHaveCount(2);
     await capture(page, info, 'cli-detection-details');
     await page.getByLabel('Scenario', { exact: true }).selectOption('Other PHP on PATH');
@@ -159,7 +173,7 @@ for (const platform of ['Windows', 'macOS']) {
     await tools.getByRole('button', { name: 'Remove from user PATH', exact: true }).click();
     await expect(tools.getByText('Not added to PATH', { exact: true })).toBeVisible();
     await expect(tools.locator('.cli-paths')).toHaveCount(0);
-    await tools.getByRole('button', { name: 'Enable PHP and Composer', exact: true }).click();
+    await tools.getByRole('button', { name: 'Enable command-line tools', exact: true }).click();
     await expect(tools.getByText('Added to PATH', { exact: true })).toBeVisible();
     await expect(composer).toHaveText(`${base}${platform === 'Windows' ? 'composer.cmd' : 'composer'}`);
   });

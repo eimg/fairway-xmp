@@ -12,8 +12,8 @@ import tomllib
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = ('windows-x64', 'macos-arm64', 'linux-x86_64')
 MANUAL_CHECKS = {
-    'windows-x64': ['install-and-first-project', 'upgrade-preserves-work', 'uninstall-reinstall-preserves-work', 'tray-and-quit', 'browser-visual-review'],
-    'macos-arm64': ['install-and-first-project', 'upgrade-preserves-work', 'uninstall-reinstall-preserves-work', 'menu-bar-and-quit', 'browser-visual-review'],
+    'windows-x64': ['install-and-first-project', 'upgrade-preserves-work', 'uninstall-reinstall-preserves-work', 'tray-and-quit', 'browser-visual-review', 'data-browser-and-sql-tools', 'terminal-sessions-and-cleanup'],
+    'macos-arm64': ['install-and-first-project', 'upgrade-preserves-work', 'uninstall-reinstall-preserves-work', 'menu-bar-and-quit', 'browser-visual-review', 'data-browser-and-sql-tools', 'terminal-sessions-and-cleanup'],
     'linux-x86_64': ['install-and-first-project', 'upgrade-preserves-work', 'uninstall-reinstall-preserves-work', 'dashboard-detach-and-shutdown'],
 }
 
@@ -73,7 +73,7 @@ def record(target, directory, artifact, lifecycle, output):
     if evidence.get('installer') != installers[0] or evidence.get('installerSha256') != files[installers[0]]['sha256']:
         raise ValueError('Candidate installer differs from the file used by the lifecycle test')
     data = {'schema': 1, 'target': target, 'version': version, 'commit': commit, 'signed': False,
-            'artifact': artifact, 'relatedArtifacts': ['fairway-linux-x86_64-sources'] if target == 'linux-x86_64' else [], 'installer': installers[0], 'files': files, 'runtime': runtime, 'lifecycle': evidence,
+            'artifact': artifact, 'relatedArtifacts': [f'fairway-xmp-linux-x86_64-{version}-sources'] if target == 'linux-x86_64' else [], 'installer': installers[0], 'files': files, 'runtime': runtime, 'lifecycle': evidence,
             'run': f"{os.environ.get('GITHUB_SERVER_URL', '')}/{os.environ.get('GITHUB_REPOSITORY', '')}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '')}"}
     write(output, data)
     write(Path(directory) / 'candidate-info.json', data)
@@ -94,7 +94,7 @@ def assemble(inputs, output):
     data = {'schema': 1, 'version': version, 'commit': commit, 'status': 'awaiting-human-acceptance',
             'uiReview': {'artifact': f'ui-visual-review-{commit}'},
             'signing': 'deferred', 'legacyPhp': ['8.0', '8.1'],
-            'knownLimitations': ['Unsigned installers; manual updates.', 'PHP 8.0/8.1 are unsupported legacy compatibility options.', 'Exact Windows PHP 8.0/8.1 dependency build/patch provenance remains unverified; see docs/release-follow-ups.md.'],
+            'knownLimitations': ['Unsigned installers; manual updates.', 'Windows MySQL requires ANSI-compatible filesystem paths or existing short-name aliases; see docs/data-browser.md.', 'PHP 8.0/8.1 are unsupported legacy compatibility options.', 'Exact Windows PHP 8.0/8.1 dependency build/patch provenance remains unverified; see docs/release-follow-ups.md.'],
             'candidates': by_target}
     write(output, data)
     acceptance = {'version': version, 'commit': commit, 'platforms': {target: {

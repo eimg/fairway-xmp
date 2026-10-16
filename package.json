@@ -1,7 +1,7 @@
 {
   "name": "fairway-xmp",
   "private": true,
-  "version": "0.1.0-beta.1",
+  "version": "0.1.0-beta.2",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -15,6 +15,9 @@
     "test:ui:report": "playwright show-report"
   },
   "dependencies": {
+    "@xterm/addon-fit": "0.10.0",
+    "@xterm/addon-search": "0.15.0",
+    "@xterm/xterm": "5.5.0",
     "lucide-react": "0.542.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"

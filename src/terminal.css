@@ -1,0 +1,49 @@
+.terminal-page { min-width: 0; }
+.terminal-workspace { min-width: 0; }
+.terminal-workspace-controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 14px; flex-shrink: 0; }
+.terminal-tabs { display: flex; gap: 4px; max-width: 100%; }
+.terminal-tabs button { padding: 8px 12px; border-radius: 6px; background: #edf1ee; color: #667c6e; font-size: 11px; max-width: 220px; white-space: nowrap; overflow: hidden; }
+.terminal-tabs button[aria-selected=true] { background: #dfeee5; color: #27634a; }
+.terminal-tabs button span { overflow: hidden; text-overflow: ellipsis; }
+.terminal-new-session { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+.terminal-new-session label { display: flex; gap: 8px; align-items: center; color: #607b69; font-size: 11px; }
+.terminal-new-session select { width: 170px; min-height: 32px; font-family: inherit; font-size: 11px; padding: 6px 8px; }
+.terminal-new-session .secondary { min-height: 32px; padding: 6px 10px; }
+.terminal-history { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; font-size: 11px; color: #607b69; width: 100%; }
+.terminal-history input { width: auto; margin: 0; accent-color: #27634a; }
+.terminal-history span { font-size: 10px; color: #819589; }
+.terminal-context-error { font-size: 11px; color: #70541f; }
+.terminal-panel { border: 1px solid var(--border); border-radius: 9px; overflow: hidden; background: #fff; }
+.terminal-toolbar { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.terminal-toolbar-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.terminal-session-actions { display: flex; gap: 6px; }
+.terminal-shell { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 550; color: #536b5d; }
+.terminal-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.terminal-toolbar .secondary { padding: 6px 9px; min-height: 30px; }
+.terminal-zoom { display: flex; gap: 2px; }
+.terminal-font-size { font-variant-numeric: tabular-nums; min-width: 49px; }
+.terminal-search { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.terminal-search input { flex: 1; min-width: 120px; width: auto; }
+.terminal-search .secondary { padding: 6px; min-height: 30px; }
+.terminal-search-result { min-width: 68px; font-size: 11px; color: #536b5d; }
+.terminal-resize-warning { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 10px 14px; margin-bottom: 12px; border-radius: 6px; background: #fff5dc; color: #70541f; font-size: 12px; }
+.terminal-host { height: clamp(260px, calc(100vh - 330px), 640px); padding: 14px 10px 12px 14px; background: #17251f; }
+.terminal-host .xterm { height: 100%; }
+.terminal-host .xterm-viewport { border-radius: 3px; }
+.terminal-directory { padding: 10px 14px; display: flex; align-items: baseline; gap: 10px; font-size: 10px; color: var(--muted); min-width: 0; }
+.terminal-directory code { font-size: 10px; color: #607b69; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; min-width: 0; }
+.terminal-directory > span { flex-shrink: 0; }
+.terminal-hint { font-size: 10px; color: #819589; line-height: 1.8; margin-top: 14px; }
+.terminal-unavailable { padding: 50px 20px; font-size: 12px; color: #819589; }
+.terminal-confirm { max-width: 420px; }
+.terminal-confirm .button-row { margin-top: 20px; justify-content: flex-end; }
+@media (max-width: 900px) { .terminal-toolbar { gap: 10px; } .terminal-host { height: max(260px, calc(100vh - 350px)); } }
+.terminal-expanded { position: fixed; inset: 66px 0 0 220px; z-index: 12; background: #f8faf9; padding: 24px; display: flex; flex-direction: column; }
+.terminal-expanded .page-heading { flex-shrink: 0; margin-bottom: 16px; }
+.terminal-expanded .page-heading h1 { font-size: 20px; }
+.terminal-expanded .page-heading p, .terminal-expanded .terminal-hint { display: none; }
+.terminal-expanded .terminal-panel { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.terminal-expanded .terminal-tab-panel:not([hidden]), .terminal-expanded .terminal-page { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.terminal-expanded .terminal-host { height: auto; flex: 1; min-height: 80px; }
+@media (max-width: 900px) { .terminal-expanded { left: 180px; padding: 18px; } }
+@media (max-width: 650px) { .terminal-expanded { left: 64px; padding: 12px; } }

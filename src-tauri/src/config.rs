@@ -322,9 +322,9 @@ impl Layout {
         atomic_write(&conf.join("nginx.conf"), nginx.as_bytes())?;
         let mysql = format!(
             "[mysqld]\nbasedir={}\ndatadir={}\nport={}\nbind-address=127.0.0.1\nlower_case_table_names=1\nmysqlx=OFF\nlocal-infile=OFF\ncharacter-set-server=utf8mb4\ncollation-server=utf8mb4_unicode_ci\nmax_connections=40\ninnodb_buffer_pool_size=64M\nlog-error={}\npid-file={}\nsocket={}\nsecure-file-priv={}\n",
-            ini(&self.runtime.join("mysql")), ini(&self.data.join("mysql")), ports.mysql,
-            ini(&self.data.join("logs/mysql.log")), ini(&self.data.join("mysql.pid")),
-            ini(&self.data.join("mysql.sock")), ini(&self.data.join("tmp")));
+            mysql_ini(&self.runtime.join("mysql")), mysql_ini(&self.data.join("mysql")), ports.mysql,
+            mysql_ini(&self.data.join("logs/mysql.log")), mysql_ini(&self.data.join("mysql.pid")),
+            mysql_ini(&self.data.join("mysql.sock")), mysql_ini(&self.data.join("tmp")));
         atomic_write(&conf.join("mysql.cnf"), mysql.as_bytes())?;
         let secret = self.secret()?;
         let admin = format!(
@@ -338,6 +338,10 @@ impl Layout {
             php_string(&self.data.join("tmp").to_string_lossy()), ports.phpmyadmin);
         // A writable overlay keeps generated configuration outside the signed app bundle.
         atomic_write(&conf.join("config.inc.php"), phpmyadmin_config.as_bytes())?;
+        #[cfg(feature = "terminal")]
+        if self.data.join("terminal-bin").is_dir() {
+            crate::terminal::prepare_tools(self)?;
+        }
         Ok(())
     }
 
@@ -360,6 +364,91 @@ impl Layout {
 
 pub fn php_string(s: &str) -> String {
     format!("'{}'", s.replace('\\', "\\\\").replace('\'', "\\'"))
+}
+
+// MySQL on Windows is limited to paths representable in the ANSI code page.
+// Existing NTFS short-name aliases let it open the same files without relocating
+// student data. Resolve the existing parent for files not created yet.
+pub fn mysql_path(path: &Path) -> PathBuf {
+    #[cfg(windows)]
+    if !path.as_os_str().as_encoded_bytes().is_ascii() {
+        use std::os::windows::ffi::{OsStrExt, OsStringExt};
+        unsafe extern "system" {
+            fn GetShortPathNameW(long: *const u16, short: *mut u16, size: u32) -> u32;
+        }
+        let mut parent = path;
+        let mut tail = Vec::new();
+        while !parent.exists() {
+            let (Some(name), Some(next)) = (parent.file_name(), parent.parent()) else {
+                break;
+            };
+            tail.push(name.to_owned());
+            parent = next;
+        }
+        let wide: Vec<_> = parent.as_os_str().encode_wide().chain(Some(0)).collect();
+        let size = unsafe { GetShortPathNameW(wide.as_ptr(), std::ptr::null_mut(), 0) };
+        if size > 0 {
+            let mut buffer = vec![0u16; size as usize];
+            let count = unsafe { GetShortPathNameW(wide.as_ptr(), buffer.as_mut_ptr(), size) };
+            if count > 0 && count < size {
+                let mut short =
+                    PathBuf::from(std::ffi::OsString::from_wide(&buffer[..count as usize]));
+                for name in tail.into_iter().rev() {
+                    short.push(name);
+                }
+                return short;
+            }
+        }
+    }
+    path.to_path_buf()
+}
+
+pub fn mysql_path_supported(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        unsafe extern "system" {
+            fn GetACP() -> u32;
+            fn WideCharToMultiByte(
+                page: u32,
+                flags: u32,
+                wide: *const u16,
+                count: i32,
+                output: *mut u8,
+                size: i32,
+                default: *const u8,
+                used_default: *mut i32,
+            ) -> i32;
+        }
+        if unsafe { GetACP() } == 65001 {
+            return true;
+        }
+        let path = mysql_path(path);
+        let wide: Vec<_> = path.as_os_str().encode_wide().collect();
+        let mut lossy = 0;
+        let size = unsafe {
+            WideCharToMultiByte(
+                0,
+                0x400,
+                wide.as_ptr(),
+                wide.len() as i32,
+                std::ptr::null_mut(),
+                0,
+                std::ptr::null(),
+                &mut lossy,
+            )
+        };
+        size > 0 && lossy == 0
+    }
+    #[cfg(not(windows))]
+    {
+        let _ = path;
+        true
+    }
+}
+
+fn mysql_ini(path: &Path) -> String {
+    ini(&mysql_path(path))
 }
 
 pub fn ini(path: &Path) -> String {

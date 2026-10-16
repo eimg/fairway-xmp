@@ -77,6 +77,69 @@ pub fn write_unix_launchers(layout: &Layout) -> Result<()> {
         atomic_write(&path, text.as_bytes())?;
         fs::set_permissions(path, fs::Permissions::from_mode(0o755)).map_err(|e| e.to_string())?;
     }
+    #[cfg(target_os = "macos")]
+    {
+        let executable = std::env::current_exe().map_err(|e| e.to_string())?;
+        // Test/example binaries must not replace the desktop command launcher.
+        if executable.file_name().is_some_and(|name| name == "fairway") {
+            let path = layout.bin.join("fairway");
+            atomic_write(
+                &path,
+                format!(
+                    "#!/bin/sh\nexec {} \"$@\"\n",
+                    shell_quote(&executable.to_string_lossy())
+                )
+                .as_bytes(),
+            )?;
+            fs::set_permissions(path, fs::Permissions::from_mode(0o755))
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+pub fn write_windows_launchers(layout: &Layout) -> Result<()> {
+    // cmd expands percent signs in filenames; reject them rather than create broken launchers.
+    if [&layout.data, &layout.runtime]
+        .iter()
+        .any(|p| p.to_string_lossy().contains('%'))
+    {
+        return Err("The installation path contains a percent sign, which Windows command launchers cannot support.".into());
+    }
+    // Batch sources are UTF-8 so Windows user/install paths can contain Unicode.
+    let base = format!("@echo off\r\nchcp 65001 >nul\r\nsetlocal\r\nset \"PHP_INI_SCAN_DIR=\"\r\nset \"PHPRC={}\"\r\nset \"COMPOSER_HOME={}\"\r\n",
+        layout.data.join("config/php.ini").display(), layout.data.join("composer").display());
+    atomic_write(
+        &layout.bin.join("php.cmd"),
+        format!("{base}\"{}\" %*\r\n", layout.php_exe("php")?.display()).as_bytes(),
+    )?;
+    atomic_write(
+        &layout.bin.join("composer.cmd"),
+        format!(
+            "{base}\"{}\" \"{}\" %*\r\n",
+            layout.php_exe("php")?.display(),
+            layout.runtime.join("composer.phar").display()
+        )
+        .as_bytes(),
+    )?;
+    let executable = std::env::current_exe().map_err(|e| e.to_string())?;
+    if executable
+        .file_name()
+        .is_some_and(|name| name == "fairway.exe")
+    {
+        if executable.to_string_lossy().contains('%') {
+            return Err("The application path contains a percent sign, which Windows command launchers cannot support.".into());
+        }
+        atomic_write(
+            &layout.bin.join("fairway.cmd"),
+            format!(
+                "@echo off\r\nchcp 65001 >nul\r\n\"{}\" %*\r\n",
+                executable.display()
+            )
+            .as_bytes(),
+        )?;
+    }
     Ok(())
 }
 
@@ -138,28 +201,7 @@ pub fn install(layout: &Layout) -> Result<()> {
     }
     #[cfg(windows)]
     {
-        // cmd expands percent signs in filenames; reject them rather than create broken launchers.
-        if [&layout.data, &layout.runtime]
-            .iter()
-            .any(|p| p.to_string_lossy().contains('%'))
-        {
-            return Err("The installation path contains a percent sign, which Windows command launchers cannot support.".into());
-        }
-        let base = format!("@echo off\r\nsetlocal\r\nset \"PHP_INI_SCAN_DIR=\"\r\nset \"PHPRC={}\"\r\nset \"COMPOSER_HOME={}\"\r\n",
-            layout.data.join("config/php.ini").display(), layout.data.join("composer").display());
-        atomic_write(
-            &layout.bin.join("php.cmd"),
-            format!("{base}\"{}\" %*\r\n", layout.php_exe("php")?.display()).as_bytes(),
-        )?;
-        atomic_write(
-            &layout.bin.join("composer.cmd"),
-            format!(
-                "{base}\"{}\" \"{}\" %*\r\n",
-                layout.php_exe("php")?.display(),
-                layout.runtime.join("composer.phar").display()
-            )
-            .as_bytes(),
-        )?;
+        write_windows_launchers(layout)?;
         windows_path(&layout.bin, true)?;
     }
     atomic_write(&layout.data.join("cli-installed"), b"1")?;
@@ -194,6 +236,13 @@ pub fn remove(layout: &Layout) -> Result<()> {
         let file = layout.bin.join(name);
         if file.exists() {
             fs::remove_file(file).map_err(|e| e.to_string())?;
+        }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let launcher = layout.bin.join("fairway");
+        if launcher.exists() {
+            fs::remove_file(launcher).map_err(|e| e.to_string())?;
         }
     }
     let marker = layout.data.join("cli-installed");

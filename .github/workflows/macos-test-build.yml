@@ -36,34 +36,54 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run build
       - run: npm run test:scripts
-      - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - name: Stage verified macOS runtimes
         run: python scripts/prepare_runtime.py
+      - name: Build native terminal test bridge
+        run: cargo build --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --example terminal_bridge --locked
+      - run: npx playwright install --only-shell chromium
+      - name: Exercise native terminal and data browser through browser input
+        env:
+          FAIRWAY_NATIVE_ONLY: '1'
+          FAIRWAY_TEST_RUNTIME: ${{ github.workspace }}/src-tauri/resources/runtime
+        run: npx playwright test tests/ui/terminal-native.spec.ts tests/ui/data-browser-native.spec.ts --project chromium --workers=1
+      - name: Save native desktop browser report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: native-desktop-macos-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Exercise real services, backup restoration and PHP versions
         run: cargo run --manifest-path src-tauri/Cargo.toml --example smoke --no-default-features --locked -- "$PWD/.runtime-work/macos-smoke"
+      - name: Exercise native data browser and SQL export/import
+        run: cargo run --manifest-path src-tauri/Cargo.toml --example data_browser_smoke --no-default-features --locked -- "$PWD/.runtime-work/data-browser-smoke"
       - name: Build unsigned app and installer
         run: |
           npm exec --yes --package @tauri-apps/cli@2.12.2 -- tauri build --bundles app
           sh scripts/package_macos.sh
           mkdir -p artifacts/macos-installer
-          mv "artifacts/Fairway-XMP-${{ steps.metadata.outputs.version }}-arm64-unsigned.pkg" "artifacts/macos-installer/Fairway-XMP-${{ steps.metadata.outputs.version }}-macos-arm64-unsigned.pkg"
+          mv "artifacts/fairway-xmp-${{ steps.metadata.outputs.version }}-macos-arm64-unsigned.pkg" "artifacts/macos-installer/"
       - name: Test actual installer, alpha upgrade and data-preserving removal
         run: |
           python scripts/fetch_installer_baseline.py macos --output .runtime-work/baseline-macos.pkg
           cargo build --release --example installer_probe --manifest-path src-tauri/Cargo.toml --no-default-features --locked
-          python tests/installer_lifecycle.py --installer "artifacts/macos-installer/Fairway-XMP-${{ steps.metadata.outputs.version }}-macos-arm64-unsigned.pkg" --baseline .runtime-work/baseline-macos.pkg --probe src-tauri/target/release/examples/installer_probe --output .runtime-work/macos-lifecycle --allow-user-profile-changes
+          python tests/installer_lifecycle.py --installer "artifacts/macos-installer/fairway-xmp-${{ steps.metadata.outputs.version }}-macos-arm64-unsigned.pkg" --baseline .runtime-work/baseline-macos.pkg --probe src-tauri/target/release/examples/installer_probe --output .runtime-work/macos-lifecycle --allow-user-profile-changes
       - name: Collect exact application and bundled-tool sources
         run: |
           python scripts/package_sources.py --locked
-          cp "artifacts/alpha-${{ steps.metadata.outputs.version }}/Fairway-XMP-${{ steps.metadata.outputs.version }}-bundled-tool-sources.tar.gz" artifacts/macos-installer/
-          git archive --format=tar.gz --output="artifacts/macos-installer/fairway-xmp-build-source.tar.gz" HEAD
+          cp "artifacts/alpha-${{ steps.metadata.outputs.version }}/fairway-xmp-${{ steps.metadata.outputs.version }}-bundled-tool-sources.tar.gz" artifacts/macos-installer/
+          git archive --format=tar.gz --output="artifacts/macos-installer/fairway-xmp-${{ steps.metadata.outputs.version }}-build-source.tar.gz" HEAD
           cp LICENSE THIRD_PARTY_NOTICES.md runtime-manifest.json runtime-downloads.lock.json artifacts/macos-installer/
-          python scripts/release_candidate.py record --target macos-arm64 --directory artifacts/macos-installer --artifact fairway-macos-arm64-${{ steps.metadata.outputs.version }} --lifecycle .runtime-work/macos-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-macos-arm64.json
+          python scripts/release_candidate.py record --target macos-arm64 --directory artifacts/macos-installer --artifact fairway-xmp-macos-arm64-${{ steps.metadata.outputs.version }} --lifecycle .runtime-work/macos-lifecycle/lifecycle.json --output artifacts/candidate-metadata/candidate-macos-arm64.json
       - uses: actions/upload-artifact@v6
         with:
-          name: fairway-macos-arm64-${{ steps.metadata.outputs.version }}
+          name: fairway-xmp-macos-arm64-${{ steps.metadata.outputs.version }}
           path: artifacts/macos-installer/
           if-no-files-found: error
           retention-days: 90

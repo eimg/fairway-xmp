@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.0-beta.2 — candidate
+
+- Embedded Terminal on macOS and Windows: up to two local shells in coursework or project folders, with PHP and Composer available for that session even when persistent command-line integration is off.
+- Independent terminal tabs, project-folder selection, Ctrl+backtick access, private optional macOS command history, and discovery of common installed tool locations.
+- Terminal output search, saved text size, expanded view, recoverable resizing, and access to existing sessions during service operations. Routine CI now includes terminal tests; installer workflows exercise the native browser-to-PTY flow.
+- macOS and Windows data browser beside phpMyAdmin, with database and table management, row editing, and a SQL editor. Linux is unchanged.
+- Desktop command-line tools include `fairway db` for SQL export and import.
+- Both desktop candidate builds exercise real database CRUD, SQL export/import and cancellation, and browser input through native database/terminal bridges. Windows database workers and export cleanup handle native process and file semantics. Windows terminals normalize local drive paths, complete the cursor handshake during early shutdown, and close ConPTY after shell exit while preserving final output. Windows MySQL uses existing short-name aliases for non-ANSI paths without moving data.
+
+This build reports `0.1.0-beta.2`. Installers are unsigned and updates are manual. It is the beta 2 candidate and is not a published release.
+
 ## 0.1.0-beta.1 — 2026-10-15
 
 - Full backup restore verification against a fresh database, unique export filenames, and cleanup after export errors.
@@ -7,6 +18,9 @@
 - PHP 8.0/8.1 labeled as unsupported legacy options.
 - An unsigned release-candidate workflow tying platform installers, installed upgrade/removal/reinstall checks, browser reports, and human acceptance to one commit and exact file hashes. Signing remains deferred.
 - Mac keep-data uninstall handles protected application moves; source collection verifies repacked Gitiles archives against their committed source trees.
+- The Mac installer quits a running Fairway XMP and stops its services before replacing the app.
+
+This release is built as `0.1.0-beta.1` and published from candidate run 38699450419 without rebuilding. The installers are unsigned and updates are manual. PHP 8.0 and 8.1 are legacy options; their Windows dependency provenance remains unverified.
 
 ## 0.1.0-alpha.3 — 2026-10-14
 

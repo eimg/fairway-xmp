@@ -56,6 +56,15 @@ Refreshing the lock trusts upstream HTTPS for inputs without independently publi
 
 For native UI testing without touching your real user folders, debug builds accept both `FAIRWAY_DEV_HOME` and `FAIRWAY_DEV_DATA`; use absolute workspace paths. `FAIRWAY_RUNTIME_DIR` overrides the debug runtime directory. These folder overrides are disabled in release builds.
 
+Terminal unit tests run in routine Windows/macOS CI with `cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --locked`. They exercise real PTYs, two-tab isolation and reload cleanup, folder validation, input, sizing, interrupts, bounded output, tool ordering, and private macOS history with opt-out. Installer workflows also run the React → Rust → real packaged PHP/Composer check after preparing runtimes. To run it locally, build the test-only stdio bridge and opt into the native browser test:
+
+```sh
+cargo build --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --example terminal_bridge --locked
+FAIRWAY_TEST_RUNTIME=/absolute/path/to/runtime npx playwright test tests/ui/terminal-native.spec.ts --workers=1
+```
+
+The bridge creates isolated folders and command history under the Playwright output directory and reads the runtime without modifying it. The native browser check keeps a command running in one tab while a second tab runs bundled tools in a project folder with spaces and Unicode. It opens no network listener and does not start services. Ordinary browser review uses the explicitly labeled simulated terminal; native browser tests are skipped unless `FAIRWAY_TEST_RUNTIME` is set. Native WebView and Windows ConPTY checks still belong in desktop acceptance testing.
+
 ## Build locally on Windows
 
 Use Windows 10 22H2 or Windows 11 x64. Install Git, Node.js 24, Python 3.12 or later (available as `python`), Rust stable with the MSVC toolchain, and Visual Studio Build Tools with **Desktop development with C++** and a Windows SDK. Install the Microsoft Edge WebView2 Runtime if it is missing. These are the [Tauri Windows prerequisites](https://v2.tauri.app/start/prerequisites/#windows).
@@ -126,7 +135,7 @@ For new unsigned candidates, use the [beta candidate and acceptance process](doc
 
 For an unsigned x64 Windows installer, dispatch the **Windows installer** workflow with `gh workflow run windows-test-build.yml --ref main`. It checks the source, stages the pinned runtime, exercises real services and cleanup, and verifies an 8.4 → 9.7 database upgrade before building an NSIS installer. Confirm the resulting run uses the intended source commit before accepting its installer. The alpha 1 migration fixtures retain its exact Windows versions and download checksums; the preparer stages them into a separate folder without replacing the current runtime.
 
-Download its versioned artifact, for example `gh run download RUN_ID --name fairway-windows-x64-0.1.0-alpha.2 --dir artifacts/windows-alpha2`. It contains the installer, SHA256, exact build commit/run, runtime metadata, and application source archive. Actions retains it for 90 days; keep a local copy for later publication. Publish that tested installer unchanged. An application or runtime change requires another build; release notes or corresponding-source collection do not. The workflow never creates a GitHub Release.
+Download its versioned artifact, for example `gh run download RUN_ID --name fairway-xmp-windows-x64-0.1.0-beta.1 --dir artifacts/windows-beta1`. It contains the installer, SHA256, exact build commit/run, runtime metadata, and application source archive. Actions retains it for 90 days; keep a local copy for later publication. Publish that tested installer unchanged. An application or runtime change requires another build; release notes or corresponding-source collection do not. The candidate workflow never creates a GitHub Release. `publish-unsigned-release.yml` uploads candidate run 38699450419 as prerelease `v0.1.0-beta.1` after checking those recorded hashes. It does not rebuild the installers.
 
 The initial release is `v0.1.0-alpha.1`, an unsigned GitHub prerelease with manual updates. Publish alpha builds with clear installation limitations and never mark them as the latest stable release. Stable releases require installation, updates, backups, and removal checks on the supported systems.
 
@@ -160,9 +169,11 @@ python3 scripts/prepare_runtime.py --lockfile runtime-linux-downloads.lock.json
 cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --locked
 cargo build --release --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --bin fairway-cli --locked
 python3 scripts/package_linux.py
-python3 tests/linux_cli_smoke.py artifacts/linux-installer/Fairway-XMP-*-linux-x86_64.run
+python3 tests/linux_cli_smoke.py artifacts/linux-installer/fairway-xmp-*-linux-x86_64.run
 ```
 
-Keep `fairway-linux-x86_64-sources` beside the tested binary artifact when publishing. Sources include Ubuntu distribution patches for every copied system library and upstream sources pinned separately from Mac/Windows runtime downloads. No runtime libraries are installed on target machines. Linux services bind only to loopback and run as the current user. Use an isolated `HOME` and `XDG_DATA_HOME` when testing release binaries; the provided smoke script does so automatically.
+Keep `fairway-xmp-linux-x86_64-VERSION-sources` beside the tested binary artifact when publishing. Sources include Ubuntu distribution patches for every copied system library and upstream sources pinned separately from Mac/Windows runtime downloads. No runtime libraries are installed on target machines. Linux services bind only to loopback and run as the current user. Use an isolated `HOME` and `XDG_DATA_HOME` when testing release binaries; the provided smoke script does so automatically.
 
 Alpha 3 reuses tested binaries whose embedded version is alpha 2. `BUILD-INFO.json` records their original commits, runs and checksums. The Mac installer is repackaged from the existing app, without compiling it. The release’s source version is alpha 3 for future builds. `publish-reused-alpha.yml` stages assets on a GitHub runner and validates their hashes before uploading them to a draft release; publication happens after all assets are verified.
+
+Candidate native browser checks use the built production frontend: after `npm run build` and building `terminal_bridge`, set `FAIRWAY_NATIVE_ONLY=1` alongside `FAIRWAY_TEST_RUNTIME` when running the two `*-native.spec.ts` files. This starts only the static preview server; ordinary UI review retains its development fixture server. Vite excludes generated runtime, Rust build, and artifact directories from file watching.

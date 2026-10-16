@@ -1,6 +1,6 @@
 [package]
 name = "fairway"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 description = "A consistent PHP development environment for the classroom"
 edition = "2021"
 rust-version = "1.90"
@@ -22,10 +22,15 @@ name = "fairway-cli"
 path = "src/cli_main.rs"
 required-features = ["cli"]
 
+[[example]]
+name = "terminal_bridge"
+required-features = ["terminal"]
+
 [features]
 default = ["desktop"]
 cli = []
-desktop = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-updater", "dep:muda", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation"]
+desktop = ["terminal", "dep:tauri", "dep:tauri-build", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-updater", "dep:muda", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation"]
+terminal = ["dep:portable-pty"]
 
 [build-dependencies]
 tauri-build = { version = "2", optional = true, features = [] }
@@ -36,6 +41,7 @@ serde_json = "1"
 dirs = "6"
 rand = "0.9"
 libc = "0.2"
+portable-pty = { version = "0.9", optional = true }
 tauri = { version = "~2.12", optional = true, features = ["tray-icon"] }
 tauri-plugin-single-instance = { version = "2", optional = true }
 tauri-plugin-updater = { version = "2", optional = true }
@@ -51,4 +57,4 @@ objc2-foundation = { version = "0.3", optional = true, default-features = false,
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_UI_WindowsAndMessaging", "Win32_System_JobObjects", "Win32_System_Threading"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_UI_WindowsAndMessaging", "Win32_System_JobObjects", "Win32_System_Console", "Win32_System_Threading"] }
