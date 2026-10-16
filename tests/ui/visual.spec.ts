@@ -109,11 +109,11 @@ test('HTTPS explains trust once and trust can be removed when unused', async ({ 
 test('pending hosts updates and missing folders are shown with a recovery action', async ({ page }, info) => {
   await page.goto('/');
   await page.getByLabel('Scenario', { exact: true }).selectOption('Hosts update pending');
-  await expect(page.getByText('Not in the hosts file yet')).toBeVisible();
+  await expect(page.getByText('Address not set up yet')).toBeVisible();
   await expect(page.getByRole('switch', { name: 'HTTPS for Blog' })).toBeDisabled();
   await capture(page, info, 'hosts-pending');
-  await page.getByRole('button', { name: 'Update hosts file' }).click();
-  await expect(page.getByText('Not in the hosts file yet')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Set up addresses' }).click();
+  await expect(page.getByText('Address not set up yet')).toHaveCount(0);
   await expect(page.getByRole('switch', { name: 'HTTPS for Blog' })).toBeEnabled();
   await page.getByLabel('Scenario', { exact: true }).selectOption('Missing web root');
   await expect(page.getByText('Unavailable: the web root folder is missing.', { exact: false })).toBeVisible();
