@@ -109,7 +109,7 @@ pub fn write_windows_launchers(layout: &Layout) -> Result<()> {
     }
     // Batch sources are UTF-8 so Windows user/install paths can contain Unicode.
     let base = format!("@echo off\r\nchcp 65001 >nul\r\nsetlocal\r\nset \"PHP_INI_SCAN_DIR=\"\r\nset \"PHPRC={}\"\r\nset \"COMPOSER_HOME={}\"\r\n",
-        layout.data.join("config/php.ini").display(), layout.data.join("composer").display());
+        crate::config::windows_ansi_path(&layout.data.join("config/php.ini")).display(), layout.data.join("composer").display());
     atomic_write(
         &layout.bin.join("php.cmd"),
         format!("{base}\"{}\" %*\r\n", layout.php_exe("php")?.display()).as_bytes(),

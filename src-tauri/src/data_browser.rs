@@ -69,7 +69,9 @@ fn php(layout: &Layout) -> Result<Command> {
         .env("PHP_INI_SCAN_DIR", "")
         .env("MIBS", "")
         .arg("-c")
-        .arg(layout.data.join("config/php.ini"))
+        .arg(crate::config::windows_ansi_path(
+            &layout.data.join("config/php.ini"),
+        ))
         .args([
             "-d",
             "display_errors=stderr",
@@ -186,10 +188,13 @@ pub fn execute(layout: &Layout, request: Value, cancel: Arc<AtomicBool>) -> Resu
         if cancel.load(Ordering::SeqCst) || start.elapsed() > Duration::from_secs(30) {
             let id = connection_id.load(Ordering::SeqCst);
             if id > 0 {
-                let mut kill = process::command(layout.exe("mysql", "mysql"));
+                let mut kill = process::command(crate::config::windows_ansi_path(
+                    &layout.exe("mysql", "mysql"),
+                ));
                 kill.arg(format!(
                     "--defaults-file={}",
-                    crate::config::mysql_path(&layout.data.join("config/admin.cnf")).display()
+                    crate::config::windows_ansi_path(&layout.data.join("config/admin.cnf"))
+                        .display()
                 ))
                 .args(["--connect-timeout=2", "--execute"])
                 .arg(format!("KILL QUERY {id}"));
@@ -231,10 +236,12 @@ pub fn execute(layout: &Layout, request: Value, cancel: Arc<AtomicBool>) -> Resu
 }
 
 fn mysql(layout: &Layout, executable: &str) -> Command {
-    let mut command = process::command(layout.exe("mysql", executable));
+    let mut command = process::command(crate::config::windows_ansi_path(
+        &layout.exe("mysql", executable),
+    ));
     command.arg(format!(
         "--defaults-file={}",
-        crate::config::mysql_path(&layout.data.join("config/admin.cnf")).display()
+        crate::config::windows_ansi_path(&layout.data.join("config/admin.cnf")).display()
     ));
     if executable == "mysql" {
         command.arg("--connect-timeout=3");

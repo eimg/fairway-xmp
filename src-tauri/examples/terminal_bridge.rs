@@ -95,9 +95,11 @@ fn respond(request: Value, manager: &Mutex<Manager>, terminals: &Terminals) -> i
                 let mut manager = manager.lock().unwrap();
                 manager.start("mysql").map_err(|error| {
                     format!(
-                        "{error} {}",
+                        "{error} {} {}",
                         std::fs::read_to_string(manager.layout.data.join("logs/mysql.log"))
-                            .unwrap_or_default()
+                            .unwrap_or_default(),
+                        std::fs::read_to_string(manager.layout.data.join("logs/mysql-process.log"))
+                            .unwrap_or_default(),
                     )
                 })?;
                 serde_json::to_value(manager.snapshot()).unwrap()

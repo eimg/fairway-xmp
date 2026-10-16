@@ -19,6 +19,7 @@ test('React input reaches the real native PTY and packaged PHP/Composer', async 
     const enter = async (command: string) => { await input.focus(); await input.pressSequentially(command); await input.press('Enter'); };
     if (process.platform === 'win32') await expect(rows).toContainText('>', { timeout: 15000 });
     await enter('php --version'); await expect(rows).toContainText(/PHP 8\.5\./);
+    await enter('php --ri pdo_mysql'); await expect(rows).toContainText('PDO Driver for MySQL => enabled');
     await enter('composer --version'); await expect(rows).toContainText('Composer version');
     await enter(process.platform === 'win32' ? 'cd' : 'pwd');
     await expect(rows).toContainText(process.platform === 'win32' ? "Student May's home" : join('Student May\'s home 日本', 'fairway', 'www'));

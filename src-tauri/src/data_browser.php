@@ -188,6 +188,7 @@ function run_request($db, $r) {
     return ['message'=>$op==='delete'?'Row deleted.':'Row saved.'];
 }
 try {
+    if (!extension_loaded('pdo_mysql')) throw new Exception('The bundled PHP MySQL driver is unavailable. Check the PHP log and the selected runtime before retrying.');
     $input=json_decode(stream_get_contents(STDIN),true,512,JSON_THROW_ON_ERROR);
     $db=new PDO('mysql:host=127.0.0.1;port=' . (int)$input['port'] . ';charset=utf8mb4','root',$input['password'],[PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION,PDO::ATTR_STRINGIFY_FETCHES=>true,PDO::ATTR_EMULATE_PREPARES=>false,PDO::MYSQL_ATTR_MULTI_STATEMENTS=>true,PDO::MYSQL_ATTR_FOUND_ROWS=>true,PDO::ATTR_TIMEOUT=>3]);
     fwrite(STDERR,'FAIRWAY_CONNECTION_ID=' . $db->query('SELECT CONNECTION_ID()')->fetchColumn() . "\n");

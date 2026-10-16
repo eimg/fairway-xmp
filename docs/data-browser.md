@@ -62,4 +62,6 @@ Both desktop candidate workflows run this real-database example and browser inpu
 
 ## Windows filesystem paths
 
+PHP startup configuration also uses compatible path aliases when available, so the database driver loads from user profiles containing Unicode characters. Project names and query/row text keep their original Unicode values.
+
 MySQL Server on Windows restricts file paths to the current ANSI code page ([upstream restriction](https://dev.mysql.com/doc/refman/9.7/en/windows-restrictions.html)). Fairway uses existing NTFS short-name aliases for MySQL configuration, data and log paths when available, without moving or renaming student data. PHP, the terminal folder picker and project paths retain their Unicode paths. When aliases are unavailable and the paths cannot be represented in the active code page, MySQL startup reports the limitation and keeps existing data intact. A filesystem with short-name aliases or paths compatible with the Windows locale is required in that case.

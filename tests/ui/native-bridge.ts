@@ -14,19 +14,23 @@ export async function nativeBridge(page: Page, info: TestInfo) {
   const child = spawn(binary, [root, process.env.FAIRWAY_TEST_RUNTIME!], { stdio: ['pipe', 'pipe', 'pipe'] });
   let next = 0;
   let stderr = '';
-  const pending = new Map<number, { resolve: (value: unknown) => void; reject: (reason: Error) => void }>();
+  const timings: { command: string; operation?: string; elapsedMs: number; failed: boolean }[] = [];
+  const pending = new Map<number, { resolve: (value: unknown) => void; reject: (reason: Error) => void; command: string; operation?: string; started: number }>();
   const lines = createInterface({ input: child.stdout });
   child.stderr.on('data', chunk => { stderr += chunk; });
   lines.on('line', line => {
     const response = JSON.parse(line);
     const item = pending.get(response.requestId); pending.delete(response.requestId);
-    if (response.error) item?.reject(new Error(response.error)); else item?.resolve(response.value);
+    if (item && !item.command.startsWith('terminal_read')) timings.push({ command: item.command, operation: item.operation, elapsedMs: Date.now() - item.started, failed: typeof response.error === 'string' });
+    if (typeof response.error === 'string') item?.reject(new Error(response.error)); else item?.resolve(response.value);
   });
   child.on('exit', code => {
     pending.forEach(item => item.reject(new Error(`Native bridge exited ${code}: ${stderr}`))); pending.clear();
   });
   await page.exposeFunction('nativeTerminalInvoke', (command: string, args: Record<string, unknown> = {}) => new Promise((resolve, reject) => {
-    const requestId = ++next; pending.set(requestId, { resolve, reject });
+    const requestId = ++next;
+    const operation = (args.request as { op?: string } | undefined)?.op;
+    pending.set(requestId, { resolve, reject, command, operation, started: Date.now() });
     child.stdin.write(JSON.stringify({ requestId, command, args }) + '\n');
   }));
   await page.addInitScript(() => {
@@ -42,9 +46,10 @@ export async function nativeBridge(page: Page, info: TestInfo) {
       await Promise.race([exited, new Promise<void>(resolve => { timer = setTimeout(() => { child.kill(); resolve(); }, 15000); })]);
       clearTimeout(timer);
       lines.close();
-      {
-        const log = await readFile(join(root, 'data 日本/logs/mysql.log')).catch(() => null);
-        if (log) await info.attach('native-mysql-log', { body: log, contentType: 'text/plain' });
+      await info.attach('native-request-timings', { body: JSON.stringify(timings, null, 2), contentType: 'application/json' });
+      for (const name of ['mysql.log', 'mysql-process.log', 'php.log']) {
+        const log = await readFile(join(root, 'data 日本/logs', name)).catch(() => null);
+        if (log) await info.attach(`native-${name}`, { body: log, contentType: 'text/plain' });
       }
       await rm(parent, { recursive: true, force: true });
     },

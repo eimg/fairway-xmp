@@ -28,7 +28,8 @@ pub fn output(mut cmd: Command) -> Result<String> {
     let result = cmd.output().map_err(|e| e.to_string())?;
     if !result.status.success() {
         return Err(format!(
-            "{}{}",
+            "Command failed ({}): {}{}",
+            result.status,
             String::from_utf8_lossy(&result.stdout),
             String::from_utf8_lossy(&result.stderr)
         ));
@@ -468,6 +469,24 @@ pub fn tail(path: &Path) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn silent_command_failure_retains_the_exit_status() {
+        #[cfg(windows)]
+        let mut cmd = command(
+            std::path::PathBuf::from(std::env::var_os("SystemRoot").unwrap())
+                .join("System32")
+                .join("cmd.exe"),
+        );
+        #[cfg(windows)]
+        cmd.args(["/D", "/C", "exit", "7"]);
+        #[cfg(unix)]
+        let mut cmd = command("/bin/sh");
+        #[cfg(unix)]
+        cmd.args(["-c", "exit 7"]);
+        let error = output(cmd).unwrap_err();
+        assert!(error.contains("Command failed"), "{error}");
+        assert!(error.contains('7'), "{error}");
+    }
     #[cfg(target_os = "linux")]
     #[test]
     fn adopted_process_does_not_accept_a_reused_pid() {

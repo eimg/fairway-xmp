@@ -332,9 +332,9 @@ impl Layout {
         atomic_write(&conf.join("nginx.conf"), nginx.as_bytes())?;
         let mysql = format!(
             "[mysqld]\nbasedir={}\ndatadir={}\nport={}\nbind-address=127.0.0.1\nlower_case_table_names=1\nmysqlx=OFF\nlocal-infile=OFF\ncharacter-set-server=utf8mb4\ncollation-server=utf8mb4_unicode_ci\nmax_connections=40\ninnodb_buffer_pool_size=64M\nlog-error={}\npid-file={}\nsocket={}\nsecure-file-priv={}\n",
-            mysql_ini(&self.runtime.join("mysql")), mysql_ini(&self.data.join("mysql")), ports.mysql,
-            mysql_ini(&self.data.join("logs/mysql.log")), mysql_ini(&self.data.join("mysql.pid")),
-            mysql_ini(&self.data.join("mysql.sock")), mysql_ini(&self.data.join("tmp")));
+            ini(&self.runtime.join("mysql")), ini(&self.data.join("mysql")), ports.mysql,
+            ini(&self.data.join("logs/mysql.log")), ini(&self.data.join("mysql.pid")),
+            ini(&self.data.join("mysql.sock")), ini(&self.data.join("tmp")));
         atomic_write(&conf.join("mysql.cnf"), mysql.as_bytes())?;
         let secret = self.secret()?;
         let admin = format!(
@@ -376,10 +376,10 @@ pub fn php_string(s: &str) -> String {
     format!("'{}'", s.replace('\\', "\\\\").replace('\'', "\\'"))
 }
 
-// MySQL on Windows is limited to paths representable in the ANSI code page.
+// MySQL paths and PHP startup configuration on Windows use ANSI APIs.
 // Existing NTFS short-name aliases let it open the same files without relocating
 // student data. Resolve the existing parent for files not created yet.
-pub fn mysql_path(path: &Path) -> PathBuf {
+pub fn windows_ansi_path(path: &Path) -> PathBuf {
     #[cfg(windows)]
     if !path.as_os_str().as_encoded_bytes().is_ascii() {
         use std::os::windows::ffi::{OsStrExt, OsStringExt};
@@ -433,7 +433,7 @@ pub fn mysql_path_supported(path: &Path) -> bool {
         if unsafe { GetACP() } == 65001 {
             return true;
         }
-        let path = mysql_path(path);
+        let path = windows_ansi_path(path);
         let wide: Vec<_> = path.as_os_str().encode_wide().collect();
         let mut lossy = 0;
         let size = unsafe {
@@ -457,14 +457,11 @@ pub fn mysql_path_supported(path: &Path) -> bool {
     }
 }
 
-fn mysql_ini(path: &Path) -> String {
-    ini(&mysql_path(path))
-}
-
 pub fn ini(path: &Path) -> String {
     format!(
         "\"{}\"",
-        path.to_string_lossy()
+        windows_ansi_path(path)
+            .to_string_lossy()
             .replace('\\', "/")
             .replace('"', "\\\"")
     )
