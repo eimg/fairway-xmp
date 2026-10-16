@@ -114,9 +114,9 @@ test('pending hosts updates and missing folders are shown with a recovery action
   await expect(page.getByText('Not in the hosts file yet')).toHaveCount(0);
   await expect(page.getByRole('switch', { name: 'HTTPS for Blog' })).toBeEnabled();
   await page.getByLabel('Scenario', { exact: true }).selectOption('Missing web root');
-  await expect(page.getByText('Web root folder not found.')).toBeVisible();
+  await expect(page.getByText('Unavailable: the web root folder was moved or deleted.', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: 'Collapse projects' }).click();
-  await expect(page.getByText('Web root folder not found.')).toBeHidden();
+  await expect(page.getByText('Unavailable: the web root folder was moved or deleted.', { exact: false })).toBeHidden();
 });
 
 test('support report is reviewable and excludes private paths; old PHP versions are legacy', async ({ page }, info) => {
