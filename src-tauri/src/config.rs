@@ -528,7 +528,9 @@ pub fn private_file(path: &Path) -> Result<()> {
 fn nginx_config(layout: &Layout, ports: &Ports, projects: &[ProjectConfig]) -> String {
     let fastcgi = format!(
         "fastcgi_pass 127.0.0.1:{};\nfastcgi_param QUERY_STRING $query_string;\nfastcgi_param REQUEST_METHOD $request_method;\nfastcgi_param CONTENT_TYPE $content_type;\nfastcgi_param CONTENT_LENGTH $content_length;\nfastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\nfastcgi_param SCRIPT_NAME $fastcgi_script_name;\nfastcgi_param REQUEST_URI $request_uri;\nfastcgi_param DOCUMENT_URI $document_uri;\nfastcgi_param DOCUMENT_ROOT $document_root;\nfastcgi_param SERVER_PROTOCOL $server_protocol;\nfastcgi_param REQUEST_SCHEME $scheme;\nfastcgi_param GATEWAY_INTERFACE CGI/1.1;\nfastcgi_param SERVER_SOFTWARE nginx;\nfastcgi_param REMOTE_ADDR $remote_addr;\nfastcgi_param REMOTE_PORT $remote_port;\nfastcgi_param SERVER_ADDR $server_addr;\nfastcgi_param SERVER_PORT $server_port;\nfastcgi_param SERVER_NAME $server_name;\nfastcgi_param REDIRECT_STATUS 200;\nfastcgi_param HTTP_PROXY \"\";\n", ports.php);
-    let project_servers = projects.iter().filter(|project| project.root.is_dir()).map(|project| {
+    // A missing web root stays configured (Nginx answers 404), so restoring the folder
+    // brings the site back without another change.
+    let project_servers = projects.iter().map(|project| {
         let fallback = if project.index_fallback { "/index.php?$query_string" } else { "=404" };
         let locations = format!("location ~ /\\. {{ deny all; }}\nlocation / {{ try_files $uri $uri/ {fallback}; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {fastcgi} }}");
         let server = |listen: String, tls: String| format!("server {{ listen 127.0.0.1:{listen}; server_name {}.test; root {}; index index.php index.html;\n{tls}{locations}\n}}\n",
@@ -596,7 +598,7 @@ mod tests {
     }
 
     #[test]
-    fn registered_projects_serve_their_chosen_root_and_skip_missing_folders() {
+    fn registered_projects_serve_their_chosen_root_including_missing_folders() {
         let root = std::env::temp_dir().join(format!(
             "fairway-sites-{}-{}",
             std::process::id(),
@@ -631,7 +633,7 @@ mod tests {
         )));
         assert_eq!(nginx.matches("/index.php?$query_string").count(), 1);
         assert!(nginx.contains("server_name plain.test"));
-        assert!(!nginx.contains("server_name gone.test"));
+        assert!(nginx.contains("server_name gone.test"));
         for invalid in [
             vec![project("", "shop", shop.clone(), false)],
             vec![project("Shop", "Shop", shop.clone(), false)],
