@@ -66,6 +66,7 @@ export default function App() {
   const [sslSetup, setSslSetup] = useState<Project | null>(null);
   const operation = useRef(false);
   const backendOperation = useRef(false);
+  const noticeRef = useRef<HTMLDivElement>(null);
   const versions = data.runtimeVersions;
   const selectedPhp = data.phpVersions[data.phpVersion] ?? versions?.php;
   const allReady = data.services.every(service => service.ready);
@@ -133,6 +134,8 @@ export default function App() {
     return () => { disposed = true; unlisteners.forEach(fn => fn()); };
   }, []);
 
+  // Results appear at the top of the page; bring them into view from lower cards.
+  useEffect(() => { noticeRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }); }, [notice]);
   useEffect(() => { setPorts(data.ports); }, [data.ports.website, data.ports.phpmyadmin, data.ports.mysql, data.ports.php]);
   useEffect(() => { setPhpVersion(data.phpVersion); }, [data.phpVersion]);
 
@@ -233,7 +236,7 @@ export default function App() {
       <div className="main-content">
         {UiTestToolbar && <Suspense fallback={null}><UiTestToolbar busy={!!busy} /></Suspense>}
         {!isDesktop && !isUiTest && <div className="preview-banner"><Code2 size={16} />Interface preview — open the desktop app to manage services.</div>}
-        {notice && <div className={`notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}><span>{notice.text}</span><button aria-label="Dismiss message" onClick={() => setNotice(null)}><X size={17} /></button></div>}
+        {notice && <div ref={noticeRef} className={`notice ${notice.kind}`} role={notice.kind === 'error' ? 'alert' : 'status'}><span>{notice.text}</span><button aria-label="Dismiss message" onClick={() => setNotice(null)}><X size={17} /></button></div>}
         {terminalOpened && <div hidden={view !== 'terminal'}><Suspense fallback={<p>Loading terminal…</p>}><TerminalPage active={view === 'terminal'} busy={!!busy} focusRequest={terminalFocus} /></Suspense></div>}
         {dataBrowserAvailable && <Activity mode={view === 'data' ? 'visible' : 'hidden'}><DataBrowser ready={data.services.some(service => service.id === 'mysql' && service.ready)} busy={!!busy && !databaseBusy} start={() => serviceAction('start', 'mysql')} open={open} /></Activity>}
 

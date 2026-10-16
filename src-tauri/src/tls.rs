@@ -9,6 +9,7 @@ use std::{fs, path::PathBuf, process::Command, time::Duration};
 use time::OffsetDateTime;
 
 pub const HTTPS_PORT: u16 = 8443;
+const CA_NAME: &str = "Fairway XMP Local CA";
 
 pub fn https_port() -> u16 {
     #[cfg(debug_assertions)]
@@ -65,9 +66,7 @@ fn clear_https(layout: &Layout) -> Result<()> {
 fn ca_params() -> CertificateParams {
     let mut params = CertificateParams::default();
     params.distinguished_name = DistinguishedName::new();
-    params
-        .distinguished_name
-        .push(DnType::CommonName, "Fairway XMP Local CA");
+    params.distinguished_name.push(DnType::CommonName, CA_NAME);
     params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     params.key_usages = vec![KeyUsagePurpose::KeyCertSign, KeyUsagePurpose::CrlSign];
     params.name_constraints = Some(NameConstraints {
@@ -253,14 +252,23 @@ pub fn remove_trust(layout: &Layout) -> Result<()> {
     }
     #[cfg(target_os = "macos")]
     {
-        let mut remove = Command::new("/usr/bin/security");
-        remove
-            .arg("remove-trusted-cert")
-            .arg("-k")
-            .arg(macos_keychain(layout))
-            .arg(root);
-        run(remove)
-            .map_err(|e| format!("Could not remove Fairway's local certificate trust: {e}"))?;
+        // Delete every Fairway CA with its trust setting, including ones left by an earlier CA.
+        let mut find = Command::new("/usr/bin/security");
+        find.args(["find-certificate", "-a", "-Z", "-c", CA_NAME])
+            .arg(macos_keychain(layout));
+        // find-certificate exits non-zero when nothing matches.
+        let found = find.output().map_err(|e| e.to_string())?;
+        for hash in String::from_utf8_lossy(&found.stdout)
+            .lines()
+            .filter_map(|line| line.strip_prefix("SHA-1 hash: "))
+        {
+            let mut delete = Command::new("/usr/bin/security");
+            delete
+                .args(["delete-certificate", "-t", "-Z", hash.trim()])
+                .arg(macos_keychain(layout));
+            run(delete)
+                .map_err(|e| format!("Could not remove Fairway's local certificate trust: {e}"))?;
+        }
     }
     #[cfg(windows)]
     {
