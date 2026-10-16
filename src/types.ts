@@ -4,9 +4,10 @@ export type ServiceStatus = {
   id: ServiceId; running: boolean; ready: boolean; port: number;
   pid: number | null; message: string | null;
 };
-export type Project = { name: string; url: string; httpsUrl: string | null; sslEnabled: boolean; domainEnabled: boolean; kind: 'php' | 'laravel' | 'incomplete' | 'invalid'; message: string | null; root: string };
+export type ProjectConfig = { name: string; domain: string; root: string; https: boolean; indexFallback: boolean };
+export type Project = ProjectConfig & { available: boolean; domainReady: boolean };
 export type Snapshot = {
-  ports: Ports; services: ServiceStatus[]; documentRoot: string; projects: Project[]; staleDomains: string[]; dataDir: string;
+  ports: Ports; services: ServiceStatus[]; documentRoot: string; projects: Project[]; domainsPending: boolean; httpsTrusted: boolean; os: string; dataDir: string;
   runtimeReady: boolean; runtimeVersions: Record<string, string> | null;
   phpVersion: string; phpVersions: Record<string, string>;
   pathInstalled: boolean; cliPhp: string | null; cliComposer: string | null;

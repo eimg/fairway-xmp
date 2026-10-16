@@ -1,6 +1,6 @@
 //! Exercise real packaged runtimes against an isolated student directory.
 use fairway_core::{
-    config::{Layout, Ports},
+    config::{Layout, Ports, ProjectConfig},
     integration,
     manager::Manager,
     process,
@@ -168,19 +168,31 @@ fn main() -> Result<(), String> {
         "<?php echo 'plain project';",
     )
     .map_err(|e| e.to_string())?;
-    fs::create_dir_all(manager.layout.www.join("laravel-project/public"))
-        .map_err(|e| e.to_string())?;
-    fs::write(manager.layout.www.join("laravel-project/artisan"), "").map_err(|e| e.to_string())?;
+    // Registered projects can live outside fairway/www and serve only their chosen web root.
+    let shop = manager.layout.home.join("code/shop");
+    fs::create_dir_all(shop.join("public")).map_err(|e| e.to_string())?;
+    fs::write(shop.join("secret.txt"), "private project file").map_err(|e| e.to_string())?;
     fs::write(
-        manager.layout.www.join("laravel-project/secret.txt"),
-        "private project file",
+        shop.join("public/index.php"),
+        "<?php echo 'front controller ', $_SERVER['REQUEST_URI'];",
     )
     .map_err(|e| e.to_string())?;
-    fs::write(
-        manager.layout.www.join("laravel-project/public/index.php"),
-        "<?php echo 'laravel route ', $_SERVER['REQUEST_URI'];",
-    )
-    .map_err(|e| e.to_string())?;
+    let project = |domain: &str, root: PathBuf, index_fallback: bool| ProjectConfig {
+        name: domain.into(),
+        domain: domain.into(),
+        root,
+        https: false,
+        index_fallback,
+    };
+    manager.save_project(
+        None,
+        project(
+            "plain-project",
+            manager.layout.www.join("plain-project"),
+            false,
+        ),
+    )?;
+    manager.save_project(None, project("shop", shop.join("public"), true))?;
     integration::install(&manager.layout)?;
     let result = (|| -> Result<(), String> {
         let snapshot = manager.snapshot();
@@ -216,13 +228,14 @@ fn main() -> Result<(), String> {
         let page = http(chosen.website, "/");
         assert!(page.contains("Your environment"), "{page}");
         assert!(http_host(chosen.website, "/", "plain-project.test").contains("plain project"));
+        assert!(http_host(chosen.website, "/courses/1", "shop.test")
+            .contains("front controller /courses/1"));
         assert!(
-            http_host(chosen.website, "/courses/1", "laravel-project.test")
-                .contains("laravel route /courses/1")
+            !http_host(chosen.website, "/secret.txt", "shop.test").contains("private project file")
         );
         assert!(
-            !http_host(chosen.website, "/secret.txt", "laravel-project.test")
-                .contains("private project file")
+            !http_host(chosen.website, "/courses/1", "plain-project.test")
+                .contains("plain project")
         );
         fs::create_dir_all(manager.layout.www.join("new-project")).map_err(|e| e.to_string())?;
         fs::write(
@@ -230,7 +243,10 @@ fn main() -> Result<(), String> {
             "<?php echo 'refreshed project';",
         )
         .map_err(|e| e.to_string())?;
-        manager.refresh_projects()?;
+        manager.save_project(
+            None,
+            project("new-project", manager.layout.www.join("new-project"), false),
+        )?;
         let mut refreshed = false;
         for _ in 0..20 {
             if http_host(chosen.website, "/", "new-project.test").contains("refreshed project") {
@@ -239,8 +255,8 @@ fn main() -> Result<(), String> {
             }
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
-        assert!(refreshed, "Nginx did not reload the new project site");
-        manager.set_project_ssl("new-project", true)?;
+        assert!(refreshed, "Nginx did not reload the added project site");
+        manager.set_project_https("new-project", true)?;
         let mut tls_ready = false;
         for _ in 0..20 {
             if https(&manager.layout, "new-project.test")
@@ -254,7 +270,7 @@ fn main() -> Result<(), String> {
         if !tls_ready {
             return Err("HTTPS project did not serve a trusted certificate".into());
         }
-        manager.set_project_ssl("plain-project", true)?;
+        manager.set_project_https("plain-project", true)?;
         for _ in 0..20 {
             if https(&manager.layout, "plain-project.test")
                 .is_ok_and(|body| body.contains("plain project"))
@@ -270,8 +286,19 @@ fn main() -> Result<(), String> {
         {
             return Err("The second HTTPS project did not receive a valid certificate".into());
         }
-        manager.set_project_ssl("new-project", false)?;
-        manager.set_project_ssl("plain-project", false)?;
+        manager.set_project_https("new-project", false)?;
+        manager.set_project_https("plain-project", false)?;
+        manager.remove_project("new-project")?;
+        let mut removed = false;
+        for _ in 0..20 {
+            if !http_host(chosen.website, "/", "new-project.test").contains("refreshed project") {
+                removed = true;
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        assert!(removed, "Nginx still serves a removed project");
+        assert!(manager.layout.www.join("new-project/index.php").is_file());
         let probe = manager.layout.www.join("smoke.php");
         fs::write(&probe, format!("<?php $pdo = new PDO('mysql:host=127.0.0.1;port={};dbname=fairway','fairway','fairway'); $pdo->exec('CREATE TABLE IF NOT EXISTS smoke (id INT PRIMARY KEY, title VARCHAR(30))'); $pdo->exec(\"REPLACE INTO smoke VALUES (1, 'classroom works')\"); echo $pdo->query('SELECT title FROM smoke WHERE id=1')->fetchColumn();", chosen.mysql)).map_err(|e| e.to_string())?;
         let result = http(chosen.website, "/smoke.php");

@@ -1,5 +1,5 @@
 use crate::{
-    config::{Layout, Ports, Result},
+    config::{Layout, Ports, ProjectConfig, Result},
     integration,
     lifecycle::{Lifecycle, Operation},
     manager::{Manager, Snapshot},
@@ -350,116 +350,119 @@ async fn save_settings(
     .await
 }
 
-#[tauri::command]
-async fn refresh_projects(app: tauri::AppHandle, state: State<'_, Shared>) -> Result<Snapshot> {
-    let _operation = begin_operation(&app, "Refreshing projects…")?;
-    let state = state.inner().clone();
-    access(state, |m| {
-        m.refresh_projects()?;
-        Ok(m.snapshot())
-    })
-    .await
+/// Match the hosts file to the registered domains. Runs outside the manager lock
+/// because the OS approval prompt waits for the user.
+async fn sync_hosts(state: Shared) -> Result<()> {
+    let domains = access(state, |m| m.domains()).await?;
+    tauri::async_runtime::spawn_blocking(move || crate::hosts::ensure(&domains, "--sync-hosts"))
+        .await
+        .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-async fn set_project_domain(
+async fn save_project(
     app: tauri::AppHandle,
     state: State<'_, Shared>,
-    name: String,
-    enabled: bool,
+    previous: Option<String>,
+    project: ProjectConfig,
 ) -> Result<Snapshot> {
-    let _operation = begin_operation(&app, "Updating project .test address…")?;
+    let _operation = begin_operation(&app, "Saving project…")?;
     let state = state.inner().clone();
-    access(state.clone(), {
-        let name = name.clone();
-        move |m| {
-            m.refresh_projects()?;
-            let project = m
-                .snapshot()
-                .projects
-                .into_iter()
-                .find(|project| project.name == name);
-            if enabled
-                && !project
-                    .as_ref()
-                    .is_some_and(|project| project.message.is_none())
-            {
-                return Err("This project is unavailable. Refresh projects first.".into());
-            }
-            if !enabled && project.is_some_and(|project| project.ssl_enabled) {
-                return Err(
-                    "Turn off HTTPS for this project before removing its .test address.".into(),
-                );
-            }
-            Ok(())
-        }
+    access(state.clone(), move |m| {
+        m.save_project(previous.as_deref(), project)
     })
     .await?;
-    tauri::async_runtime::spawn_blocking(move || {
-        crate::hosts::set_project(&name, enabled, "--sync-hosts")
-    })
-    .await
-    .map_err(|e| e.to_string())??;
+    sync_hosts(state.clone())
+        .await
+        .map_err(|e| format!("The project was saved, but the hosts file was not updated: {e}"))?;
     access(state, |m| Ok(m.snapshot())).await
 }
 
 #[tauri::command]
-async fn set_project_ssl(
+async fn remove_project(
     app: tauri::AppHandle,
     state: State<'_, Shared>,
-    name: String,
+    domain: String,
+) -> Result<Snapshot> {
+    let _operation = begin_operation(&app, "Removing project…")?;
+    let state = state.inner().clone();
+    access(state.clone(), move |m| m.remove_project(&domain)).await?;
+    sync_hosts(state.clone())
+        .await
+        .map_err(|e| format!("The project was removed, but the hosts file was not updated: {e}"))?;
+    access(state, |m| Ok(m.snapshot())).await
+}
+
+#[tauri::command]
+async fn sync_domains(app: tauri::AppHandle, state: State<'_, Shared>) -> Result<Snapshot> {
+    let _operation = begin_operation(&app, "Updating the hosts file…")?;
+    let state = state.inner().clone();
+    sync_hosts(state.clone()).await?;
+    access(state, |m| Ok(m.snapshot())).await
+}
+
+#[tauri::command]
+async fn set_project_https(
+    app: tauri::AppHandle,
+    state: State<'_, Shared>,
+    domain: String,
     enabled: bool,
 ) -> Result<Snapshot> {
     let _operation = begin_operation(&app, "Updating project HTTPS…")?;
     let shared = state.inner().clone();
-    let layout = access(shared.clone(), {
-        let name = name.clone();
-        move |m| {
-            if enabled
-                && !m
-                    .snapshot()
-                    .projects
-                    .iter()
-                    .any(|project| project.name == name && project.domain_enabled)
-            {
-                return Err("Enable this project's .test address before enabling HTTPS.".into());
-            }
-            if enabled
-                && [
-                    m.ports.website,
-                    m.ports.phpmyadmin,
-                    m.ports.mysql,
-                    m.ports.php,
-                ]
-                .contains(&crate::tls::https_port())
-            {
-                return Err(format!(
-                    "Port {} is reserved for project HTTPS. Choose another service port.",
-                    crate::tls::https_port()
-                ));
-            }
-            if !m
-                .layout
-                .projects(m.ports.website)?
-                .iter()
-                .any(|project| project.name == name && (!enabled || project.message.is_none()))
-            {
-                return Err("This project is unavailable. Refresh projects first.".into());
-            }
-            Ok(m.layout.clone())
-        }
-    })
-    .await?;
     if enabled {
+        let layout = access(shared.clone(), {
+            let domain = domain.clone();
+            move |m| {
+                if !m.domains()?.contains(&domain) {
+                    return Err("This project is no longer registered.".into());
+                }
+                Ok(m.layout.clone())
+            }
+        })
+        .await?;
         tauri::async_runtime::spawn_blocking(move || crate::tls::ensure_trust(&layout))
             .await
             .map_err(|e| e.to_string())??;
     }
     access(shared, move |m| {
-        m.set_project_ssl(&name, enabled)?;
+        m.set_project_https(&domain, enabled)?;
         Ok(m.snapshot())
     })
     .await
+}
+
+#[tauri::command]
+async fn remove_https_trust(app: tauri::AppHandle, state: State<'_, Shared>) -> Result<Snapshot> {
+    let _operation = begin_operation(&app, "Removing certificate trust…")?;
+    let shared = state.inner().clone();
+    let layout = access(shared.clone(), |m| {
+        if m.layout.registered_projects()?.iter().any(|p| p.https) {
+            return Err(
+                "Turn off HTTPS for every project before removing certificate trust.".into(),
+            );
+        }
+        Ok(m.layout.clone())
+    })
+    .await?;
+    tauri::async_runtime::spawn_blocking(move || crate::tls::remove_trust(&layout))
+        .await
+        .map_err(|e| e.to_string())??;
+    access(shared, |m| Ok(m.snapshot())).await
+}
+
+#[tauri::command]
+async fn pick_folder(app: tauri::AppHandle) -> Result<Option<PathBuf>> {
+    use tauri_plugin_dialog::DialogExt;
+    tauri::async_runtime::spawn_blocking(move || {
+        app.dialog()
+            .file()
+            .blocking_pick_folder()
+            .map(|path| path.into_path().map_err(|e| e.to_string()))
+            .transpose()
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -713,6 +716,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
             show_window(app);
         }))
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if app.config().plugins.0.contains_key("updater") {
                 app.handle()
@@ -773,9 +777,12 @@ pub fn run() {
             cancel_data_browser,
             service_action,
             save_settings,
-            refresh_projects,
-            set_project_domain,
-            set_project_ssl,
+            save_project,
+            remove_project,
+            sync_domains,
+            set_project_https,
+            remove_https_trust,
+            pick_folder,
             open_target,
             read_log,
             cli_integration,

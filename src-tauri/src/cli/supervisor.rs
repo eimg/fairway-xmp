@@ -320,8 +320,11 @@ fn execute(manager: &mut Manager, request: Request) -> Result<serde_json::Value>
             return Ok(serde_json::json!(manager.layout.php_version()?));
         }
         Request::Backup => return manager.backup().map(serde_json::Value::String),
-        Request::RefreshProjects => manager.refresh_projects()?,
-        Request::ProjectSsl { name, enabled } => manager.set_project_ssl(&name, enabled)?,
+        Request::SaveProject { previous, project } => {
+            manager.save_project(previous.as_deref(), project)?
+        }
+        Request::RemoveProject { domain } => manager.remove_project(&domain)?,
+        Request::ProjectHttps { domain, enabled } => manager.set_project_https(&domain, enabled)?,
         Request::InstallCli => {
             integration::install(&manager.layout)?;
             let path = manager.layout.bin.join("fairway");

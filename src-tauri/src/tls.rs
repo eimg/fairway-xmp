@@ -1,11 +1,11 @@
 //! Local HTTPS material for the optional project sites.
-use crate::config::{atomic_write, private_file, valid_project_name, Layout, Result};
+use crate::config::{atomic_write, private_file, Layout, Result};
 use rcgen::{
     BasicConstraints, CertificateParams, CertifiedIssuer, DistinguishedName, DnType,
     ExtendedKeyUsagePurpose, GeneralSubtree, IsCa, Issuer, KeyPair, KeyUsagePurpose,
     NameConstraints,
 };
-use std::{collections::BTreeSet, fs, path::PathBuf, process::Command, time::Duration};
+use std::{fs, path::PathBuf, process::Command, time::Duration};
 use time::OffsetDateTime;
 
 pub const HTTPS_PORT: u16 = 8443;
@@ -46,27 +46,20 @@ fn trust_marker(layout: &Layout) -> PathBuf {
     directory(layout).join("trusted")
 }
 
-fn state_path(layout: &Layout) -> PathBuf {
-    layout.data.join("https-projects.json")
+pub fn trusted(layout: &Layout) -> bool {
+    trust_marker(layout).exists()
 }
 
-pub fn enabled_names(layout: &Layout) -> Result<BTreeSet<String>> {
-    let names: BTreeSet<String> = match fs::read(state_path(layout)) {
-        Ok(bytes) => serde_json::from_slice(&bytes).map_err(|e| e.to_string())?,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => BTreeSet::new(),
-        Err(error) => return Err(error.to_string()),
-    };
-    if names.iter().any(|name| !valid_project_name(name)) {
-        return Err("An HTTPS project name is invalid. Check https-projects.json.".into());
+/// Remove saved HTTPS choices so a kept profile does not serve untrusted certificates.
+fn clear_https(layout: &Layout) -> Result<()> {
+    let mut projects = layout.registered_projects()?;
+    if projects.iter().any(|project| project.https) {
+        projects
+            .iter_mut()
+            .for_each(|project| project.https = false);
+        layout.save_projects(&projects)?;
     }
-    Ok(names)
-}
-
-pub fn save_enabled_names(layout: &Layout, names: &BTreeSet<String>) -> Result<()> {
-    atomic_write(
-        &state_path(layout),
-        &serde_json::to_vec_pretty(names).map_err(|e| e.to_string())?,
-    )
+    Ok(())
 }
 
 fn ca_params() -> CertificateParams {
@@ -109,9 +102,11 @@ pub fn ensure_certificate(layout: &Layout) -> Result<()> {
         atomic_write(&ca_cert, ca.pem().as_bytes())?;
         atomic_write(&dir.join("root-ca.der"), ca.der().as_ref())?;
     }
-    let mut domains = enabled_names(layout)?
+    let mut domains = layout
+        .registered_projects()?
         .into_iter()
-        .map(|name| format!("{name}.test"))
+        .filter(|project| project.https)
+        .map(|project| format!("{}.test", project.domain))
         .collect::<Vec<_>>();
     domains.push("fairway.test".into());
     domains.sort();
@@ -249,8 +244,7 @@ pub fn ensure_trust(layout: &Layout) -> Result<()> {
 pub fn remove_trust(layout: &Layout) -> Result<()> {
     let root = root_certificate(layout);
     if !trust_marker(layout).exists() {
-        save_enabled_names(layout, &BTreeSet::new())?;
-        return Ok(());
+        return clear_https(layout);
     }
     if !root.exists() {
         return Err(
@@ -297,7 +291,7 @@ pub fn remove_trust(layout: &Layout) -> Result<()> {
             .map_err(|e| format!("Could not remove Fairway's local certificate trust: {e}"))?;
     }
     fs::remove_file(trust_marker(layout)).map_err(|e| e.to_string())?;
-    save_enabled_names(layout, &BTreeSet::new())
+    clear_https(layout)
 }
 
 #[cfg(test)]
@@ -309,9 +303,16 @@ mod tests {
         let root = std::env::temp_dir().join(format!("fairway-tls-test-{}", rand::random::<u64>()));
         let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
         fs::create_dir_all(&layout.data).unwrap();
-        save_enabled_names(&layout, &BTreeSet::from(["hello".to_string()])).unwrap();
+        let project = crate::config::ProjectConfig {
+            name: "Hello".into(),
+            domain: "hello".into(),
+            root: root.clone(),
+            https: true,
+            index_fallback: false,
+        };
+        layout.save_projects(&[project]).unwrap();
         remove_trust(&layout).unwrap();
-        assert!(enabled_names(&layout).unwrap().is_empty());
+        assert!(!layout.registered_projects().unwrap()[0].https);
         fs::remove_dir_all(root).unwrap();
     }
 }

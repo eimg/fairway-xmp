@@ -5,13 +5,18 @@
 .project-card{background:#fff;border:1px solid var(--border);border-radius:9px;padding:20px;margin-top:14px}
 .project-card>.card-title{margin-bottom:8px}.project-card p{font-size:10px;color:var(--muted);line-height:1.7;margin:7px 0}.project-heading-actions{display:flex;align-items:center;gap:7px}.project-collapse{width:33px;padding:0}.project-collapse svg{transition:transform .15s}.project-collapse svg.expanded{transform:rotate(180deg)}
 .project-table-scroll{margin-top:13px;overflow-x:auto}
-.project-table{width:100%;min-width:650px;border-collapse:collapse;table-layout:fixed;text-align:left}
+.project-table{width:100%;min-width:500px;border-collapse:collapse;table-layout:fixed;text-align:left}
 .project-table th,.project-table td{padding:11px 6px;border-bottom:1px solid #eef0ef;vertical-align:middle}
 .project-table thead{background:#f7f9f8;color:#74827a;font-size:10px}
-.project-table thead th{font-weight:600}.project-table thead th:nth-child(1){width:17%}.project-table thead th:nth-child(2){width:31%}.project-table thead th:nth-child(3){width:31%}.project-table thead th:nth-child(4){width:9%}.project-table thead th:nth-child(5){width:12%}
+.project-table thead th{font-weight:600}.project-table thead th:nth-child(1){width:38%}.project-table thead th:nth-child(2){width:26%}.project-table thead th:nth-child(3){width:10%}.project-table thead th:nth-child(4){width:26%}
 .project-table tbody th{font-weight:400}.project-table tbody strong{display:block;font-size:11px;overflow-wrap:anywhere}.project-table tbody small{display:block;color:#829086;font-size:9px;margin-top:2px}.project-table tbody small.project-warning{color:#a15142;line-height:1.4}
-.project-table code{font-size:10px;color:var(--green);overflow-wrap:anywhere}.project-table .project-muted,.project-table .project-domain-muted{color:#98a39d}.project-table .project-domain-active{color:var(--green)}
-.project-domain-cell{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:6px}.project-domain-cell .secondary{flex-shrink:0;min-height:27px;padding:4px 7px}.project-table td:last-child .secondary{min-height:27px;padding:4px 6px;gap:3px}
+.project-table code{font-size:10px;color:var(--green);overflow-wrap:anywhere}.project-table code.project-root{display:block;color:#829086;font-size:9px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.project-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:5px}.project-actions .secondary{min-height:27px;padding:4px 7px;gap:3px}
+.project-pending{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:9px 11px;border-radius:7px;background:#f7f9f8;font-size:10px;color:#6b7d71}.project-pending .secondary{flex-shrink:0;min-height:27px;padding:4px 8px}
+.project-form{display:flex;flex-direction:column;gap:14px;margin-top:12px}.project-form label{display:flex;flex-direction:column;gap:6px}.project-form label>span:first-child{font-weight:550;font-size:11px}.project-form small{display:block;color:#93a097;font-weight:400;font-size:9px;line-height:1.6}.project-form input{max-width:none}
+.project-card p code,.project-pending code,.project-form small code{font-size:.95em}
+.domain-input,.root-input{display:flex;align-items:center;gap:6px}.domain-input>span{font-family:ui-monospace,monospace;font-size:12px;color:#6b7d71}.root-input .secondary{flex-shrink:0}
+.project-form .project-check{flex-direction:row;align-items:flex-start;gap:8px}.project-form .project-check input{width:auto;margin-top:2px}.project-form .project-check>span{font-weight:400}
 .domain-confirm-actions{margin-top:18px}
 .ssl-toggle{display:inline-flex;align-items:center;gap:5px;font-size:9px;color:#6b7d71;cursor:pointer;white-space:nowrap;position:relative}.ssl-toggle input{position:absolute;opacity:0;width:1px;height:1px;padding:0;margin:0}.ssl-track{display:block;width:26px;height:16px;flex-shrink:0;border:1px solid #a8b8ad;border-radius:20px;background:#cbd5ce;transition:background .15s}.ssl-track:before{content:"";display:block;width:12px;height:12px;margin:1px;border-radius:50%;background:#fff;box-shadow:0 1px 2px #0002;transition:transform .15s}.ssl-toggle input:checked+.ssl-track{background:var(--green);border-color:var(--green)}.ssl-toggle input:checked+.ssl-track:before{transform:translateX(10px)}.ssl-toggle input:focus-visible+.ssl-track{outline:2px solid var(--green);outline-offset:2px}.ssl-toggle:has(input:disabled){opacity:.45;cursor:not-allowed}
 

@@ -51,17 +51,25 @@ pub struct Layout {
     pub bin: PathBuf,
 }
 
+/// A project the user registered. Saved registrations are the only source of project sites.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ProjectConfig {
+    pub name: String,
+    /// DNS label served as `<domain>.test`.
+    pub domain: String,
+    pub root: PathBuf,
+    pub https: bool,
+    pub index_fallback: bool,
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
-    pub name: String,
-    pub url: String,
-    pub https_url: Option<String>,
-    pub ssl_enabled: bool,
-    pub domain_enabled: bool,
-    pub kind: String,
-    pub message: Option<String>,
-    pub root: PathBuf,
+    #[serde(flatten)]
+    pub config: ProjectConfig,
+    pub available: bool,
+    pub domain_ready: bool,
 }
 
 pub fn valid_project_name(name: &str) -> bool {
@@ -79,58 +87,56 @@ pub fn valid_project_name(name: &str) -> bool {
             .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
 }
 
-impl Layout {
-    pub fn projects(&self, port: u16) -> Result<Vec<Project>> {
-        let secure = crate::tls::enabled_names(self)?;
-        let mut projects = Vec::new();
-        for entry in fs::read_dir(&self.www).map_err(|e| e.to_string())? {
-            let entry = entry.map_err(|e| e.to_string())?;
-            if !entry.file_type().map_err(|e| e.to_string())?.is_dir() {
-                continue;
-            }
-            let name = entry.file_name().to_string_lossy().into_owned();
-            let valid = valid_project_name(&name);
-            let path = entry.path();
-            let laravel = path.join("artisan").is_file();
-            let incomplete = laravel && !path.join("public/index.php").is_file();
-            let ssl_enabled = valid && secure.contains(&name);
-            projects.push(Project {
-                url: if valid && !incomplete {
-                    format!("http://{name}.test:{port}/")
-                } else {
-                    String::new()
-                },
-                https_url: (ssl_enabled && !incomplete)
-                    .then(|| format!("https://{name}.test:{}/", crate::tls::https_port())),
-                ssl_enabled,
-                domain_enabled: false,
-                kind: if !valid {
-                    "invalid"
-                } else if incomplete {
-                    "incomplete"
-                } else if laravel {
-                    "laravel"
-                } else {
-                    "php"
-                }
-                .into(),
-                message: if !valid {
-                    Some("Use lowercase letters, numbers, and hyphens for the folder name.".into())
-                } else if incomplete {
-                    Some(
-                        "Laravel's public/index.php is missing. This project is not being served."
-                            .into(),
-                    )
-                } else {
-                    None
-                },
-                root: if laravel { path.join("public") } else { path },
-                name,
-            });
+pub fn validate_projects(projects: &[ProjectConfig]) -> Result<()> {
+    let mut domains = HashSet::new();
+    for project in projects {
+        let name = project.name.trim();
+        if name.is_empty() || name.len() > 80 || name != project.name {
+            return Err("Enter a project name up to 80 characters.".into());
         }
-        projects.sort_by(|a, b| a.name.cmp(&b.name));
+        if !valid_project_name(&project.domain) || project.domain == "fairway" {
+            return Err(format!(
+                "{}.test is not available. Use lowercase letters, numbers, and hyphens.",
+                project.domain
+            ));
+        }
+        if !domains.insert(&project.domain) {
+            return Err(format!(
+                "{}.test is already used by another project.",
+                project.domain
+            ));
+        }
+        if !project.root.is_absolute() {
+            return Err("Choose the project's web root folder.".into());
+        }
+    }
+    Ok(())
+}
+
+impl Layout {
+    fn projects_path(&self) -> PathBuf {
+        self.data.join("projects.json")
+    }
+
+    pub fn registered_projects(&self) -> Result<Vec<ProjectConfig>> {
+        let projects: Vec<ProjectConfig> = match fs::read(self.projects_path()) {
+            Ok(bytes) => serde_json::from_slice(&bytes)
+                .map_err(|e| format!("The saved project list is invalid: {e}"))?,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Vec::new(),
+            Err(error) => return Err(error.to_string()),
+        };
+        validate_projects(&projects)?;
         Ok(projects)
     }
+
+    pub fn save_projects(&self, projects: &[ProjectConfig]) -> Result<()> {
+        validate_projects(projects)?;
+        atomic_write(
+            &self.projects_path(),
+            &serde_json::to_vec_pretty(projects).map_err(|e| e.to_string())?,
+        )
+    }
+
     pub fn new(runtime: PathBuf) -> Result<Self> {
         #[cfg(debug_assertions)]
         if let (Some(home), Some(data)) = (
@@ -308,8 +314,10 @@ impl Layout {
             "[global]\npid={}\nerror_log={}\ndaemonize=no\n[www]\nlisten=127.0.0.1:{}\nlisten.allowed_clients=127.0.0.1\npm=ondemand\npm.max_children=4\npm.process_idle_timeout=10s\ncatch_workers_output=yes\nclear_env=no\n",
             ini(&self.data.join("php.pid")), ini(&self.data.join("logs/php-fpm.log")), ports.php);
         atomic_write(&conf.join("php-fpm.conf"), fpm.as_bytes())?;
-        let projects = self.projects(ports.website)?;
-        if projects.iter().any(|project| project.ssl_enabled) {
+        // ponytail: an unreadable project list must not stop the basic localhost server;
+        // edits still read it strictly, so it is never overwritten silently.
+        let projects = self.registered_projects().unwrap_or_default();
+        if projects.iter().any(|project| project.https) {
             if [ports.website, ports.phpmyadmin, ports.mysql, ports.php]
                 .contains(&crate::tls::https_port())
             {
@@ -517,23 +525,20 @@ pub fn private_file(path: &Path) -> Result<()> {
     Ok(())
 }
 
-fn nginx_config(layout: &Layout, ports: &Ports, projects: &[Project]) -> String {
+fn nginx_config(layout: &Layout, ports: &Ports, projects: &[ProjectConfig]) -> String {
     let fastcgi = format!(
         "fastcgi_pass 127.0.0.1:{};\nfastcgi_param QUERY_STRING $query_string;\nfastcgi_param REQUEST_METHOD $request_method;\nfastcgi_param CONTENT_TYPE $content_type;\nfastcgi_param CONTENT_LENGTH $content_length;\nfastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;\nfastcgi_param SCRIPT_NAME $fastcgi_script_name;\nfastcgi_param REQUEST_URI $request_uri;\nfastcgi_param DOCUMENT_URI $document_uri;\nfastcgi_param DOCUMENT_ROOT $document_root;\nfastcgi_param SERVER_PROTOCOL $server_protocol;\nfastcgi_param REQUEST_SCHEME $scheme;\nfastcgi_param GATEWAY_INTERFACE CGI/1.1;\nfastcgi_param SERVER_SOFTWARE nginx;\nfastcgi_param REMOTE_ADDR $remote_addr;\nfastcgi_param REMOTE_PORT $remote_port;\nfastcgi_param SERVER_ADDR $server_addr;\nfastcgi_param SERVER_PORT $server_port;\nfastcgi_param SERVER_NAME $server_name;\nfastcgi_param REDIRECT_STATUS 200;\nfastcgi_param HTTP_PROXY \"\";\n", ports.php);
-    let project_servers = projects.iter().filter(|project| !project.url.is_empty() && project.message.is_none()).map(|project| {
-        let locations = if project.kind == "laravel" {
-            format!("location / {{ try_files $uri $uri/ /index.php?$query_string; }}\nlocation = /index.php {{ try_files $uri =404; {fastcgi} }}\nlocation ~ \\.php$ {{ return 404; }}")
-        } else {
-            format!("location / {{ try_files $uri $uri/ =404; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {fastcgi} }}")
-        };
-        let http = format!("server {{ listen 127.0.0.1:{}; server_name {}.test; root {}; index index.php index.html;\nlocation ~ /\\. {{ deny all; }}\n{}\n}}\n",
-            ports.website, project.name, nginx_path(&project.root), locations);
-        if !project.ssl_enabled {
+    let project_servers = projects.iter().filter(|project| project.root.is_dir()).map(|project| {
+        let fallback = if project.index_fallback { "/index.php?$query_string" } else { "=404" };
+        let locations = format!("location ~ /\\. {{ deny all; }}\nlocation / {{ try_files $uri $uri/ {fallback}; }}\nlocation ~ \\.php$ {{ try_files $uri =404; {fastcgi} }}");
+        let server = |listen: String, tls: String| format!("server {{ listen 127.0.0.1:{listen}; server_name {}.test; root {}; index index.php index.html;\n{tls}{locations}\n}}\n",
+            project.domain, nginx_path(&project.root));
+        let http = server(ports.website.to_string(), String::new());
+        if !project.https {
             return http;
         }
-        let https = format!("server {{ listen 127.0.0.1:{} ssl; server_name {}.test; root {}; index index.php index.html;\nssl_certificate {};\nssl_certificate_key {};\nlocation ~ /\\. {{ deny all; }}\n{}\n}}\n",
-            crate::tls::https_port(), project.name, nginx_path(&project.root),
-            nginx_path(&crate::tls::certificate(layout)), nginx_path(&crate::tls::private_key(layout)), locations);
+        let https = server(format!("{} ssl", crate::tls::https_port()), format!("ssl_certificate {};\nssl_certificate_key {};\n",
+            nginx_path(&crate::tls::certificate(layout)), nginx_path(&crate::tls::private_key(layout))));
         format!("{http}{https}")
     }).collect::<String>();
     format!(
@@ -591,7 +596,7 @@ mod tests {
     }
 
     #[test]
-    fn project_sites_use_laravel_public_and_skip_incomplete_or_invalid_folders() {
+    fn registered_projects_serve_their_chosen_root_and_skip_missing_folders() {
         let root = std::env::temp_dir().join(format!(
             "fairway-sites-{}-{}",
             std::process::id(),
@@ -599,47 +604,46 @@ mod tests {
         ));
         let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
         layout.initialize().unwrap();
-        fs::create_dir_all(layout.www.join("plain")).unwrap();
-        fs::write(layout.www.join("plain/index.php"), "plain").unwrap();
-        fs::create_dir_all(layout.www.join("laravel/public")).unwrap();
-        fs::write(layout.www.join("laravel/artisan"), "").unwrap();
-        fs::write(layout.www.join("laravel/public/index.php"), "laravel").unwrap();
-        fs::create_dir_all(layout.www.join("broken")).unwrap();
-        fs::write(layout.www.join("broken/artisan"), "").unwrap();
-        crate::tls::save_enabled_names(
-            &layout,
-            &std::collections::BTreeSet::from(["broken".to_string()]),
-        )
-        .unwrap();
-        fs::create_dir_all(layout.www.join("bad_name")).unwrap();
-        let projects = layout.projects(8800).unwrap();
-        assert_eq!(projects.len(), 4);
-        assert_eq!(
-            projects.iter().find(|p| p.name == "laravel").unwrap().root,
-            layout.www.join("laravel/public")
-        );
-        assert!(projects
-            .iter()
-            .find(|p| p.name == "broken")
-            .unwrap()
-            .message
-            .is_some());
-        assert!(
-            projects
-                .iter()
-                .find(|p| p.name == "broken")
-                .unwrap()
-                .ssl_enabled
-        );
+        assert!(layout.registered_projects().unwrap().is_empty());
+        let shop = root.join("code/shop/public");
+        fs::create_dir_all(&shop).unwrap();
+        let project =
+            |name: &str, domain: &str, root: PathBuf, index_fallback: bool| ProjectConfig {
+                name: name.into(),
+                domain: domain.into(),
+                root,
+                https: false,
+                index_fallback,
+            };
+        let projects = vec![
+            project("My Shop", "shop", shop.clone(), true),
+            project("Plain", "plain", layout.www.clone(), false),
+            project("Gone", "gone", root.join("missing"), false),
+        ];
+        layout.save_projects(&projects).unwrap();
+        assert_eq!(layout.registered_projects().unwrap(), projects);
         let nginx = nginx_config(&layout, &Ports::default(), &projects);
         let localhost = format!("server_name localhost; root {}", nginx_path(&layout.www));
-        assert!(nginx.contains(&localhost));
-        assert!(nginx.find(&localhost) < nginx.find("server_name plain.test"));
+        assert!(nginx.find(&localhost) < nginx.find("server_name shop.test"));
+        assert!(nginx.contains(&format!(
+            "server_name shop.test; root {}",
+            nginx_path(&shop)
+        )));
+        assert_eq!(nginx.matches("/index.php?$query_string").count(), 1);
         assert!(nginx.contains("server_name plain.test"));
-        assert!(nginx.contains("server_name laravel.test"));
-        assert!(nginx.contains("try_files $uri $uri/ /index.php?$query_string"));
-        assert!(!nginx.contains("server_name broken.test"));
-        assert!(!nginx.contains("server_name bad_name.test"));
+        assert!(!nginx.contains("server_name gone.test"));
+        for invalid in [
+            vec![project("", "shop", shop.clone(), false)],
+            vec![project("Shop", "Shop", shop.clone(), false)],
+            vec![project("Shop", "fairway", shop.clone(), false)],
+            vec![project("Shop", "shop", "relative".into(), false)],
+            vec![
+                projects[0].clone(),
+                project("Again", "shop", shop.clone(), false),
+            ],
+        ] {
+            assert!(layout.save_projects(&invalid).is_err());
+        }
         fs::remove_dir_all(root).unwrap();
     }
 

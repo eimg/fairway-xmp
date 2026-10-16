@@ -30,7 +30,7 @@ required-features = ["terminal"]
 [features]
 default = ["desktop"]
 cli = []
-desktop = ["terminal", "dep:tauri", "dep:tauri-build", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-updater", "dep:muda", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation"]
+desktop = ["terminal", "dep:tauri", "dep:tauri-build", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-updater", "dep:tauri-plugin-dialog", "dep:muda", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation"]
 terminal = ["dep:portable-pty"]
 
 [build-dependencies]
@@ -46,6 +46,7 @@ portable-pty = { version = "0.9", optional = true }
 tauri = { version = "~2.12", optional = true, features = ["tray-icon"] }
 tauri-plugin-single-instance = { version = "2", optional = true }
 tauri-plugin-updater = { version = "2", optional = true }
+tauri-plugin-dialog = { version = "2", optional = true }
 rcgen = { version = "0.14.10", features = ["x509-parser"] }
 time = "0.3"
 ring = "0.17"

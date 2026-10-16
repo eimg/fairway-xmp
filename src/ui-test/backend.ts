@@ -1,13 +1,13 @@
 import { preview } from '../bridge';
 import { terminalRequest } from './terminal';
-import type { Ports, ServiceId, Snapshot } from '../types';
+import type { Ports, ProjectConfig, ServiceId, Snapshot } from '../types';
 import { cancelData, databaseRequest, resetData } from './data-browser';
 
 // Fixture modules own event subscriptions and state. Reload them together so
 // Fast Refresh cannot keep a screen subscribed to an obsolete simulation.
 if (import.meta.hot) import.meta.hot.accept(() => window.location.reload());
 
-export const scenarios = ['Stopped', 'Domains not set up', 'One domain set up', 'Removed project domain', 'Running', 'Partially running', 'Port conflict', 'Missing runtime', 'Update available', 'Update failure', 'CLI not detected by app', 'Other PHP on PATH', 'CLI disabled'] as const;
+export const scenarios = ['Stopped', 'No projects', 'Hosts update pending', 'Missing web root', 'Running', 'Partially running', 'Port conflict', 'Missing runtime', 'Update available', 'Update failure', 'CLI not detected by app', 'Other PHP on PATH', 'CLI disabled'] as const;
 export type Scenario = typeof scenarios[number];
 export type Platform = 'Windows' | 'macOS';
 const events = new EventTarget();
@@ -30,6 +30,15 @@ function paths() {
 
 function joinPath(...parts: string[]) {
   return parts.join(platform === 'Windows' ? '\\' : '/');
+}
+
+function home() {
+  return platform === 'Windows' ? 'C:\\Users\\Student May' : '/Users/Student May';
+}
+
+function syncDomains() {
+  for (const project of data.projects) project.domainReady = true;
+  data.domainsPending = false;
 }
 
 function configureCli(enabled: boolean) {
@@ -56,15 +65,13 @@ export function select(next: Scenario, os: Platform) {
   resetData();
   scenario = next; platform = os;
   data = { ...structuredClone(preview), ...paths(), runtimeReady: next !== 'Missing runtime', pathInstalled: true };
-  data.projects = [
-    { name: 'hello', url: 'http://hello.test:8800/', httpsUrl: null, sslEnabled: false, domainEnabled: next !== 'Domains not set up', kind: 'php', message: null, root: joinPath(data.documentRoot, 'hello') },
-    { name: 'laravel-app', url: 'http://laravel-app.test:8800/', httpsUrl: 'https://laravel-app.test:8443/', sslEnabled: true, domainEnabled: next !== 'Domains not set up' && next !== 'One domain set up', kind: 'laravel', message: null, root: joinPath(data.documentRoot, 'laravel-app', 'public') },
+  data.projects = next === 'No projects' ? [] : [
+    { name: 'My Shop', domain: 'shop', root: joinPath(home(), 'Code', 'shop', 'public'), https: true, indexFallback: true, available: next !== 'Missing web root', domainReady: true },
+    { name: 'Blog', domain: 'blog', root: joinPath(data.documentRoot, 'blog'), https: false, indexFallback: false, available: true, domainReady: next !== 'Hosts update pending' },
   ];
-  if (next === 'Domains not set up' || next === 'One domain set up') {
-    data.projects[1].sslEnabled = false;
-    data.projects[1].httpsUrl = null;
-  }
-  if (next === 'Removed project domain') data.staleDomains = ['old-project'];
+  data.httpsTrusted = next !== 'No projects';
+  data.domainsPending = next === 'Hosts update pending';
+  data.os = platform === 'Windows' ? 'windows' : 'macos';
   configureCli(next !== 'CLI disabled');
   if (next === 'Running' || next === 'Partially running') running('nginx', true);
   if (next === 'Running') running('mysql', true);
@@ -127,26 +134,31 @@ export async function invoke<T>(command: string, args: Record<string, unknown> =
       result = structuredClone(data); break;
     }
     case 'cli_integration': configureCli(Boolean(args.enabled)); result = structuredClone(data); break;
-    case 'refresh_projects': result = structuredClone(data); break;
-    case 'set_project_domain': {
-      const project = data.projects.find(project => project.name === args.name);
-      if (!project && args.enabled) throw new Error('Project not found.');
-      if (!project && !data.staleDomains.includes(String(args.name))) throw new Error('Domain not found.');
-      if (!project) data.staleDomains = data.staleDomains.filter(name => name !== args.name);
-      else {
-      if (!args.enabled && project.sslEnabled) throw new Error('Turn off HTTPS for this project first.');
-      project.domainEnabled = Boolean(args.enabled);
-      }
+    case 'pick_folder': return joinPath(home(), 'Code', 'new-site', 'public') as T;
+    case 'save_project': {
+      const project = args.project as ProjectConfig;
+      const others = data.projects.filter(item => item.domain !== args.previous);
+      if (!project.name.trim()) throw new Error('Enter a project name up to 80 characters.');
+      if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/.test(project.domain) || project.domain === 'fairway') throw new Error(`${project.domain}.test is not available. Use lowercase letters, numbers, and hyphens.`);
+      if (others.some(item => item.domain === project.domain)) throw new Error(`${project.domain}.test is already used by another project.`);
+      const saved = { ...project, available: true, domainReady: true };
+      data.projects = args.previous ? data.projects.map(item => item.domain === args.previous ? saved : item) : [...data.projects, saved];
+      syncDomains(); result = structuredClone(data); break;
+    }
+    case 'remove_project':
+      data.projects = data.projects.filter(item => item.domain !== args.domain);
+      result = structuredClone(data); break;
+    case 'sync_domains': syncDomains(); result = structuredClone(data); break;
+    case 'set_project_https': {
+      const project = data.projects.find(item => item.domain === args.domain);
+      if (!project) throw new Error('This project is no longer registered.');
+      project.https = Boolean(args.enabled);
+      if (project.https) data.httpsTrusted = true;
       result = structuredClone(data); break;
     }
-    case 'set_project_ssl': {
-      const project = data.projects.find(project => project.name === args.name);
-      if (!project) throw new Error('Project not found.');
-      if (args.enabled && !project.domainEnabled) throw new Error('Enable this project’s .test address first.');
-      project.sslEnabled = Boolean(args.enabled);
-      project.httpsUrl = project.sslEnabled ? `https://${project.name}.test:8443/` : null;
-      result = structuredClone(data); break;
-    }
+    case 'remove_https_trust':
+      if (data.projects.some(item => item.https)) throw new Error('Turn off HTTPS for every project before removing certificate trust.');
+      data.httpsTrusted = false; result = structuredClone(data); break;
     case 'backup_database':
       if (!data.services.find(service => service.id === 'mysql')?.ready) throw new Error('Start MySQL before making a backup.');
       result = joinPath(data.dataDir, 'backups', 'student-databases-ui-test.sql'); break;

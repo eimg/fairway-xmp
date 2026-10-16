@@ -43,21 +43,6 @@ pub fn managed_names() -> Result<BTreeSet<String>> {
     managed_names_from(&text)
 }
 
-pub fn set_project(name: &str, enabled: bool, helper_flag: &str) -> Result<()> {
-    if !valid_project_name(name) {
-        return Err("Invalid project domain name.".into());
-    }
-    let mut names = managed_names()?;
-    if enabled {
-        names.insert(name.to_string());
-    } else if !names.remove(name) {
-        return Err(format!(
-            "Fairway does not manage {name}.test in the hosts file."
-        ));
-    }
-    ensure(&names.into_iter().collect::<Vec<_>>(), helper_flag)
-}
-
 fn hosts_path() -> Result<PathBuf> {
     #[cfg(windows)]
     {

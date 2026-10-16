@@ -1,5 +1,5 @@
 use crate::{
-    config::{atomic_write, Layout, Ports, Project, Result},
+    config::{atomic_write, Layout, Ports, Project, ProjectConfig, Result},
     process::{self, OwnedProcess},
 };
 use serde::Serialize;
@@ -30,7 +30,10 @@ pub struct Snapshot {
     pub services: Vec<ServiceStatus>,
     pub document_root: String,
     pub projects: Vec<Project>,
-    pub stale_domains: Vec<String>,
+    /// The hosts file does not match the registered domains yet.
+    pub domains_pending: bool,
+    pub https_trusted: bool,
+    pub os: String,
     pub data_dir: String,
     pub runtime_ready: bool,
     pub runtime_versions: serde_json::Value,
@@ -152,21 +155,28 @@ impl Manager {
             }
         })
         .collect();
-        let mut projects = self.layout.projects(self.ports.website).unwrap_or_default();
+        let registered = self.layout.registered_projects().unwrap_or_default();
         let managed = crate::hosts::managed_names().unwrap_or_default();
-        for project in &mut projects {
-            project.domain_enabled = managed.contains(&project.name);
-        }
-        let stale_domains = managed
+        let domains = registered
+            .iter()
+            .map(|project| project.domain.clone())
+            .collect::<Vec<_>>();
+        let projects = registered
             .into_iter()
-            .filter(|name| !projects.iter().any(|project| project.name == *name))
+            .map(|config| Project {
+                available: config.root.is_dir(),
+                domain_ready: managed.contains(&config.domain),
+                config,
+            })
             .collect();
         Snapshot {
             ports: self.ports.clone(),
             services,
             document_root: self.layout.www.to_string_lossy().into(),
             projects,
-            stale_domains,
+            domains_pending: !crate::hosts::current(&domains).unwrap_or(false),
+            https_trusted: crate::tls::trusted(&self.layout),
+            os: std::env::consts::OS.into(),
             data_dir: self.layout.data.to_string_lossy().into(),
             runtime_ready: self.runtime_ready(),
             runtime_versions: fs::read(self.layout.runtime.join("manifest.json"))
@@ -202,7 +212,38 @@ impl Manager {
         Ok(())
     }
 
-    pub fn refresh_projects(&mut self) -> Result<()> {
+    /// Save a new project list and apply it to Nginx, restoring the previous list on failure.
+    fn apply_projects(&mut self, next: Vec<ProjectConfig>) -> Result<()> {
+        let previous = self.layout.registered_projects()?;
+        if next.iter().any(|project| project.https)
+            && [
+                self.ports.website,
+                self.ports.phpmyadmin,
+                self.ports.mysql,
+                self.ports.php,
+            ]
+            .contains(&crate::tls::https_port())
+        {
+            return Err(format!(
+                "Port {} is reserved for project HTTPS. Choose another service port.",
+                crate::tls::https_port()
+            ));
+        }
+        if next.iter().any(|project| project.https)
+            && !previous.iter().any(|project| project.https)
+            && self.processes.contains_key("nginx")
+        {
+            process::ensure_port(crate::tls::https_port(), "Project HTTPS", &[])?;
+        }
+        self.layout.save_projects(&next)?;
+        if let Err(error) = self.reload_sites() {
+            self.layout.save_projects(&previous)?;
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    fn reload_sites(&mut self) -> Result<()> {
         let _ = self.snapshot();
         if !self.runtime_ready() {
             return Err("The bundled web runtime is missing. Reinstall Fairway XMP.".into());
@@ -232,54 +273,60 @@ impl Manager {
         });
         if let Err(error) = result {
             atomic_write(&config, &previous)?;
-            return Err(format!("Could not apply project sites: {error}"));
+            return Err(format!("Could not apply project changes: {error}"));
         }
         Ok(())
     }
 
-    pub fn set_project_ssl(&mut self, name: &str, enabled: bool) -> Result<()> {
-        if enabled && !crate::hosts::managed_names()?.contains(name) {
-            return Err("Enable this project's .test address before enabling HTTPS.".into());
+    /// Add a project, or replace the one registered as `previous`.
+    pub fn save_project(&mut self, previous: Option<&str>, project: ProjectConfig) -> Result<()> {
+        if !project.root.is_dir() {
+            return Err("The web root folder does not exist.".into());
         }
-        if enabled
-            && [
-                self.ports.website,
-                self.ports.phpmyadmin,
-                self.ports.mysql,
-                self.ports.php,
-            ]
-            .contains(&crate::tls::https_port())
-        {
-            return Err(format!(
-                "Port {} is reserved for project HTTPS. Choose another service port.",
-                crate::tls::https_port()
-            ));
+        let mut projects = self.layout.registered_projects()?;
+        match previous {
+            Some(domain) => {
+                let slot = projects
+                    .iter_mut()
+                    .find(|p| p.domain == domain)
+                    .ok_or("This project is no longer registered.")?;
+                *slot = project;
+            }
+            None => projects.push(project),
         }
-        let project = self
-            .layout
-            .projects(self.ports.website)?
-            .into_iter()
-            .find(|project| project.name == name && (!enabled || project.message.is_none()))
-            .ok_or("This project is unavailable. Refresh projects first.")?;
-        let previous = crate::tls::enabled_names(&self.layout)?;
-        if project.ssl_enabled == enabled {
+        self.apply_projects(projects)
+    }
+
+    pub fn remove_project(&mut self, domain: &str) -> Result<()> {
+        let mut projects = self.layout.registered_projects()?;
+        let count = projects.len();
+        projects.retain(|p| p.domain != domain);
+        if projects.len() == count {
+            return Err("This project is no longer registered.".into());
+        }
+        self.apply_projects(projects)
+    }
+
+    pub fn set_project_https(&mut self, domain: &str, enabled: bool) -> Result<()> {
+        let mut projects = self.layout.registered_projects()?;
+        let project = projects
+            .iter_mut()
+            .find(|p| p.domain == domain)
+            .ok_or("This project is no longer registered.")?;
+        if project.https == enabled {
             return Ok(());
         }
-        if enabled && previous.is_empty() && self.processes.contains_key("nginx") {
-            process::ensure_port(crate::tls::https_port(), "Project HTTPS", &[])?;
-        }
-        let mut next = previous.clone();
-        if enabled {
-            next.insert(name.to_string());
-        } else {
-            next.remove(name);
-        }
-        crate::tls::save_enabled_names(&self.layout, &next)?;
-        if let Err(error) = self.refresh_projects() {
-            crate::tls::save_enabled_names(&self.layout, &previous)?;
-            return Err(error);
-        }
-        Ok(())
+        project.https = enabled;
+        self.apply_projects(projects)
+    }
+
+    pub fn domains(&self) -> Result<Vec<String>> {
+        Ok(self
+            .layout
+            .registered_projects()?
+            .into_iter()
+            .map(|p| p.domain)
+            .collect())
     }
 
     pub fn save_settings(&mut self, ports: Ports, version: String) -> Result<()> {
@@ -401,7 +448,7 @@ impl Manager {
                 "nginx" => {
                     process::ensure_port(self.ports.website, "Website", &excluded)?;
                     process::ensure_port(self.ports.phpmyadmin, "phpMyAdmin", &excluded)?;
-                    if !crate::tls::enabled_names(&self.layout)?.is_empty() {
+                    if self.layout.registered_projects()?.iter().any(|p| p.https) {
                         process::ensure_port(crate::tls::https_port(), "Project HTTPS", &excluded)?;
                     }
                 }

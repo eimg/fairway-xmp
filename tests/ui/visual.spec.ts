@@ -20,58 +20,86 @@ test('production browser preview cannot enable simulated services', async ({ pag
   await expect(page.locator('.sidebar-footer')).not.toContainText('FAIRWAY XMP');
 });
 
-test('project sites expand and HTTPS switch updates a site', async ({ page }, info) => {
+test('projects are added, edited, and removed explicitly', async ({ page }, info) => {
   await page.goto('/');
-  const projectSwitch = page.getByRole('switch', { name: 'HTTPS for hello' });
-  await expect(projectSwitch).toBeVisible();
-  await expect(projectSwitch).not.toBeChecked();
-  await page.getByRole('button', { name: 'Collapse project sites' }).click();
-  await expect(projectSwitch).toBeHidden();
-  await page.getByRole('button', { name: 'Expand project sites' }).click();
-  await expect(projectSwitch).toBeVisible();
-  await projectSwitch.locator('..').click();
-  await expect(page.getByRole('dialog', { name: 'Enable HTTPS for hello.test?' })).toContainText('trust store');
-  await page.getByRole('button', { name: 'Enable HTTPS', exact: true }).click();
-  await expect(projectSwitch).toBeChecked();
-  await expect(page.getByText('hello.test', { exact: true })).toHaveAttribute('title', 'https://hello.test:8443/');
-  await capture(page, info, 'project-sites');
+  await page.getByLabel('Scenario', { exact: true }).selectOption('No projects');
+  await expect(page.getByText('No projects yet.')).toBeVisible();
+  await page.getByRole('button', { name: 'Add project' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add project' });
+  await dialog.getByLabel('Name').fill('Course Site');
+  await expect(dialog.getByLabel('Domain')).toHaveValue('course-site');
+  await expect(dialog.getByRole('button', { name: 'Add project' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Choose…' }).click();
+  await expect(dialog.getByLabel('Web root folder')).toHaveValue(/new-site.public$/);
+  await expect(dialog).toContainText('course-site.test in your computer’s hosts file');
+  await dialog.getByLabel('Route missing paths to index.php').check();
+  await capture(page, info, 'add-project');
+  await dialog.getByRole('button', { name: 'Add project' }).click();
+  const table = page.getByRole('table', { name: 'Projects' });
+  await expect(table).toContainText('Course Site');
+  await expect(table.getByText('course-site.test', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Edit Course Site' }).click();
+  const edit = page.getByRole('dialog', { name: 'Edit project' });
+  await edit.getByLabel('Name').fill('Course');
+  await expect(edit.getByLabel('Domain')).toHaveValue('course-site');
+  await edit.getByLabel('Domain').fill('course');
+  await expect(edit).toContainText('replaces course-site.test with course.test');
+  await edit.getByRole('button', { name: 'Save changes' }).click();
+  await expect(table.getByText('course.test', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Remove Course' }).click();
+  const remove = page.getByRole('dialog', { name: 'Remove Course?' });
+  await expect(remove).toContainText('its files are kept');
+  await remove.getByRole('button', { name: 'Remove project' }).click();
+  await expect(page.getByText('No projects yet.')).toBeVisible();
 });
 
-test('project domains are opt-in and independent', async ({ page }, info) => {
+test('invalid project details stay in the form with an error', async ({ page }) => {
   await page.goto('/');
-  await page.getByLabel('Scenario', { exact: true }).selectOption('Domains not set up');
-  await expect(page.getByRole('table', { name: 'Project sites' })).toBeVisible();
-  await expect(page.getByText('127.0.0.1:8800/hello/')).toHaveAttribute('title', 'http://127.0.0.1:8800/hello/');
-  await expect(page.getByText('Uses project domain')).toBeVisible();
-  await expect(page.getByRole('switch', { name: 'HTTPS for hello' })).toBeDisabled();
-  await page.getByRole('button', { name: 'Refresh projects' }).click();
-  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-muted/);
-  await page.getByRole('button', { name: 'Enable hello.test' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Enable hello.test?' });
-  await expect(dialog).toContainText('system hosts file');
-  await dialog.getByRole('button', { name: 'Enable', exact: true }).click();
-  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-active/);
-  await expect(page.getByText('127.0.0.1:8800/hello/')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Enable laravel-app.test' })).toBeVisible();
-  await capture(page, info, 'one-domain-enabled');
-  await page.getByRole('button', { name: 'Enable laravel-app.test' }).click();
-  await page.getByRole('dialog', { name: 'Enable laravel-app.test?' }).getByRole('button', { name: 'Enable', exact: true }).click();
-  await expect(page.getByText('laravel-app.test', { exact: true })).toHaveClass(/project-domain-active/);
-  await page.getByRole('button', { name: 'Disable hello.test' }).click();
-  await page.getByRole('dialog', { name: 'Disable hello.test?' }).getByRole('button', { name: 'Disable', exact: true }).click();
-  await expect(page.getByText('127.0.0.1:8800/hello/')).toBeVisible();
-  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-muted/);
-  await expect(page.getByText('laravel-app.test', { exact: true })).toHaveClass(/project-domain-active/);
+  await page.getByRole('button', { name: 'Add project' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Add project' });
+  await dialog.getByLabel('Name').fill('Shop');
+  await dialog.getByRole('button', { name: 'Choose…' }).click();
+  await dialog.getByRole('button', { name: 'Add project' }).click();
+  await expect(dialog.getByRole('alert')).toContainText('shop.test is already used by another project.');
+  await expect(dialog.getByLabel('Name')).toHaveValue('Shop');
 });
 
-test('an address remains removable after its project folder is deleted', async ({ page }) => {
+test('HTTPS explains trust once and trust can be removed when unused', async ({ page }, info) => {
   await page.goto('/');
-  await page.getByLabel('Scenario', { exact: true }).selectOption('Removed project domain');
-  await expect(page.getByText('This managed address has no project folder.')).toBeVisible();
-  await page.getByRole('button', { name: 'Remove unused .test for old-project' }).click();
-  await page.getByRole('dialog', { name: 'Disable old-project.test?' }).getByRole('button', { name: 'Disable', exact: true }).click();
-  await expect(page.getByText('This managed address has no project folder.')).toHaveCount(0);
-  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-active/);
+  const shop = page.getByRole('switch', { name: 'HTTPS for My Shop' });
+  await expect(shop).toBeChecked();
+  await shop.locator('..').click();
+  await expect(shop).not.toBeChecked();
+  await page.getByRole('button', { name: 'Remove certificate trust' }).click();
+  await expect(page.getByRole('button', { name: 'Remove certificate trust' })).toHaveCount(0);
+  const blog = page.getByRole('switch', { name: 'HTTPS for Blog' });
+  await blog.locator('..').click();
+  const dialog = page.getByRole('dialog', { name: 'Enable HTTPS for blog.test?' });
+  await expect(dialog).toContainText('only this computer trusts');
+  await expect(dialog).toContainText('keeps working');
+  await capture(page, info, 'enable-https');
+  await dialog.getByRole('button', { name: 'Enable HTTPS' }).click();
+  await expect(blog).toBeChecked();
+  await shop.locator('..').click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(shop).toBeChecked();
+});
+
+test('pending hosts updates and missing folders are shown with a recovery action', async ({ page }, info) => {
+  await page.goto('/');
+  await page.getByLabel('Scenario', { exact: true }).selectOption('Hosts update pending');
+  await expect(page.getByText('Not in the hosts file yet')).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'HTTPS for Blog' })).toBeDisabled();
+  await capture(page, info, 'hosts-pending');
+  await page.getByRole('button', { name: 'Update hosts file' }).click();
+  await expect(page.getByText('Not in the hosts file yet')).toHaveCount(0);
+  await expect(page.getByRole('switch', { name: 'HTTPS for Blog' })).toBeEnabled();
+  await page.getByLabel('Scenario', { exact: true }).selectOption('Missing web root');
+  await expect(page.getByText('Web root folder not found.')).toBeVisible();
+  await page.getByRole('button', { name: 'Collapse projects' }).click();
+  await expect(page.getByText('Web root folder not found.')).toBeHidden();
 });
 
 test('support report is reviewable and excludes private paths; old PHP versions are legacy', async ({ page }, info) => {

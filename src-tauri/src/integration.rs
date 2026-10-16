@@ -353,6 +353,18 @@ fn windows_path(bin: &Path, add: bool) -> Result<()> {
     Ok(())
 }
 
+pub fn project_url(project: &crate::config::ProjectConfig, website: u16) -> String {
+    if project.https {
+        format!(
+            "https://{}.test:{}/",
+            project.domain,
+            crate::tls::https_port()
+        )
+    } else {
+        format!("http://{}.test:{website}/", project.domain)
+    }
+}
+
 pub fn open(layout: &Layout, target: &str, website: u16, admin: u16) -> Result<()> {
     let path = match target {
         "website" => format!("http://127.0.0.1:{website}/"),
@@ -360,23 +372,14 @@ pub fn open(layout: &Layout, target: &str, website: u16, admin: u16) -> Result<(
         "releases" => "https://github.com/eimg/fairway-xmp/releases".into(),
         "source" => "https://github.com/eimg/fairway-xmp".into(),
         "issues" => "https://github.com/eimg/fairway-xmp/issues".into(),
-        name if name.starts_with("project-local:") => layout
-            .projects(website)?
+        name if name.starts_with("project:") => layout
+            .registered_projects()?
             .into_iter()
-            .find(|project| project.name == name[14..] && project.kind == "php")
-            .map(|project| format!("http://127.0.0.1:{website}/{}/", project.name))
-            .ok_or("Project site is unavailable. Refresh projects first.")?,
-        name if name.starts_with("project:") => {
-            if !crate::hosts::managed_names()?.contains(&name[8..]) {
-                return Err("Enable this project's .test address first.".into());
-            }
-            layout
-                .projects(website)?
-                .into_iter()
-                .find(|project| project.name == name[8..] && project.message.is_none())
-                .map(|project| project.https_url.unwrap_or(project.url))
-                .ok_or("Project site is unavailable. Refresh projects first.")?
-        }
+            .find(|project| project.domain == name[8..] && project.root.is_dir())
+            .map(|project| project_url(&project, website))
+            .ok_or(
+                "This project's web root folder is missing. Edit the project to choose it again.",
+            )?,
         "coursework" => layout.www.to_string_lossy().into(),
         "logs" => layout.data.join("logs").to_string_lossy().into(),
         "backups" => layout.data.join("backups").to_string_lossy().into(),
