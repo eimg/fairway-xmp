@@ -73,6 +73,7 @@ test('HTTPS explains trust once and trust can be removed when unused', async ({ 
   await expect(shop).toBeChecked();
   await shop.locator('..').click();
   await expect(shop).not.toBeChecked();
+  await expect(page.getByRole('row', { name: /My Shop/ }).getByLabel('HTTPS', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'Remove certificate trust' }).click();
   await expect(page.getByRole('button', { name: 'Remove certificate trust' })).toHaveCount(0);
   const blog = page.getByRole('switch', { name: 'HTTPS for Blog' });
@@ -83,6 +84,7 @@ test('HTTPS explains trust once and trust can be removed when unused', async ({ 
   await capture(page, info, 'enable-https');
   await dialog.getByRole('button', { name: 'Enable HTTPS' }).click();
   await expect(blog).toBeChecked();
+  await expect(page.getByRole('row', { name: /Blog/ }).getByLabel('HTTPS', { exact: true })).toBeVisible();
   await shop.locator('..').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(shop).toBeChecked();
