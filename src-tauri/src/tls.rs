@@ -302,29 +302,6 @@ pub fn remove_trust(layout: &Layout) -> Result<()> {
     clear_https(layout)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn removing_trust_clears_saved_https_choices_without_a_trust_marker() {
-        let root = std::env::temp_dir().join(format!("fairway-tls-test-{}", rand::random::<u64>()));
-        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
-        fs::create_dir_all(&layout.data).unwrap();
-        let project = crate::config::ProjectConfig {
-            name: "Hello".into(),
-            domain: "hello".into(),
-            root: root.clone(),
-            https: true,
-            index_fallback: false,
-        };
-        layout.save_projects(&[project]).unwrap();
-        remove_trust(&layout).unwrap();
-        assert!(!layout.registered_projects().unwrap()[0].https);
-        fs::remove_dir_all(root).unwrap();
-    }
-}
-
 #[cfg(target_os = "linux")]
 pub fn apply_linux_trust(root: &std::path::Path, remove: bool) -> Result<()> {
     if unsafe { libc::geteuid() } != 0 {
@@ -354,4 +331,27 @@ pub fn apply_linux_trust(root: &std::path::Path, remove: bool) -> Result<()> {
         .arg(if remove { "--remove" } else { "--store" })
         .arg(root);
     run(command)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn removing_trust_clears_saved_https_choices_without_a_trust_marker() {
+        let root = std::env::temp_dir().join(format!("fairway-tls-test-{}", rand::random::<u64>()));
+        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+        fs::create_dir_all(&layout.data).unwrap();
+        let project = crate::config::ProjectConfig {
+            name: "Hello".into(),
+            domain: "hello".into(),
+            root: root.clone(),
+            https: true,
+            index_fallback: false,
+        };
+        layout.save_projects(&[project]).unwrap();
+        remove_trust(&layout).unwrap();
+        assert!(!layout.registered_projects().unwrap()[0].https);
+        fs::remove_dir_all(root).unwrap();
+    }
 }
