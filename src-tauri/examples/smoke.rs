@@ -54,6 +54,12 @@ fn https(layout: &Layout, host: &str) -> Result<String, String> {
             "--resolve",
         ])
         .arg(format!("{host}:{port}:127.0.0.1"))
+        // Schannel otherwise fails on the local CA, which has no revocation endpoint.
+        .args(if cfg!(windows) {
+            &["--ssl-no-revoke"][..]
+        } else {
+            &[]
+        })
         .arg("--cacert")
         .arg(layout.data.join("tls/root-ca.pem"))
         .arg(format!("https://{host}:{port}/"));
@@ -268,7 +274,10 @@ fn main() -> Result<(), String> {
             std::thread::sleep(std::time::Duration::from_millis(100));
         }
         if !tls_ready {
-            return Err("HTTPS project did not serve a trusted certificate".into());
+            return Err(format!(
+                "HTTPS project did not serve a trusted certificate: {:?}",
+                https(&manager.layout, "new-project.test")
+            ));
         }
         manager.set_project_https("plain-project", true)?;
         for _ in 0..20 {
