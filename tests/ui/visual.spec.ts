@@ -27,6 +27,8 @@ test('projects are added, edited, and removed explicitly', async ({ page }, info
   await page.getByRole('button', { name: 'Add project' }).click();
   const dialog = page.getByRole('dialog', { name: 'Add project' });
   await dialog.getByLabel('Name').fill('Course Site');
+  await page.locator('.modal-backdrop').click({ position: { x: 5, y: 5 } });
+  await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel('Domain')).toHaveValue('course-site');
   await expect(dialog.getByRole('button', { name: 'Add project' })).toBeDisabled();
   await dialog.getByLabel('Web root folder').click();
