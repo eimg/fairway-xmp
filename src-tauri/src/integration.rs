@@ -360,12 +360,23 @@ pub fn open(layout: &Layout, target: &str, website: u16, admin: u16) -> Result<(
         "releases" => "https://github.com/eimg/fairway-xmp/releases".into(),
         "source" => "https://github.com/eimg/fairway-xmp".into(),
         "issues" => "https://github.com/eimg/fairway-xmp/issues".into(),
-        name if name.starts_with("project:") => layout
+        name if name.starts_with("project-local:") => layout
             .projects(website)?
             .into_iter()
-            .find(|project| project.name == name[8..] && project.message.is_none())
-            .map(|project| project.https_url.unwrap_or(project.url))
+            .find(|project| project.name == name[14..] && project.kind == "php")
+            .map(|project| format!("http://127.0.0.1:{website}/{}/", project.name))
             .ok_or("Project site is unavailable. Refresh projects first.")?,
+        name if name.starts_with("project:") => {
+            if !crate::hosts::managed_names()?.contains(&name[8..]) {
+                return Err("Enable this project's .test address first.".into());
+            }
+            layout
+                .projects(website)?
+                .into_iter()
+                .find(|project| project.name == name[8..] && project.message.is_none())
+                .map(|project| project.https_url.unwrap_or(project.url))
+                .ok_or("Project site is unavailable. Refresh projects first.")?
+        }
         "coursework" => layout.www.to_string_lossy().into(),
         "logs" => layout.data.join("logs").to_string_lossy().into(),
         "backups" => layout.data.join("backups").to_string_lossy().into(),

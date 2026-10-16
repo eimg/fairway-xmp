@@ -1,9 +1,62 @@
 //! Manage only Fairway's marked entries in the system hosts file.
 use crate::config::{valid_project_name, Result};
-use std::{fs, path::PathBuf, process::Command};
+use std::{collections::BTreeSet, fs, path::PathBuf, process::Command};
 
 const BEGIN: &str = "# >>> Fairway XMP project domains >>>";
 const END: &str = "# <<< Fairway XMP project domains <<<";
+
+fn managed_names_from(text: &str) -> Result<BTreeSet<String>> {
+    let Some(start) = text.find(BEGIN) else {
+        if text.contains(END) {
+            return Err("The Fairway hosts block is incomplete.".into());
+        }
+        return Ok(BTreeSet::new());
+    };
+    if start != 0 && text.as_bytes()[start - 1] != b'\n' {
+        return Err("The Fairway hosts marker is not on its own line.".into());
+    }
+    let body = &text[start + BEGIN.len()..];
+    let end = body
+        .find(END)
+        .ok_or("The Fairway hosts block is incomplete.")?;
+    if !body[..end].starts_with('\n') && !body[..end].starts_with("\r\n") {
+        return Err("The Fairway hosts block is malformed.".into());
+    }
+    let mut names = BTreeSet::new();
+    for line in body[..end].lines().filter(|line| !line.trim().is_empty()) {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        if fields.len() != 2 || fields[0] != "127.0.0.1" {
+            return Err("The Fairway hosts block contains an unexpected entry.".into());
+        }
+        let name = fields[1]
+            .strip_suffix(".test")
+            .ok_or("The Fairway hosts block contains an unexpected domain.")?;
+        if !valid_project_name(name) || !names.insert(name.to_string()) {
+            return Err("The Fairway hosts block contains an invalid project name.".into());
+        }
+    }
+    Ok(names)
+}
+
+pub fn managed_names() -> Result<BTreeSet<String>> {
+    let text = fs::read_to_string(hosts_path()?).map_err(|e| e.to_string())?;
+    managed_names_from(&text)
+}
+
+pub fn set_project(name: &str, enabled: bool, helper_flag: &str) -> Result<()> {
+    if !valid_project_name(name) {
+        return Err("Invalid project domain name.".into());
+    }
+    let mut names = managed_names()?;
+    if enabled {
+        names.insert(name.to_string());
+    } else if !names.remove(name) {
+        return Err(format!(
+            "Fairway does not manage {name}.test in the hosts file."
+        ));
+    }
+    ensure(&names.into_iter().collect::<Vec<_>>(), helper_flag)
+}
 
 fn hosts_path() -> Result<PathBuf> {
     #[cfg(windows)]
@@ -68,19 +121,11 @@ fn updated(previous: &str, names: &[String]) -> Result<String> {
             let Some(address) = fields.next() else {
                 continue;
             };
-            if fields.any(|alias| alias.eq_ignore_ascii_case(&domain)) && address != "127.0.0.1" {
-                return Err(format!("{domain} already points elsewhere in the hosts file. Remove that entry before refreshing projects."));
+            if fields.any(|alias| alias.eq_ignore_ascii_case(&domain)) {
+                return Err(format!("{domain} already has an entry outside Fairway's managed block. Remove that entry before enabling this domain (currently {address})."));
             }
         }
     }
-    names.retain(|name| {
-        let domain = format!("{name}.test");
-        !text.lines().any(|line| {
-            let mut fields = line.split('#').next().unwrap_or("").split_whitespace();
-            fields.next() == Some("127.0.0.1")
-                && fields.any(|alias| alias.eq_ignore_ascii_case(&domain))
-        })
-    });
     if names.is_empty() {
         return Ok(text);
     }
@@ -242,6 +287,10 @@ mod tests {
         let first = updated(original, &["zoo".into(), "alpha".into()]).unwrap();
         assert!(first.contains("127.0.0.1 alpha.test\n127.0.0.1 zoo.test"));
         assert_eq!(
+            managed_names_from(&first).unwrap(),
+            BTreeSet::from(["alpha".into(), "zoo".into()])
+        );
+        assert_eq!(
             updated(&first, &["alpha".into()])
                 .unwrap()
                 .matches("zoo.test")
@@ -251,7 +300,8 @@ mod tests {
         assert_eq!(updated(&first, &[]).unwrap(), original);
         assert!(updated(original, &["bad.name".into()]).is_err());
         let own = "127.0.0.1 localhost alpha.test\n";
-        assert_eq!(updated(own, &["alpha".into()]).unwrap(), own);
+        assert!(updated(own, &["alpha".into()]).is_err());
         assert!(updated("192.0.2.1 alpha.test\n", &["alpha".into()]).is_err());
+        assert!(managed_names_from("# >>> Fairway XMP project domains >>>\n192.0.2.1 alpha.test\n# <<< Fairway XMP project domains <<<\n").is_err());
     }
 }

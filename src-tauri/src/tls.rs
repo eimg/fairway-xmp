@@ -248,8 +248,14 @@ pub fn ensure_trust(layout: &Layout) -> Result<()> {
 
 pub fn remove_trust(layout: &Layout) -> Result<()> {
     let root = root_certificate(layout);
-    if !root.exists() || !trust_marker(layout).exists() {
+    if !trust_marker(layout).exists() {
+        save_enabled_names(layout, &BTreeSet::new())?;
         return Ok(());
+    }
+    if !root.exists() {
+        return Err(
+            "The local CA certificate is missing; certificate trust could not be removed.".into(),
+        );
     }
     #[cfg(target_os = "macos")]
     {
@@ -291,7 +297,23 @@ pub fn remove_trust(layout: &Layout) -> Result<()> {
             .map_err(|e| format!("Could not remove Fairway's local certificate trust: {e}"))?;
     }
     fs::remove_file(trust_marker(layout)).map_err(|e| e.to_string())?;
-    Ok(())
+    save_enabled_names(layout, &BTreeSet::new())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn removing_trust_clears_saved_https_choices_without_a_trust_marker() {
+        let root = std::env::temp_dir().join(format!("fairway-tls-test-{}", rand::random::<u64>()));
+        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+        fs::create_dir_all(&layout.data).unwrap();
+        save_enabled_names(&layout, &BTreeSet::from(["hello".to_string()])).unwrap();
+        remove_trust(&layout).unwrap();
+        assert!(enabled_names(&layout).unwrap().is_empty());
+        fs::remove_dir_all(root).unwrap();
+    }
 }
 
 #[cfg(target_os = "linux")]

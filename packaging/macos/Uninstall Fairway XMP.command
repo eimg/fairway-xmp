@@ -19,6 +19,8 @@ if ! "$EXE" --prepare-uninstall; then
   exit 1
 fi
 if [ "$KEEP_ALL" = yes ]; then
+  "$EXE" --remove-domains
+  "$EXE" --remove-https-trust
   "$EXE" --remove-cli
   mkdir -p "$HOME/.Trash"
   TRASH_ROOT=$(mktemp -d "$HOME/.Trash/Fairway-XMP-removed.XXXXXX")

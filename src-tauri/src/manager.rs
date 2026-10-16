@@ -30,7 +30,7 @@ pub struct Snapshot {
     pub services: Vec<ServiceStatus>,
     pub document_root: String,
     pub projects: Vec<Project>,
-    pub domains_ready: bool,
+    pub stale_domains: Vec<String>,
     pub data_dir: String,
     pub runtime_ready: bool,
     pub runtime_versions: serde_json::Value,
@@ -152,18 +152,21 @@ impl Manager {
             }
         })
         .collect();
-        let projects = self.layout.projects(self.ports.website).unwrap_or_default();
-        let names = projects
-            .iter()
-            .filter(|project| project.message.is_none())
-            .map(|project| project.name.clone())
-            .collect::<Vec<_>>();
+        let mut projects = self.layout.projects(self.ports.website).unwrap_or_default();
+        let managed = crate::hosts::managed_names().unwrap_or_default();
+        for project in &mut projects {
+            project.domain_enabled = managed.contains(&project.name);
+        }
+        let stale_domains = managed
+            .into_iter()
+            .filter(|name| !projects.iter().any(|project| project.name == *name))
+            .collect();
         Snapshot {
             ports: self.ports.clone(),
             services,
             document_root: self.layout.www.to_string_lossy().into(),
             projects,
-            domains_ready: crate::hosts::current(&names).unwrap_or(false),
+            stale_domains,
             data_dir: self.layout.data.to_string_lossy().into(),
             runtime_ready: self.runtime_ready(),
             runtime_versions: fs::read(self.layout.runtime.join("manifest.json"))
@@ -235,6 +238,9 @@ impl Manager {
     }
 
     pub fn set_project_ssl(&mut self, name: &str, enabled: bool) -> Result<()> {
+        if enabled && !crate::hosts::managed_names()?.contains(name) {
+            return Err("Enable this project's .test address before enabling HTTPS.".into());
+        }
         if enabled
             && [
                 self.ports.website,
@@ -253,7 +259,7 @@ impl Manager {
             .layout
             .projects(self.ports.website)?
             .into_iter()
-            .find(|project| project.name == name && project.message.is_none())
+            .find(|project| project.name == name && (!enabled || project.message.is_none()))
             .ok_or("This project is unavailable. Refresh projects first.")?;
         let previous = crate::tls::enabled_names(&self.layout)?;
         if project.ssl_enabled == enabled {

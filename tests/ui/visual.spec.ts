@@ -30,9 +30,48 @@ test('project sites expand and HTTPS switch updates a site', async ({ page }, in
   await page.getByRole('button', { name: 'Expand project sites' }).click();
   await expect(projectSwitch).toBeVisible();
   await projectSwitch.locator('..').click();
+  await expect(page.getByRole('dialog', { name: 'Enable HTTPS for hello.test?' })).toContainText('trust store');
+  await page.getByRole('button', { name: 'Enable HTTPS', exact: true }).click();
   await expect(projectSwitch).toBeChecked();
-  await expect(page.getByText('https://hello.test:8443/')).toBeVisible();
+  await expect(page.getByText('hello.test', { exact: true })).toHaveAttribute('title', 'https://hello.test:8443/');
   await capture(page, info, 'project-sites');
+});
+
+test('project domains are opt-in and independent', async ({ page }, info) => {
+  await page.goto('/');
+  await page.getByLabel('Scenario', { exact: true }).selectOption('Domains not set up');
+  await expect(page.getByRole('table', { name: 'Project sites' })).toBeVisible();
+  await expect(page.getByText('127.0.0.1:8800/hello/')).toHaveAttribute('title', 'http://127.0.0.1:8800/hello/');
+  await expect(page.getByText('Uses project domain')).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'HTTPS for hello' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Refresh projects' }).click();
+  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-muted/);
+  await page.getByRole('button', { name: 'Enable hello.test' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Enable hello.test?' });
+  await expect(dialog).toContainText('system hosts file');
+  await dialog.getByRole('button', { name: 'Enable', exact: true }).click();
+  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-active/);
+  await expect(page.getByText('127.0.0.1:8800/hello/')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Enable laravel-app.test' })).toBeVisible();
+  await capture(page, info, 'one-domain-enabled');
+  await page.getByRole('button', { name: 'Enable laravel-app.test' }).click();
+  await page.getByRole('dialog', { name: 'Enable laravel-app.test?' }).getByRole('button', { name: 'Enable', exact: true }).click();
+  await expect(page.getByText('laravel-app.test', { exact: true })).toHaveClass(/project-domain-active/);
+  await page.getByRole('button', { name: 'Disable hello.test' }).click();
+  await page.getByRole('dialog', { name: 'Disable hello.test?' }).getByRole('button', { name: 'Disable', exact: true }).click();
+  await expect(page.getByText('127.0.0.1:8800/hello/')).toBeVisible();
+  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-muted/);
+  await expect(page.getByText('laravel-app.test', { exact: true })).toHaveClass(/project-domain-active/);
+});
+
+test('an address remains removable after its project folder is deleted', async ({ page }) => {
+  await page.goto('/');
+  await page.getByLabel('Scenario', { exact: true }).selectOption('Removed project domain');
+  await expect(page.getByText('This managed address has no project folder.')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove unused .test for old-project' }).click();
+  await page.getByRole('dialog', { name: 'Disable old-project.test?' }).getByRole('button', { name: 'Disable', exact: true }).click();
+  await expect(page.getByText('This managed address has no project folder.')).toHaveCount(0);
+  await expect(page.getByText('hello.test', { exact: true })).toHaveClass(/project-domain-active/);
 });
 
 test('support report is reviewable and excludes private paths; old PHP versions are legacy', async ({ page }, info) => {

@@ -71,7 +71,7 @@ pub fn run() -> Result<()> {
         args.first().map(String::as_str),
         Some("help" | "--help" | "-h")
     ) {
-        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway refresh-projects     Apply project folders to Nginx\nfairway https NAME on|off     Toggle HTTPS for one project (:8443)\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway php-version          Show selected PHP version\nfairway php-version 8.0–8.5  Switch PHP after stopping all services (8.0/8.1 are legacy)\nfairway diagnostics          Print a shareable diagnostic report\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
+        println!("Fairway XMP terminal edition\n\nfairway [tui]                 Open the terminal dashboard\nfairway status [--json]       Service status and paths\nfairway start|stop|restart [all|nginx|mysql]\nfairway refresh-projects     Apply project folders to Nginx\nfairway domain NAME on|off   Add or remove one .test address (requires OS approval)\nfairway https NAME on|off     Toggle HTTPS for one project (:8443)\nfairway logs nginx|mysql|php  Show recent log entries\nfairway ports                Show configured ports\nfairway ports WEB PMA DB PHP  Change ports while all services are stopped\nfairway php-version          Show selected PHP version\nfairway php-version 8.0–8.5  Switch PHP after stopping all services (8.0/8.1 are legacy)\nfairway diagnostics          Print a shareable diagnostic report\nfairway backup               Back up student databases (MySQL must be running)\nfairway php|composer|mysql|mysqldump [arguments...]\nfairway shell                Open a shell with bundled PHP/Composer on PATH\nfairway install-cli          Enable PHP/Composer/Fairway in shell profiles\nfairway remove-cli           Remove managed shell integration\nfairway shutdown             Gracefully stop services and the supervisor\nfairway uninstall            Remove the installation; preserve projects and data\n\nClosing the dashboard leaves services running. PHP-FPM follows Nginx.\nTools and services run as your user; do not run Fairway with sudo.");
         return Ok(());
     }
     if matches!(args.first().map(String::as_str), Some("--version" | "-V")) {
@@ -127,7 +127,23 @@ pub fn run() -> Result<()> {
     }
     let request = parse(&args)?;
     supervisor::ensure(&layout)?;
-    if matches!(request, Request::ProjectSsl { enabled: true, .. }) {
+    if let Request::ProjectSsl {
+        name,
+        enabled: true,
+    } = &request
+    {
+        let snapshot: Snapshot =
+            serde_json::from_value(supervisor::call(&layout, &Request::Status)?)
+                .map_err(|e| e.to_string())?;
+        if !snapshot
+            .projects
+            .iter()
+            .any(|project| project.name == *name && project.domain_enabled)
+        {
+            return Err(format!(
+                "Run fairway domain {name} on before enabling HTTPS."
+            ));
+        }
         crate::tls::ensure_trust(&layout)?;
     }
     if command == "tui" {
@@ -177,18 +193,34 @@ pub fn run() -> Result<()> {
         std::process::exit(status.code().unwrap_or(1));
     }
     let mut data = supervisor::call(&layout, &request)?;
-    if command == "refresh-projects" {
+    if command == "domain" {
+        let name = &args[1];
+        let enabled = args[2] == "on";
         let snapshot: Snapshot =
             serde_json::from_value(supervisor::call(&layout, &Request::Status)?)
                 .map_err(|e| e.to_string())?;
-        let names = snapshot
+        let project = snapshot
             .projects
             .iter()
-            .filter(|project| project.message.is_none())
-            .map(|project| project.name.clone())
-            .collect::<Vec<_>>();
-        crate::hosts::ensure(&names, "__sync-hosts")?;
-        println!("Project sites and local domains refreshed.");
+            .find(|project| project.name == *name);
+        if enabled && !project.is_some_and(|project| project.message.is_none()) {
+            return Err("This project is unavailable. Refresh projects first.".into());
+        }
+        if !enabled && project.is_some_and(|project| project.ssl_enabled) {
+            return Err(
+                "Turn off HTTPS for this project before removing its .test address.".into(),
+            );
+        }
+        crate::hosts::set_project(name, enabled, "__sync-hosts")?;
+        println!(
+            "{}.test {}.",
+            name,
+            if enabled { "enabled" } else { "removed" }
+        );
+        return Ok(());
+    }
+    if command == "refresh-projects" {
+        println!("Project folders refreshed. Existing localhost addresses still work.");
         return Ok(());
     }
     if command == "ports" && args.len() == 1 {
@@ -293,6 +325,13 @@ fn parse(args: &[String]) -> Result<Request> {
         }
         "backup" if args.len() == 1 => Ok(Request::Backup),
         "refresh-projects" if args.len() == 1 => Ok(Request::RefreshProjects),
+        "domain"
+            if args.len() == 3
+                && crate::config::valid_project_name(&args[1])
+                && ["on", "off"].contains(&args[2].as_str()) =>
+        {
+            Ok(Request::RefreshProjects)
+        }
         "https"
             if args.len() == 3
                 && crate::config::valid_project_name(&args[1])

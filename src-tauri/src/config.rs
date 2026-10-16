@@ -58,6 +58,7 @@ pub struct Project {
     pub url: String,
     pub https_url: Option<String>,
     pub ssl_enabled: bool,
+    pub domain_enabled: bool,
     pub kind: String,
     pub message: Option<String>,
     pub root: PathBuf,
@@ -92,16 +93,17 @@ impl Layout {
             let path = entry.path();
             let laravel = path.join("artisan").is_file();
             let incomplete = laravel && !path.join("public/index.php").is_file();
-            let ssl_enabled = valid && !incomplete && secure.contains(&name);
+            let ssl_enabled = valid && secure.contains(&name);
             projects.push(Project {
                 url: if valid && !incomplete {
                     format!("http://{name}.test:{port}/")
                 } else {
                     String::new()
                 },
-                https_url: ssl_enabled
+                https_url: (ssl_enabled && !incomplete)
                     .then(|| format!("https://{name}.test:{}/", crate::tls::https_port())),
                 ssl_enabled,
+                domain_enabled: false,
                 kind: if !valid {
                     "invalid"
                 } else if incomplete {
@@ -604,6 +606,11 @@ mod tests {
         fs::write(layout.www.join("laravel/public/index.php"), "laravel").unwrap();
         fs::create_dir_all(layout.www.join("broken")).unwrap();
         fs::write(layout.www.join("broken/artisan"), "").unwrap();
+        crate::tls::save_enabled_names(
+            &layout,
+            &std::collections::BTreeSet::from(["broken".to_string()]),
+        )
+        .unwrap();
         fs::create_dir_all(layout.www.join("bad_name")).unwrap();
         let projects = layout.projects(8800).unwrap();
         assert_eq!(projects.len(), 4);
@@ -617,7 +624,17 @@ mod tests {
             .unwrap()
             .message
             .is_some());
+        assert!(
+            projects
+                .iter()
+                .find(|p| p.name == "broken")
+                .unwrap()
+                .ssl_enabled
+        );
         let nginx = nginx_config(&layout, &Ports::default(), &projects);
+        let localhost = format!("server_name localhost; root {}", nginx_path(&layout.www));
+        assert!(nginx.contains(&localhost));
+        assert!(nginx.find(&localhost) < nginx.find("server_name plain.test"));
         assert!(nginx.contains("server_name plain.test"));
         assert!(nginx.contains("server_name laravel.test"));
         assert!(nginx.contains("try_files $uri $uri/ /index.php?$query_string"));

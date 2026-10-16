@@ -7,7 +7,7 @@ import { cancelData, databaseRequest, resetData } from './data-browser';
 // Fast Refresh cannot keep a screen subscribed to an obsolete simulation.
 if (import.meta.hot) import.meta.hot.accept(() => window.location.reload());
 
-export const scenarios = ['Stopped', 'Running', 'Partially running', 'Port conflict', 'Missing runtime', 'Update available', 'Update failure', 'CLI not detected by app', 'Other PHP on PATH', 'CLI disabled'] as const;
+export const scenarios = ['Stopped', 'Domains not set up', 'One domain set up', 'Removed project domain', 'Running', 'Partially running', 'Port conflict', 'Missing runtime', 'Update available', 'Update failure', 'CLI not detected by app', 'Other PHP on PATH', 'CLI disabled'] as const;
 export type Scenario = typeof scenarios[number];
 export type Platform = 'Windows' | 'macOS';
 const events = new EventTarget();
@@ -57,10 +57,14 @@ export function select(next: Scenario, os: Platform) {
   scenario = next; platform = os;
   data = { ...structuredClone(preview), ...paths(), runtimeReady: next !== 'Missing runtime', pathInstalled: true };
   data.projects = [
-    { name: 'hello', url: 'http://hello.test:8800/', httpsUrl: null, sslEnabled: false, kind: 'php', message: null, root: joinPath(data.documentRoot, 'hello') },
-    { name: 'laravel-app', url: 'http://laravel-app.test:8800/', httpsUrl: 'https://laravel-app.test:8443/', sslEnabled: true, kind: 'laravel', message: null, root: joinPath(data.documentRoot, 'laravel-app', 'public') },
+    { name: 'hello', url: 'http://hello.test:8800/', httpsUrl: null, sslEnabled: false, domainEnabled: next !== 'Domains not set up', kind: 'php', message: null, root: joinPath(data.documentRoot, 'hello') },
+    { name: 'laravel-app', url: 'http://laravel-app.test:8800/', httpsUrl: 'https://laravel-app.test:8443/', sslEnabled: true, domainEnabled: next !== 'Domains not set up' && next !== 'One domain set up', kind: 'laravel', message: null, root: joinPath(data.documentRoot, 'laravel-app', 'public') },
   ];
-  data.domainsReady = true;
+  if (next === 'Domains not set up' || next === 'One domain set up') {
+    data.projects[1].sslEnabled = false;
+    data.projects[1].httpsUrl = null;
+  }
+  if (next === 'Removed project domain') data.staleDomains = ['old-project'];
   configureCli(next !== 'CLI disabled');
   if (next === 'Running' || next === 'Partially running') running('nginx', true);
   if (next === 'Running') running('mysql', true);
@@ -124,9 +128,21 @@ export async function invoke<T>(command: string, args: Record<string, unknown> =
     }
     case 'cli_integration': configureCli(Boolean(args.enabled)); result = structuredClone(data); break;
     case 'refresh_projects': result = structuredClone(data); break;
+    case 'set_project_domain': {
+      const project = data.projects.find(project => project.name === args.name);
+      if (!project && args.enabled) throw new Error('Project not found.');
+      if (!project && !data.staleDomains.includes(String(args.name))) throw new Error('Domain not found.');
+      if (!project) data.staleDomains = data.staleDomains.filter(name => name !== args.name);
+      else {
+      if (!args.enabled && project.sslEnabled) throw new Error('Turn off HTTPS for this project first.');
+      project.domainEnabled = Boolean(args.enabled);
+      }
+      result = structuredClone(data); break;
+    }
     case 'set_project_ssl': {
       const project = data.projects.find(project => project.name === args.name);
       if (!project) throw new Error('Project not found.');
+      if (args.enabled && !project.domainEnabled) throw new Error('Enable this project’s .test address first.');
       project.sslEnabled = Boolean(args.enabled);
       project.httpsUrl = project.sslEnabled ? `https://${project.name}.test:8443/` : null;
       result = structuredClone(data); break;

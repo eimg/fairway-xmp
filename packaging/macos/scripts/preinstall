@@ -45,5 +45,15 @@ if app_running; then
 fi
 
 if [ -x "$APP" ]; then
+  # Older installed builds reject an empty nginx.pid left by a failed start.
+  USER_HOME=$(/usr/bin/sudo -u "$USER_NAME" -H /bin/sh -c 'printf %s "$HOME"')
+  NGINX_PID="$USER_HOME/Library/Application Support/dev.fairway.environment/nginx.pid"
+  if [ -f "$NGINX_PID" ] && [ ! -s "$NGINX_PID" ]; then
+    if /usr/bin/pgrep -f '/Applications/Fairway XMP.app/Contents/Resources/runtime/nginx/bin/nginx' >/dev/null; then
+      echo 'Fairway Nginx is still running; stop all services and quit before installing.' >&2
+      exit 1
+    fi
+    /usr/bin/sudo -u "$USER_NAME" -H /bin/rm "$NGINX_PID"
+  fi
   /usr/bin/sudo -u "$USER_NAME" -H "$APP" --prepare-uninstall
 fi

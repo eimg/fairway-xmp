@@ -27,7 +27,7 @@ export const preview: Snapshot = {
     { id: 'mysql', running: false, ready: false, port: 13306, pid: null, message: null },
     { id: 'phpmyadmin', running: false, ready: false, port: 8801, pid: null, message: null },
   ],
-  documentRoot: '~/fairway/www', projects: [], domainsReady: false, dataDir: 'Fairway XMP application data',
+  documentRoot: '~/fairway/www', projects: [], staleDomains: [], dataDir: 'Fairway XMP application data',
   runtimeReady: false, runtimeVersions: {
     php: manifest.php, mysql: manifest.mysql, nginx: manifest.nginx,
     phpmyadmin: manifest.phpmyadmin, composer: manifest.composer,

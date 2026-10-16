@@ -354,20 +354,52 @@ async fn save_settings(
 async fn refresh_projects(app: tauri::AppHandle, state: State<'_, Shared>) -> Result<Snapshot> {
     let _operation = begin_operation(&app, "Refreshing projects…")?;
     let state = state.inner().clone();
-    let snapshot = access(state.clone(), |m| {
+    access(state, |m| {
         m.refresh_projects()?;
         Ok(m.snapshot())
     })
+    .await
+}
+
+#[tauri::command]
+async fn set_project_domain(
+    app: tauri::AppHandle,
+    state: State<'_, Shared>,
+    name: String,
+    enabled: bool,
+) -> Result<Snapshot> {
+    let _operation = begin_operation(&app, "Updating project .test address…")?;
+    let state = state.inner().clone();
+    access(state.clone(), {
+        let name = name.clone();
+        move |m| {
+            m.refresh_projects()?;
+            let project = m
+                .snapshot()
+                .projects
+                .into_iter()
+                .find(|project| project.name == name);
+            if enabled
+                && !project
+                    .as_ref()
+                    .is_some_and(|project| project.message.is_none())
+            {
+                return Err("This project is unavailable. Refresh projects first.".into());
+            }
+            if !enabled && project.is_some_and(|project| project.ssl_enabled) {
+                return Err(
+                    "Turn off HTTPS for this project before removing its .test address.".into(),
+                );
+            }
+            Ok(())
+        }
+    })
     .await?;
-    let names = snapshot
-        .projects
-        .iter()
-        .filter(|project| project.message.is_none())
-        .map(|project| project.name.clone())
-        .collect::<Vec<_>>();
-    tauri::async_runtime::spawn_blocking(move || crate::hosts::ensure(&names, "--sync-hosts"))
-        .await
-        .map_err(|e| e.to_string())??;
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::hosts::set_project(&name, enabled, "--sync-hosts")
+    })
+    .await
+    .map_err(|e| e.to_string())??;
     access(state, |m| Ok(m.snapshot())).await
 }
 
@@ -383,6 +415,15 @@ async fn set_project_ssl(
     let layout = access(shared.clone(), {
         let name = name.clone();
         move |m| {
+            if enabled
+                && !m
+                    .snapshot()
+                    .projects
+                    .iter()
+                    .any(|project| project.name == name && project.domain_enabled)
+            {
+                return Err("Enable this project's .test address before enabling HTTPS.".into());
+            }
             if enabled
                 && [
                     m.ports.website,
@@ -401,7 +442,7 @@ async fn set_project_ssl(
                 .layout
                 .projects(m.ports.website)?
                 .iter()
-                .any(|project| project.name == name && project.message.is_none())
+                .any(|project| project.name == name && (!enabled || project.message.is_none()))
             {
                 return Err("This project is unavailable. Refresh projects first.".into());
             }
@@ -593,8 +634,16 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
         for name in ["app.pid", "mysql.pid", "nginx.pid", "php.pid"] {
             let path = layout.data.join(name);
             if let Ok(text) = std::fs::read_to_string(&path) {
+                // Nginx can leave an empty PID file after a failed start.
+                if name == "nginx.pid" && text.trim().is_empty() {
+                    if crate::process::health(layout.ports()?.website) {
+                        return Err("Open Fairway XMP, stop all services, and quit before installing or uninstalling.".into());
+                    }
+                    std::fs::remove_file(path).map_err(|e| e.to_string())?;
+                    continue;
+                }
                 let pid: u32 = text.trim().parse().map_err(|_| {
-                    "Cannot verify a service PID; stop services before uninstalling."
+                    "Cannot verify a service PID; stop services before installing or uninstalling."
                 })?;
                 if crate::process::pid_alive(pid) {
                     return Err(
@@ -725,6 +774,7 @@ pub fn run() {
             service_action,
             save_settings,
             refresh_projects,
+            set_project_domain,
             set_project_ssl,
             open_target,
             read_log,
