@@ -37,8 +37,9 @@ test('projects are added, edited, and removed explicitly', async ({ page }, info
   await dialog.getByRole('button', { name: 'Add project' }).click();
   const table = page.getByRole('table', { name: 'Projects' });
   await expect(table).toContainText('Course Site');
-  await expect(table.getByText('course-site.test', { exact: true })).toBeVisible();
+  await expect(table.getByText('course-site.test:8800', { exact: true })).toBeVisible();
 
+  await expect(page.getByRole('button', { name: 'Open Course Site' })).toBeDisabled();
   await page.getByRole('button', { name: 'Edit Course Site' }).click();
   const edit = page.getByRole('dialog', { name: 'Edit project' });
   await edit.getByLabel('Name').fill('Course');
@@ -46,7 +47,7 @@ test('projects are added, edited, and removed explicitly', async ({ page }, info
   await edit.getByLabel('Domain').fill('course');
   await expect(edit).toContainText('replaces course-site.test with course.test');
   await edit.getByRole('button', { name: 'Save changes' }).click();
-  await expect(table.getByText('course.test', { exact: true })).toBeVisible();
+  await expect(table.getByText('course.test:8800', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: 'Remove Course' }).click();
   const remove = page.getByRole('dialog', { name: 'Remove Course?' });

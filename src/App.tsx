@@ -170,6 +170,10 @@ export default function App() {
     void run('Reading log…', async () => setLog({ service, text: await invoke<string>('read_log', { service }) }));
   }
 
+  function projectUrl(project: Project) {
+    return project.https ? `https://${project.domain}.test:8443/` : `http://${project.domain}.test:${data.ports.website}/`;
+  }
+
   function setHttps(project: Project, enabled: boolean) {
     void run('Updating project HTTPS…', async () => {
       setData(await invoke<Snapshot>('set_project_https', { domain: project.domain, enabled }));
@@ -258,9 +262,9 @@ export default function App() {
                 <thead><tr><th scope="col">Project</th><th scope="col">Address</th><th scope="col">HTTPS</th><th scope="col" aria-label="Actions" /></tr></thead>
                 <tbody>{data.projects.map(project => <tr key={project.domain}>
                   <th scope="row"><strong>{project.name}</strong><code className="project-root" title={project.root}>{project.root}</code>{!project.available && <small className="project-warning">Web root folder not found. Edit the project to choose it again, or remove it.</small>}</th>
-                  <td><code title={`${project.https ? 'https' : 'http'}://${project.domain}.test:${project.https ? 8443 : data.ports.website}/`}>{project.domain}.test</code>{!project.domainReady && <small className="project-warning">Not in the hosts file yet</small>}</td>
+                  <td><span className="project-address"><code title={projectUrl(project)}>{project.domain}.test:{project.https ? 8443 : data.ports.website}</code><button className="icon-button" aria-label={`Open ${project.name}`} title={`Open ${projectUrl(project)}`} disabled={!project.available || !project.domainReady || !data.services.find(service => service.id === 'nginx')?.ready || !!busy} onClick={() => open(`project:${project.domain}`)}><ExternalLink size={13} /></button></span>{!project.domainReady && <small className="project-warning">Not in the hosts file yet</small>}</td>
                   <td><label className="ssl-toggle"><input type="checkbox" role="switch" aria-label={`HTTPS for ${project.name}`} checked={project.https} disabled={!usable || (!project.https && (!project.available || !project.domainReady))} onChange={event => { if (!event.target.checked) setHttps(project, false); else if (data.httpsTrusted) setHttps(project, true); else setSslSetup(project); }} /><span className="ssl-track" aria-hidden="true" /></label></td>
-                  <td><div className="project-actions"><button className="secondary" disabled={!project.available || !project.domainReady || !data.services.find(service => service.id === 'nginx')?.ready || !!busy} onClick={() => open(`project:${project.domain}`)}>Open<ExternalLink size={13} /></button><button className="secondary" aria-label={`Edit ${project.name}`} disabled={!usable} onClick={() => setProjectForm({ ...project, previous: project.domain, domainEdited: true, error: null })}>Edit</button><button className="secondary" aria-label={`Remove ${project.name}`} disabled={!usable} onClick={() => setRemoving(project)}>Remove</button></div></td>
+                  <td><div className="project-actions"><button className="secondary" aria-label={`Edit ${project.name}`} disabled={!usable} onClick={() => setProjectForm({ ...project, previous: project.domain, domainEdited: true, error: null })}>Edit</button><button className="secondary" aria-label={`Remove ${project.name}`} disabled={!usable} onClick={() => setRemoving(project)}>Remove</button></div></td>
                 </tr>)}</tbody>
               </table></div>}
               {data.httpsTrusted && !data.projects.some(project => project.https) && <div className="project-pending"><span>Fairway's local HTTPS certificate is still trusted by this computer. Remove the trust if you no longer need HTTPS.</span><button className="secondary" disabled={!usable} onClick={() => { void run('Removing certificate trust…', async () => { setData(await invoke<Snapshot>('remove_https_trust')); setNotice({ kind: 'success', text: 'Fairway’s local certificate is no longer trusted.' }); }); }}>Remove certificate trust</button></div>}
