@@ -1,6 +1,9 @@
 name: macOS installer
 
 on:
+  # Build this signed comparison app when its dedicated test branch changes.
+  push:
+    branches: [codex/issue-9-macos-authorization-focus]
   workflow_dispatch:
     inputs:
       standalone_only:
@@ -26,7 +29,7 @@ permissions:
 
 jobs:
   build:
-    if: inputs.standalone_only != true
+    if: inputs.standalone_only != true && github.event_name != 'push'
     runs-on: macos-15
     timeout-minutes: 150
     steps:
@@ -206,7 +209,7 @@ jobs:
           retention-days: 7
 
   standalone:
-    if: inputs.standalone_only == true
+    if: inputs.standalone_only == true || github.event_name == 'push'
     runs-on: macos-15
     timeout-minutes: 90
     steps:
