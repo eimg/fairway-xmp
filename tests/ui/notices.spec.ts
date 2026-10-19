@@ -37,6 +37,11 @@ test.beforeEach(async ({ page }) => {
         if (fail) { fail = false; throw new Error('Could not complete the operation. Try again.'); }
         if (command === 'backup_database') return '/Users/Student May/Backups/classroom.sql' as T;
         if (command === 'cli_integration') { data.pathInstalled = Boolean(args.enabled); return structuredClone(data) as T; }
+        if (command === 'set_project_https' && !args.enabled) {
+          data.projects.find(project => project.domain === args.domain)!.https = false;
+          throw new Error(`HTTPS is off for ${args.domain}.test, but certificate cleanup did not finish. Choose Remove certificate trust to retry. Certificate removal was cancelled.`);
+        }
+        if (command === 'remove_https_trust') { data.httpsTrusted = false; return structuredClone(data) as T; }
         throw new Error(`Unexpected test command: ${command}`);
       },
     };
@@ -52,6 +57,19 @@ async function positionAt(page: Page, control: Locator) {
   expect(position).toBeGreaterThan(100);
   return position;
 }
+
+test('cancelled last-site certificate cleanup leaves HTTPS off and can be retried', async ({ page }) => {
+  await page.getByRole('button', { name: 'Manage Sites', exact: true }).click();
+  const shop = page.getByRole('switch', { name: 'HTTPS for My Shop' });
+  await expect(shop).toBeChecked();
+  await shop.locator('..').click();
+  await expect(shop).not.toBeChecked();
+  await expect(page.getByRole('alert')).toContainText('HTTPS is off for shop.test, but certificate cleanup did not finish');
+  await page.getByRole('button', { name: 'Remove certificate trust', exact: true }).click();
+  await expect(page.getByRole('status')).toContainText('local certificate is no longer trusted');
+  await expect(page.getByRole('button', { name: 'Remove certificate trust', exact: true })).toHaveCount(0);
+  await expect(shop).not.toBeChecked();
+});
 
 async function expectPosition(page: Page, control: Locator, position: number) {
   await expect(control).toBeEnabled();

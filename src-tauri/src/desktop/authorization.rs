@@ -20,7 +20,7 @@ pub(super) fn in_progress() -> bool {
     PROMPTS.load(Ordering::SeqCst) != 0
 }
 
-/// Wait for the handoff before starting a blocking Security operation. AppKit
+/// Wait for the handoff before starting a blocking authorization operation. AppKit
 /// always runs on the main thread; the authorization call stays on its worker.
 fn on_main(action: impl FnOnce(MainThreadMarker) + Send + 'static) -> Result<()> {
     let Some(app) = APP.get() else {
@@ -43,10 +43,8 @@ fn on_main(action: impl FnOnce(MainThreadMarker) + Send + 'static) -> Result<()>
 }
 
 #[must_use]
-#[cfg(any(feature = "native-macos-trust", test))]
 pub(crate) struct Authorization<'a>(&'a AtomicUsize);
 
-#[cfg(any(feature = "native-macos-trust", test))]
 impl<'a> Authorization<'a> {
     fn acquire(count: &'a AtomicUsize) -> Self {
         count.fetch_add(1, Ordering::SeqCst);
@@ -54,7 +52,6 @@ impl<'a> Authorization<'a> {
     }
 }
 
-#[cfg(any(feature = "native-macos-trust", test))]
 impl Drop for Authorization<'_> {
     fn drop(&mut self) {
         self.0.fetch_sub(1, Ordering::SeqCst);
@@ -63,11 +60,10 @@ impl Drop for Authorization<'_> {
     }
 }
 
-/// Security owns its authorization UI and doesn't expose an application to
+/// macOS owns its authorization UI and doesn't expose an application to
 /// yield to. Relinquish Fairway's active appearance once, before asking for it.
 /// Keep explicit Fairway focus requests suppressed until the native call ends.
-#[cfg(feature = "native-macos-trust")]
-pub(crate) fn begin_trust() -> Result<Authorization<'static>> {
+pub(crate) fn begin() -> Result<Authorization<'static>> {
     let guard = Authorization::acquire(&PROMPTS);
     on_main(|mtm| {
         let app = NSApplication::sharedApplication(mtm);

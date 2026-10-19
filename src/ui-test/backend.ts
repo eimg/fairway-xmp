@@ -202,6 +202,7 @@ export async function invoke<T>(command: string, args: Record<string, unknown> =
       if (!project) throw new Error('This site is no longer registered.');
       project.https = Boolean(args.enabled);
       if (project.https) data.httpsTrusted = true;
+      else if (!data.projects.some(item => item.https)) data.httpsTrusted = false;
       result = structuredClone(data); break;
     }
     case 'remove_https_trust':

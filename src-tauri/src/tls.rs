@@ -211,6 +211,10 @@ pub fn ensure_trust(layout: &Layout) -> Result<()> {
                     .into(),
             );
         }
+        // Native Security calls and the compatibility security subprocess can
+        // both ask for keychain/trust approval. Cover either implementation.
+        #[cfg(feature = "desktop")]
+        let _authorization = crate::desktop::authorization::begin()?;
         #[cfg(feature = "native-macos-trust")]
         macos_native::install(&root_certificate(layout), &keychain)?;
         #[cfg(not(feature = "native-macos-trust"))]
@@ -262,6 +266,10 @@ pub fn remove_trust(layout: &Layout) -> Result<()> {
     }
     #[cfg(target_os = "macos")]
     {
+        // Deleting a certificate with its trust settings can prompt just like
+        // installation. Hold the same focus handoff for the entire cleanup.
+        #[cfg(feature = "desktop")]
+        let _authorization = crate::desktop::authorization::begin()?;
         // Delete every Fairway CA with its trust setting, including ones left by an earlier CA.
         let mut find = Command::new("/usr/bin/security");
         find.args(["find-certificate", "-a", "-Z", "-c", CA_NAME])

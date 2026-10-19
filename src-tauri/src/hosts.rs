@@ -249,6 +249,8 @@ pub fn ensure(names: &[String], helper_flag: &str) -> Result<()> {
             "do shell script \"{}\" with administrator privileges",
             command.replace('\\', "\\\\").replace('"', "\\\"")
         );
+        #[cfg(feature = "desktop")]
+        let _authorization = crate::desktop::authorization::begin()?;
         let status = Command::new("/usr/bin/osascript")
             .args(["-e", &script])
             .status()

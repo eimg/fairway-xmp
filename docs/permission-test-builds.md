@@ -22,8 +22,8 @@ it twice. Start Nginx and confirm the address works.
 
 For HTTPS, enable it on a site and approve Windows' certificate trust confirmation.
 There should be no empty console behind that confirmation. Existing trust may skip the
-confirmation; to test fresh trust, turn HTTPS off for every site, remove certificate
-trust, then enable it again. Also test cancellation/retry and trust removal. The change
+confirmation; to test fresh trust, turn HTTPS off for every site (the last switch also removes
+certificate trust), then enable it again. Also test cancellation/retry and trust removal. The change
 suppresses console windows, while retaining Windows security confirmations and errors.
 
 When done, quit from the tray and reopen the installed app. Do not enable/disable CLI
@@ -55,15 +55,22 @@ prompt. Existing CA trust is reused. Test it independently from hosts approval.
 
 The focus test build relinquishes Fairway's active state before native keychain/trust
 authorization and suppresses Fairway's own window-focus requests until that call ends.
-It cooperatively yields to System Settings before opening Login Items, and native-build
+The same handoff now covers removal, legacy hosts authorization and updater installation.
+It cooperatively yields to System Settings before opening Login Items, and Mac
 errors stay in Fairway's panel without raising the app over Settings. This adds no
 authentication prompt and preserves the one-time helper approval model. Actual system
 dialog focus still needs device verification; unit tests cannot establish it.
 
-Test HTTPS separately: turn HTTPS off for every site, choose **Remove certificate
-trust**, then enable HTTPS on an existing site. When the authorization prompt appears,
+The owner confirmed that enabling HTTPS focuses the Touch ID prompt in build
+`88fa366`, but removing trust did not. This follow-up covers both directions.
+
+Test HTTPS separately: turn HTTPS off for every site. The last switch now also removes
+certificate trust, so there is no second cleanup click. If cleanup is cancelled, HTTPS
+stays off and **Remove certificate trust** appears for retry. Test that retry too.
+Enable HTTPS again on an existing site. When the authorization prompt appears,
 try Touch ID immediately, without clicking the prompt first. Cancel once, retry, and
-also check the password fallback. Confirm Fairway does not jump in front while the
+also check the password fallback for both enabling and removal. With two HTTPS sites,
+turn one off: there must be no trust-removal prompt, and the other site must still work. Confirm Fairway does not jump in front while the
 prompt is open, and that returning to Fairway works after either outcome.
 
 For fresh helper approval, quit the previous prototype and unregister its helper

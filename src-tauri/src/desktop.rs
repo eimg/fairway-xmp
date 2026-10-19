@@ -17,10 +17,7 @@ use std::{
 use tauri::{Emitter, Manager as _, State};
 use tauri_plugin_updater::UpdaterExt;
 
-#[cfg(all(
-    target_os = "macos",
-    any(feature = "native-macos-trust", feature = "native-macos-hosts")
-))]
+#[cfg(target_os = "macos")]
 pub(crate) mod authorization;
 
 type Shared = Arc<Mutex<Manager>>;
@@ -62,10 +59,7 @@ pub(crate) fn show_window(app: &tauri::AppHandle) {
     let handle = app.clone();
     let _ = app.run_on_main_thread(move || {
         // Check on the UI thread, including requests queued before a prompt.
-        #[cfg(all(
-            target_os = "macos",
-            any(feature = "native-macos-trust", feature = "native-macos-hosts")
-        ))]
+        #[cfg(target_os = "macos")]
         if authorization::in_progress() {
             return;
         }
@@ -81,10 +75,7 @@ fn report_error(app: &tauri::AppHandle, error: String) {
     // A pending-helper error follows opening System Settings. Raising Fairway
     // here can undo that handoff even after the native call has returned.
     // Keep Mac errors in the panel for the user's return, without activation.
-    #[cfg(not(all(
-        target_os = "macos",
-        any(feature = "native-macos-trust", feature = "native-macos-hosts")
-    )))]
+    #[cfg(not(target_os = "macos"))]
     show_window(app);
     let _ = app.emit("fairway-error", error);
 }
@@ -495,11 +486,23 @@ async fn set_project_https(
             .await
             .map_err(|e| e.to_string())??;
     }
-    access(shared, move |m| {
+    let changed_domain = domain.clone();
+    let unused_trust = access(shared.clone(), move |m| {
         m.set_project_https(&domain, enabled)?;
-        Ok(m.snapshot())
+        Ok((!enabled && m.unused_trust()?).then(|| m.layout.clone()))
     })
-    .await
+    .await?;
+    if let Some(layout) = unused_trust {
+        // The site/config change has succeeded. A cancelled cleanup leaves
+        // HTTPS off and exposes the existing unused-trust retry in the panel.
+        tauri::async_runtime::spawn_blocking(move || crate::tls::remove_trust(&layout))
+            .await
+            .map_err(|e| e.to_string())?
+            .map_err(|e| {
+                format!("HTTPS is off for {changed_domain}.test, but certificate cleanup did not finish. Choose Remove certificate trust to retry. {e}")
+            })?;
+    }
+    access(shared, |m| Ok(m.snapshot())).await
 }
 
 #[tauri::command]
@@ -666,10 +669,16 @@ async fn install_update(
         "fairway-update-progress",
         serde_json::json!({"phase": "installing"}),
     );
-    let result = tauri::async_runtime::spawn_blocking(move || update.install(bytes))
-        .await
-        .map_err(|e| e.to_string())
-        .and_then(|r| r.map_err(|e| e.to_string()));
+    let result = tauri::async_runtime::spawn_blocking(move || -> Result<()> {
+        // The updater may fall back to administrator authorization for a
+        // root-owned installation. Downloads and backups do not hand off focus.
+        #[cfg(target_os = "macos")]
+        let _authorization = authorization::begin()?;
+        update.install(bytes).map_err(|e| e.to_string())
+    })
+    .await
+    .map_err(|e| e.to_string())
+    .and_then(|r| r);
     if let Err(error) = result {
         access(state.inner().clone(), |m| {
             crate::config::atomic_write(
@@ -851,10 +860,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
-            #[cfg(all(
-                target_os = "macos",
-                any(feature = "native-macos-trust", feature = "native-macos-hosts")
-            ))]
+            #[cfg(target_os = "macos")]
             authorization::initialize(app.handle());
             if app.config().plugins.0.contains_key("updater") {
                 app.handle()

@@ -362,7 +362,7 @@ impl Manager {
         self.apply_projects(projects)
     }
 
-    /// Certificate trust that no project needs any more; removing a project cleans it up.
+    /// Shared certificate trust that no remaining HTTPS site needs any more.
     pub fn unused_trust(&self) -> Result<bool> {
         Ok(crate::tls::trusted(&self.layout)
             && !self.layout.registered_projects()?.iter().any(|p| p.https))
@@ -1039,6 +1039,34 @@ mod tests {
         assert_eq!(fs::read(&saved).unwrap(), b"invalid json");
         manager.layout.save_projects(&[]).unwrap();
         assert!(manager.snapshot().sites_error.is_none());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn trust_cleanup_requires_no_remaining_https_sites_and_a_readable_site_list() {
+        let root =
+            std::env::temp_dir().join(format!("fairway-trust-cleanup-{}", rand::random::<u64>()));
+        let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+        let manager = Manager::new(layout).unwrap();
+        fs::create_dir_all(manager.layout.data.join("tls")).unwrap();
+        fs::write(manager.layout.data.join("tls/trusted"), b"test marker only").unwrap();
+        let mut projects = ["one", "two"].map(|name| ProjectConfig {
+            name: name.into(),
+            domain: name.into(),
+            root: root.clone(),
+            https: true,
+            index_fallback: false,
+        });
+        manager.layout.save_projects(&projects).unwrap();
+        assert!(!manager.unused_trust().unwrap());
+        projects[0].https = false;
+        manager.layout.save_projects(&projects).unwrap();
+        assert!(!manager.unused_trust().unwrap());
+        projects[1].https = false;
+        manager.layout.save_projects(&projects).unwrap();
+        assert!(manager.unused_trust().unwrap());
+        fs::write(manager.layout.data.join("sites.json"), b"invalid json").unwrap();
+        assert!(manager.unused_trust().is_err());
         fs::remove_dir_all(root).unwrap();
     }
 

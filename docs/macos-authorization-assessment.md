@@ -74,6 +74,37 @@ they cannot prove Touch ID focus. The implementation host reports macOS 27.2
 The owner's actual prompt-focus, cancellation, password-fallback and helper-reuse
 results for this build remain pending. See [test steps](permission-test-builds.md#issue-9-authorization-focus).
 
+## Follow-up: removal focus and authorization audit — 2026-10-19
+
+The owner tested signed/notarized build `88fa366` and confirmed that HTTPS-enable
+Touch ID authorization focuses automatically. They reported certificate-removal
+Touch ID authorization still needed a click. This isolated the missing removal path:
+`security delete-certificate -t` was outside the scoped handoff.
+
+The shared guard now covers both native and compatibility HTTPS installation, all
+certificate-removal callers, legacy hosts elevation, and the updater's potentially
+privileged installation. Read-only trust verification, ordinary service controls,
+CLI/PATH integration and approved-helper XPC requests do not request elevation and
+retain normal focus. Settings retains the cooperative handoff for initial helper
+approval. Installer-owned authorization runs in Installer, and the standalone
+uninstaller requires Fairway to quit first; its dialogs activate themselves, and
+Finder is activated before its own deletion approval. Terminal-owned sudo prompts
+remain terminal interactions. No extra authorization or security-agent targeting
+was introduced. Folder-picker/TCC permission UI remains system-owned; no blanket
+focus manipulation is applied to ordinary file access.
+
+In the desktop app, turning off the last HTTPS site now applies the site/config
+change and removes unused shared CA trust in one operation. Other enabled HTTPS
+sites retain trust. If cleanup is cancelled or fails, HTTPS stays off and the panel
+reports that cleanup did not finish; **Remove certificate trust** remains available
+as a retry. This avoids silently re-enabling HTTPS or requiring a second cleanup
+click in the successful flow. The existing uninstall and remove-site cleanup paths
+use the same guarded trust-removal function.
+
+Device results for removal, the broader authorization paths and cancellation remain
+pending the follow-up build. No trust removal, elevation, updater installation or
+uninstall was triggered by the agent during this audit.
+
 ## Release recommendation
 
 Keep RC 1 and its published artifacts unchanged. The accompanying welcome-page proposal is independent visual/content polish. The native trust feature remains an opt-in test proposal and has a successful owner-reported HTTPS comparison. The owner has accepted the hosts background-approval and subsequent-add flow for the next release; release packaging/default-feature integration and the remaining acceptance cases still need completion. Any welcome-page or authorization implementation chosen for another RC requires a fresh candidate build and acceptance; existing RC 1 hashes do not cover it.

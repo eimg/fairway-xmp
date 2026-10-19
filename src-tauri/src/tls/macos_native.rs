@@ -73,10 +73,6 @@ fn native_error(stage: &str, error: Error) -> String {
 pub(super) fn install(root: &Path, keychain: &Path) -> Result<()> {
     // Decode the actual PEM used by verification, not a potentially stale DER sidecar.
     let certificate = certificate_from_pem(&fs::read(root).map_err(|e| e.to_string())?)?;
-    // Both login-keychain access and trust changes may request authorization.
-    // The guard releases on every return path, including cancellation/retry.
-    #[cfg(feature = "desktop")]
-    let _authorization = crate::desktop::authorization::begin_trust()?;
     let keychain =
         SecKeychain::open(keychain).map_err(|e| native_error("open your login keychain", e))?;
     let mut add = ItemAddOptions::new(ItemAddValue::Ref(AddRef::Certificate(certificate.clone())));

@@ -132,7 +132,7 @@ test('invalid project details stay in the form with an error', async ({ page }) 
   await expect(dialog.getByLabel('Site name')).toHaveValue('Shop');
 });
 
-test('HTTPS explains trust once and trust can be removed when unused', async ({ page }, info) => {
+test('turning off the last HTTPS site removes trust, while other sites retain it', async ({ page }, info) => {
   await page.goto('/');
   await openSites(page);
   const shop = page.getByRole('switch', { name: 'HTTPS for My Shop' });
@@ -140,13 +140,13 @@ test('HTTPS explains trust once and trust can be removed when unused', async ({ 
   await shop.locator('..').click();
   await expect(shop).not.toBeChecked();
   await expect(page.getByRole('listitem', { name: 'My Shop', exact: true }).getByLabel('HTTPS', { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Remove certificate trust' }).click();
   await expect(page.getByRole('button', { name: 'Remove certificate trust' })).toHaveCount(0);
+  await expect(page.getByRole('status')).toContainText('Its unused certificate trust was removed');
   const blog = page.getByRole('switch', { name: 'HTTPS for Blog' });
   await blog.locator('..').click();
   const dialog = page.getByRole('dialog', { name: 'Enable HTTPS for blog.test?' });
   await expect(dialog).toContainText('only this computer trusts');
-  await expect(dialog).toContainText('Turning HTTPS off leaves the certificate trusted');
+  await expect(dialog).toContainText('Turning off HTTPS for the last site also removes the shared certificate trust');
   await capture(page, info, 'enable-https');
   await dialog.getByRole('button', { name: 'Enable HTTPS' }).click();
   await expect(blog).toBeChecked();
@@ -154,6 +154,13 @@ test('HTTPS explains trust once and trust can be removed when unused', async ({ 
   await shop.locator('..').click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(shop).toBeChecked();
+  await shop.locator('..').click();
+  await expect(shop).not.toBeChecked();
+  await expect(blog).toBeChecked();
+  // The CA still serves Blog: enabling My Shop again must not ask for trust.
+  await shop.locator('..').click();
+  await expect(shop).toBeChecked();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
 test('pending hosts updates and missing folders are shown with a recovery action', async ({ page }, info) => {
