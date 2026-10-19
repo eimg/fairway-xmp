@@ -61,7 +61,7 @@ security-framework = { version = "=3.7.0", optional = true }
 security-framework-sys = { version = "=2.17.0", optional = true }
 muda = { version = "0.20", optional = true, default-features = false }
 objc2 = { version = "0.6", optional = true }
-objc2-app-kit = { version = "0.3", optional = true, default-features = false, features = ["NSMenu", "NSMenuItem", "NSFont", "NSColor", "NSAttributedString"] }
+objc2-app-kit = { version = "0.3", optional = true, default-features = false, features = ["NSApplication", "NSMenu", "NSMenuItem", "NSFont", "NSColor", "NSAttributedString"] }
 objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["NSString", "NSAttributedString", "NSValue", "NSError"] }
 
 [target.'cfg(windows)'.dependencies]

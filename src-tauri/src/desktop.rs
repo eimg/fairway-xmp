@@ -17,6 +17,12 @@ use std::{
 use tauri::{Emitter, Manager as _, State};
 use tauri_plugin_updater::UpdaterExt;
 
+#[cfg(all(
+    target_os = "macos",
+    any(feature = "native-macos-trust", feature = "native-macos-hosts")
+))]
+pub(crate) mod authorization;
+
 type Shared = Arc<Mutex<Manager>>;
 
 #[derive(Default)]
@@ -53,14 +59,32 @@ fn begin_operation(app: &tauri::AppHandle, label: &str) -> Result<DesktopOperati
 }
 
 pub(crate) fn show_window(app: &tauri::AppHandle) {
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.unminimize();
-        let _ = window.show();
-        let _ = window.set_focus();
-    }
+    let handle = app.clone();
+    let _ = app.run_on_main_thread(move || {
+        // Check on the UI thread, including requests queued before a prompt.
+        #[cfg(all(
+            target_os = "macos",
+            any(feature = "native-macos-trust", feature = "native-macos-hosts")
+        ))]
+        if authorization::in_progress() {
+            return;
+        }
+        if let Some(window) = handle.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+    });
 }
 
 fn report_error(app: &tauri::AppHandle, error: String) {
+    // A pending-helper error follows opening System Settings. Raising Fairway
+    // here can undo that handoff even after the native call has returned.
+    // Keep Mac errors in the panel for the user's return, without activation.
+    #[cfg(not(all(
+        target_os = "macos",
+        any(feature = "native-macos-trust", feature = "native-macos-hosts")
+    )))]
     show_window(app);
     let _ = app.emit("fairway-error", error);
 }
@@ -827,6 +851,11 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
+            #[cfg(all(
+                target_os = "macos",
+                any(feature = "native-macos-trust", feature = "native-macos-hosts")
+            ))]
+            authorization::initialize(app.handle());
             if app.config().plugins.0.contains_key("updater") {
                 app.handle()
                     .plugin(tauri_plugin_updater::Builder::new().build())?;

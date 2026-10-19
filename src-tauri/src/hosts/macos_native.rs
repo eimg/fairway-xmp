@@ -134,9 +134,7 @@ pub fn ensure(names: &[String]) -> Result<()> {
     let service = service();
     let status = register_if_needed(&service)?;
     if status == 2 {
-        unsafe {
-            let _: () = msg_send![class!(SMAppService), openSystemSettingsLoginItems];
-        }
+        crate::desktop::authorization::open_login_items()?;
         return Err("Allow Fairway XMP in System Settings → General → Login Items & Extensions, then try the address change again.".into());
     }
     if status != 1 {
