@@ -400,8 +400,11 @@ impl Layout {
         let settings =
             crate::php_settings::Overrides::load(self)?.settings(&self.php_version()?)?;
         let conf = self.data.join("config");
+        // Match PHP's development INI: keep host variables in getenv()/$_SERVER,
+        // outside $_ENV, which Laravel filters when spawning artisan serve.
+        // Otherwise its child loses PHPRC, PHP_INI_SCAN_DIR and MIBS.
         let php = format!(
-            "[PHP]\nengine=On\nshort_open_tag=Off\nerror_reporting=E_ALL\nlog_errors=On\nerror_log={}\n{}session.save_path={}\nupload_tmp_dir={}\nextension_dir={}\ncurl.cainfo={}\nopenssl.cafile={}\n{}{}",
+            "[PHP]\nengine=On\nshort_open_tag=Off\nvariables_order=GPCS\nerror_reporting=E_ALL\nlog_errors=On\nerror_log={}\n{}session.save_path={}\nupload_tmp_dir={}\nextension_dir={}\ncurl.cainfo={}\nopenssl.cafile={}\n{}{}",
             ini(&self.data.join("logs/php.log")), settings.ini(), ini(&self.data.join("sessions")),
             ini(&self.data.join("tmp")), ini(&self.php_root()?.join("ext")),
             ini(&self.runtime.join("cacert.pem")), ini(&self.runtime.join("cacert.pem")),

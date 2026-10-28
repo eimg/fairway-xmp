@@ -1,6 +1,6 @@
 [package]
 name = "fairway"
-version = "0.1.0"
+version = "0.1.1"
 description = "A consistent PHP development environment for the classroom"
 edition = "2021"
 default-run = "fairway"

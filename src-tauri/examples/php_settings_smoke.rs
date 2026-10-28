@@ -195,6 +195,28 @@ fn main() -> Result<(), String> {
             true,
             &managed_ini,
         )?;
+        let output = process::command(manager.layout.php_exe("php")?)
+            .arg(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../tests/fixtures/php_child_environment.php"
+            ))
+            .arg(layout.runtime.join("composer.phar"))
+            .env(
+                "PHPRC",
+                fairway_core::config::windows_ansi_path(&managed_ini),
+            )
+            .env("PHP_INI_SCAN_DIR", "")
+            .env("MIBS", "")
+            .env("FAIRWAY_PROJECT_VALUE", "stale host value")
+            .output()
+            .map_err(|e| e.to_string())?;
+        if !output.status.success() || !output.stderr.is_empty() {
+            return Err(format!(
+                "PHP {minor} child environment check failed: {} {}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
         let web = (|| -> Result<(), String> {
             manager.start("nginx")?;
             assert!(manager.save_php_settings(minor, None).is_err());
@@ -292,7 +314,7 @@ fn main() -> Result<(), String> {
         manager.stop_all()?;
         web?;
         manager.save_php_settings(minor, None)?;
-        println!("PASS PHP {minor}: CLI/web values, real uploads with progress off, upload limits, persistence, inactive edits, rollback, reset and unlimited execution.");
+        println!("PASS PHP {minor}: CLI/web values, child environment inheritance, real uploads with progress off, upload limits, persistence, inactive edits, rollback, reset and unlimited execution.");
     }
     // Reproduce the previous failure: a valid PHP request silent for more than
     // Nginx's old 60-second default must reach the browser successfully.
