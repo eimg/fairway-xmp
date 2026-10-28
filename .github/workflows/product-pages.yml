@@ -1,0 +1,49 @@
+name: Documentation website
+
+on:
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'runtime-manifest.json'
+      - 'src-tauri/icons/128x128.png'
+      - 'package.json'
+      - '.github/workflows/product-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      # The static site builder has no dependencies and does not build the app.
+      - run: npm run site:check
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: website/dist
+
+  # Initial work stays local. Publish manually from main after review and merge.
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v5
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

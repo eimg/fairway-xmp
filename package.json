@@ -7,13 +7,21 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "site:build": "node website/build.mjs",
+    "site:dev": "node website/build.mjs && node website/serve.mjs",
+    "site:check": "node website/build.mjs && node website/check.mjs && node --test website/device.test.mjs website/translation-data.test.mjs",
+    "site:test:navigation": "node website/build.mjs && node --test website/navigation.test.mjs",
     "tauri": "tauri",
     "runtime:prepare": "python3 scripts/prepare_runtime.py",
     "test:scripts": "python3 -m unittest discover -s tests -v",
     "test:unit": "node scripts/test_unit.mjs",
     "dev:ui": "vite --host 127.0.0.1 --mode ui-test",
     "test:ui": "playwright test",
-    "test:ui:report": "playwright show-report"
+    "test:ui:report": "playwright show-report",
+    "site:test:theme": "node website/build.mjs && node --test website/theme.test.mjs",
+    "site:edit:mm": "node website/edit-translations.mjs",
+    "site:test:translations": "node --test website/translation-data.test.mjs",
+    "site:test:editor": "node --test website/editor.test.mjs"
   },
   "dependencies": {
     "@xterm/addon-fit": "0.10.0",

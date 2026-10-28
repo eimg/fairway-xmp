@@ -2,6 +2,8 @@
 
 Start with the [user guide](../README.md) or [development setup](../CONTRIBUTING.md). [PROJECT_SPEC.md](../PROJECT_SPEC.md) describes the current behavior and architecture.
 
+The [English/Myanmar how-to website](../website/README.md) organizes help by user tasks and common problems. Review it locally with `npm run site:dev`. The guides below provide deeper technical and contributor reference.
+
 | Guide | Use it for |
 | --- | --- |
 | [Build and release](build-and-release.md) | Packaging, signing, candidate CI, publication and update feeds |

@@ -2,6 +2,8 @@
 
 A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. Run your web server and database from one control panel, write code in your preferred editor, and manage your data with the built-in database browser or phpMyAdmin.
 
+[How-to guides](https://eimg.github.io/fairway-xmp/) · [မြန်မာလမ်းညွှန်](https://eimg.github.io/fairway-xmp/mm/)
+
 ![Fairway XMP on macOS showing the Environment page with services stopped](docs/images/control-panel.png)
 
 *Fairway XMP on macOS.*

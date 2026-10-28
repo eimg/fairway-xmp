@@ -10,6 +10,98 @@ A classroom PHP development environment with a desktop control panel on Windows/
 Supported targets: Windows 10 22H2 / Windows 11 x64, macOS 15+ Apple Silicon, and Linux x86_64 with glibc 2.35+. Linux ships as a terminal edition; CI covers its installer and five distro runtimes, with release-owner testing still encouraged.
 No Docker/WSL requirement, distro-specific Linux packages, ARM Linux or musl support, Intel Mac packages, Laravel-specific project management, or a preinstalled Node/npm requirement for the PHP services/desktop app. All platforms bundle the unchanged fnm CLI; the macOS and Windows apps offer optional Node downloads.
 
+## Product website
+
+`website/` contains an independent static documentation website in English and
+Myanmar. The home page starts with common tasks and problem links under
+“How-to guides”, with a neutral description of the guide's scope. English uses the root route; Myanmar uses `mm/`,
+with HTML language `my`. The header switches between matching pages. JavaScript
+selects the chapter actually in view rather than copying a stale URL hash;
+returning to the top clears the language links' anchors. Ordinary navigation
+works without JavaScript.
+
+Guides are organized by reader goals: Serve project folders, Work with data & email,
+Configure bundled tools, Fix a problem, Manage Fairway XMP, and Connection
+reference. Titles describe tasks rather than app pages or bundled services.
+Coverage includes the shared document root, .test site registration and HTTPS,
+MySQL connection/browsing/import/backup/restore, SQLite files, email testing,
+bundled PHP/Composer access, PHP versions/settings, optional Node.js, terminal folders, common
+site/log/PATH/port failures, service shutdown, updates and uninstalling.
+
+The scope is Fairway XMP operation and configuration, assuming an existing project.
+English website prose uses the full name Fairway XMP to distinguish it from the
+separate Fairway product; literal commands, paths, credentials and URLs are kept.
+Burmese guide text follows the owner's edited page labels: concise Burmese with
+familiar English technical terms. Owner-edited page labels are preserved.
+Programming lessons, hello-world examples, framework initialization, application
+key generation, migrations and package-installation tutorials are excluded.
+Application configuration appears only where required to connect to Fairway XMP
+services or choose a Fairway XMP setting, such as a site's public web root.
+
+Each task has numbered steps and a concrete expected result. Introductions are
+optional and limited to prerequisites or consequential constraints; generic
+use-case descriptions and conversational prompts are omitted. Supporting labels
+use Expected result, Troubleshooting, Screenshot and Related guides. Contextual
+troubleshooting uses expandable symptom or error headings; Linux usage,
+platform-specific restore commands and screenshots are also expandable.
+Consequences appear beside the relevant action. Related tasks link directly to
+other guides; deeper technical repository guides are explicitly labeled English.
+The connection reference lists default ports. Both languages use the same guide
+IDs and structure, retaining existing topic anchors. Content and group metadata
+live in `website/guides.mjs`; site labels and common-task links live in
+`website/content.mjs`.
+
+`npm run site:edit:mm` opens a local Burmese translation editor on port 4174.
+It provides English reference text beside editable Burmese, section selection,
+search, browser drafts, draft download/import and Save & update preview.
+Only text segments are submitted; original HTML, formatted labels, code blocks,
+paths and link targets remain fixed. Plain labels are escaped by the site renderer.
+The catalog includes site labels, navigation, guides and optional platform text,
+excluding locale codes, routing IDs, port numbers and shared commands.
+Saves preserve English, create ignored recovery copies, update Burmese source
+and rebuild the preview; build failure restores the original source. Revision
+checks reject stale writes. The server binds to loopback and checks host, origin
+and a per-process token for saves. Editor assets and backups are not published.
+Browser tests exercise real saves and recovery in temporary website copies.
+
+The desktop task directory scrolls independently. Mobile shows common tasks first
+and provides a collapsed directory within the introduction. Task headings have
+permalinks. Screenshots show the actual desktop UI with simulated sample data and
+are labeled accordingly. The guides omit bundled-runtime version inventories.
+
+The header has a light/dark toggle with sun and moon icons, translated accessible
+labels, a checked state for dark mode and an action tooltip. It follows live OS
+preference changes until an explicit light/dark choice is saved. Manual choices
+persist across reloads, tabs and languages. There is no System selection in the UI;
+missing, invalid or legacy System preferences fall back to the OS setting.
+A small blocking `theme.js` applies the saved choice before the stylesheet loads.
+CSS provides system-based light/dark themes without JavaScript, hiding the manual
+control until initialized. Storage failures preserve current-page switching.
+Theme tokens cover text, surfaces, code, tables, controls and the download dialog;
+screenshots keep their original colors. `site:test:theme` verifies theme behavior,
+text/code contrast and responsive layout in Chromium and WebKit for both languages.
+
+The Get Fairway XMP header button opens a bilingual native download dialog. A
+browser-detected Windows, macOS or Linux platform gets a prominent direct
+installer link and requirements, followed by smaller downloads for the other
+platforms. Mobile/unknown devices and known unsupported architectures get a
+platform chooser. Browser identification does not guarantee CPU/OS compatibility;
+requirements remain visible. The dialog supports native focus containment,
+Escape, close and backdrop dismissal, restores page scrolling on close, and
+returns focus to the trigger. Without JavaScript/dialog support the header
+links to the release page. `website/downloads.json` pins the published version
+and installer URLs independently of runtime component versions.
+
+`npm run site:dev` builds and serves the site locally under `/fairway-xmp/` on
+port 4173; `site:build` produces `website/dist` and `site:check` builds and checks
+local links, assets, fragments, translated task structure and language metadata.
+Browser navigation checks cover task discovery and contextual help without
+JavaScript, plus language switching on desktop and mobile. The app's build and root
+`dist` stay separate. The Documentation website workflow checks relevant pull
+requests; GitHub Pages publication requires manual dispatch from `main`, after the owner
+enables the GitHub Actions Pages source. See `website/README.md` for local review,
+editing, screenshot refresh and publication instructions.
+
 ## Application and runtimes
 
 Tauri 2, Rust service manager, React/TypeScript UI. Exact versions and required PHP extensions are recorded in `runtime-manifest.json`. Download inputs are pinned by SHA256 in `runtime-downloads.lock.json` once prepared and reviewed. Runtime preparation never installs Homebrew or system services.

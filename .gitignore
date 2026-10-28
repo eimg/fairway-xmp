@@ -14,3 +14,7 @@ test-results/
 __pycache__/
 src-tauri/gen/
 VERIFICATION.md
+
+# Local translation editor recovery copies
+website/.translation-backups/
+website/*.editor-*.tmp
