@@ -12,8 +12,9 @@ No Docker/WSL requirement, distro-specific Linux packages, ARM Linux or musl sup
 
 ## Product website
 
-`website/` contains an independent static documentation website in English and
-Myanmar. The home page starts with common tasks and problem links under
+`website/` contains an independent static documentation website published on GitHub Pages:
+[English](https://eimg.github.io/fairway-xmp/) and [Myanmar](https://eimg.github.io/fairway-xmp/mm/).
+The home page starts with common tasks and problem links under
 “How-to guides”, with a neutral description of the guide's scope. English uses the root route; Myanmar uses `mm/`,
 with HTML language `my`. The header switches between matching pages. JavaScript
 selects the chapter actually in view rather than copying a stale URL hash;
@@ -51,19 +52,6 @@ IDs and structure, retaining existing topic anchors. Content and group metadata
 live in `website/guides.mjs`; site labels and common-task links live in
 `website/content.mjs`.
 
-`npm run site:edit:mm` opens a local Burmese translation editor on port 4174.
-It provides English reference text beside editable Burmese, section selection,
-search, browser drafts, draft download/import and Save & update preview.
-Only text segments are submitted; original HTML, formatted labels, code blocks,
-paths and link targets remain fixed. Plain labels are escaped by the site renderer.
-The catalog includes site labels, navigation, guides and optional platform text,
-excluding locale codes, routing IDs, port numbers and shared commands.
-Saves preserve English, create ignored recovery copies, update Burmese source
-and rebuild the preview; build failure restores the original source. Revision
-checks reject stale writes. The server binds to loopback and checks host, origin
-and a per-process token for saves. Editor assets and backups are not published.
-Browser tests exercise real saves and recovery in temporary website copies.
-
 The desktop task directory scrolls independently. Mobile shows common tasks first
 and provides a collapsed directory within the introduction. Task headings have
 permalinks. Screenshots show the actual desktop UI with simulated sample data and
@@ -98,8 +86,8 @@ local links, assets, fragments, translated task structure and language metadata.
 Browser navigation checks cover task discovery and contextual help without
 JavaScript, plus language switching on desktop and mobile. The app's build and root
 `dist` stay separate. The Documentation website workflow checks relevant pull
-requests; GitHub Pages publication requires manual dispatch from `main`, after the owner
-enables the GitHub Actions Pages source. See `website/README.md` for local review,
+requests; GitHub Pages publication uses the configured GitHub Actions source and
+requires manual dispatch from `main`. See `website/README.md` for local review,
 editing, screenshot refresh and publication instructions.
 
 ## Application and runtimes

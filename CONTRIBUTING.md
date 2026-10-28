@@ -18,6 +18,13 @@ On Windows use `python` and, if PowerShell blocks `npm.ps1`, `npm.cmd`. Runtime 
 
 The UI simulation resets on reload, uses example paths, and does not change real files/services. To preview a machine without Node, choose **Scenario → Node not detected**, then open **Settings**. Choose **Existing fnm**, **Existing fnm store** or **fnm handover** to preview read-only guidance and explicit activation handover. The simulated Install & use flow works on both example platforms; changing scenarios resets Node installations and activation. Native development uses real services. Set `FAIRWAY_DEV_HOME` and `FAIRWAY_DEV_DATA` to isolated directories when testing startup, settings, launchers and data. See [Testing](docs/testing.md#isolated-development-profiles).
 
+## Documentation website
+
+The published how-to guides are available in [English](https://eimg.github.io/fairway-xmp/)
+and [Myanmar](https://eimg.github.io/fairway-xmp/mm/). For guide content, translations,
+local preview and publication, see the [website source guide](website/README.md).
+The website builds independently of the desktop app with `npm run site:check`.
+
 ## Verification
 
 ```sh

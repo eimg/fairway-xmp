@@ -1,5 +1,7 @@
 # Node.js and native fnm
 
+For task instructions, see [Install or switch Node.js](https://eimg.github.io/fairway-xmp/#node).
+
 Starting with `0.1.0-rc.5`, installers for all three platforms include the pinned upstream **fnm** executable. Node itself is downloaded only when requested. macOS distribution applies the app’s normal code signing to fnm; its source and CLI behavior are unmodified. Use `fnm` directly; there is no `fairway node` or `fairway fnm` command.
 
 | Platform | Detection and activation |

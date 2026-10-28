@@ -1,5 +1,7 @@
 # Back up and restore student databases
 
+For task instructions, see [Back up databases](https://eimg.github.io/fairway-xmp/#backups) and [Restore MySQL databases from a backup](https://eimg.github.io/fairway-xmp/#restore).
+
 Fairway's SQL backups contain student databases, tables, views, routines, events, and triggers. They exclude MySQL's system databases and account tables. Projects in `fairway/www` need their own file backup.
 
 ## Create and keep a backup

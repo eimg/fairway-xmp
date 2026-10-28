@@ -1,5 +1,7 @@
 # PHP settings
 
+For task instructions, see [Change PHP limits or timezone](https://eimg.github.io/fairway-xmp/#settings) and [Switch the active PHP version](https://eimg.github.io/fairway-xmp/#php).
+
 Open **Settings → PHP settings** in the desktop app. The card starts with the active PHP version, normally 8.5. **Choose another PHP version** reveals the other bundled branches. Editing a branch does not switch the active interpreter; switch under **Service Settings → Advanced settings** when needed.
 
 | Setting | Default | Meaning |

@@ -202,7 +202,9 @@ The uninstaller removes the app and its command-line integration. Your projects 
 
 ## Help and license
 
-See the [documentation index](docs/README.md) for development, testing, releases and maintenance.
+For task instructions and troubleshooting, see the [English how-to guides](https://eimg.github.io/fairway-xmp/)
+or [မြန်မာလမ်းညွှန်](https://eimg.github.io/fairway-xmp/mm/).
+See the [technical documentation index](docs/README.md) for development, testing, releases and maintenance.
 
 For problems or suggestions, [open an issue](https://github.com/eimg/fairway-xmp/issues). Include your operating system, what you tried, and any error shown in Fairway XMP.
 

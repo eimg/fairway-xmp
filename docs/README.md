@@ -1,8 +1,13 @@
 # Documentation
 
-Start with the [user guide](../README.md) or [development setup](../CONTRIBUTING.md). [PROJECT_SPEC.md](../PROJECT_SPEC.md) describes the current behavior and architecture.
+For application setup, task instructions and troubleshooting, use the published
+[English how-to guides](https://eimg.github.io/fairway-xmp/) or
+[မြန်မာလမ်းညွှန်](https://eimg.github.io/fairway-xmp/mm/).
 
-The [English/Myanmar how-to website](../website/README.md) organizes help by user tasks and common problems. Review it locally with `npm run site:dev`. The guides below provide deeper technical and contributor reference.
+The guides below provide technical and contributor reference. Start with
+[development setup](../CONTRIBUTING.md) for app contributions or the
+[website source guide](../website/README.md) for documentation changes.
+[PROJECT_SPEC.md](../PROJECT_SPEC.md) describes current behavior and architecture.
 
 | Guide | Use it for |
 | --- | --- |

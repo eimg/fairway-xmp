@@ -1,5 +1,7 @@
 # Desktop data browser
 
+For task instructions, see [Browse and edit database records](https://eimg.github.io/fairway-xmp/#phpmyadmin), [Open a SQLite file](https://eimg.github.io/fairway-xmp/#sqlite) and [Import a MySQL SQL file](https://eimg.github.io/fairway-xmp/#import-sql).
+
 **Data browser** is available in the macOS and Windows desktop panels alongside phpMyAdmin. Open it through **Browse Data** in the sidebar. The existing Linux terminal edition does not include the desktop data browser.
 
 ## Reading a row

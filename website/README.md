@@ -1,7 +1,8 @@
 # Fairway XMP documentation website
 
 Task-based how-to guides in English and Myanmar,
-served as the documentation home and prepared for GitHub Pages.
+published on GitHub Pages: [English](https://eimg.github.io/fairway-xmp/) ·
+[မြန်မာ](https://eimg.github.io/fairway-xmp/mm/).
 This is independent of the desktop application's UI
 and requires only Node.js 24; there are no site dependencies to install.
 
@@ -28,35 +29,6 @@ preview does not watch files. For another port: `SITE_PORT=4174 npm run site:dev
 
 ## Edit and verify
 
-### Edit Burmese in the browser
-
-Run `npm run site:edit:mm` and open **http://127.0.0.1:4174/**.
-No JavaScript or HTML editing is required:
-
-1. Select a section or search for an English/Burmese phrase.
-2. Click the Burmese text on the right to edit it beside the English reference.
-3. Choose **Save & update preview**, or press Cmd/Ctrl+S.
-4. Open **Preview saved Burmese guide** to inspect the result.
-
-The editor covers page labels, navigation, guide headings, steps, results,
-troubleshooting and platform notes. Formatted app labels, commands, paths and link
-targets remain fixed. Saves change Burmese text only, rebuild the static preview,
-and keep recovery copies in ignored `website/.translation-backups/` folders.
-An out-of-date editor refuses to overwrite external source changes.
-
-Unsaved edits are kept in browser storage for the current source revision.
-**Download draft** and **Import draft** allow explicit recovery or moving edits
-between browsers; an imported draft is reviewed before saving. The editor warns
-before leaving with unsaved changes. If the source changed outside the editor,
-download the current draft before reloading and importing it.
-
-The server listens only on the local computer and requires same-origin,
-token-authorized save requests. Neither the editor nor its recovery files are
-copied into the published site. Stop it with Ctrl+C. Use `SITE_EDITOR_PORT=4175`
-to select another port. `npm run site:test:editor` verifies the editing/save/preview
-flow in Chromium and WebKit using temporary copies; working translations are not
-changed by those tests.
-
 ### Source files and checks
 
 - `guides.mjs`: paired English/Myanmar task guides and navigation groups.
@@ -67,7 +39,6 @@ changed by those tests.
 - `downloads.json`: published installer version and direct GitHub asset URLs.
 - `device.js` and `site.js`: device selection, download dialog and language links.
 - `theme.js`: saved light/dark preference with automatic system fallback before first paint.
-- `translation-data.mjs`, `edit-translations.mjs`, `editor/`: local Burmese editing tools.
 
 ```sh
 npm run site:check  # build, check links/assets/anchors and device-selection tests
@@ -79,8 +50,9 @@ work without JavaScript. A small script follows the documentation section
 actually in view when changing language. At the top it clears any old chapter
 anchor, so a previous TOC visit cannot pull the translated page back down.
 No analytics, external fonts or CDN are needed.
-Detailed links to repository guides are explicitly marked as English. The
-translation and layout are ready for local review.
+Detailed links to repository guides are explicitly marked as English. Edit the paired
+English/Myanmar entries in `guides.mjs` and the locale labels in `content.mjs`,
+then rebuild and review both languages locally before publishing.
 
 The home page starts with common tasks and problems. The directory groups guides
 by the reader's goal: Serve project folders, Work with data & email, Configure bundled tools,
@@ -206,9 +178,9 @@ native services or access real user data. Review the images before committing.
 The `Documentation website` workflow validates relevant pull requests. Deployment is
 manual and restricted to `main`.
 
-After review and merge, set repository **Settings → Pages → Build and deployment
-→ Source** to **GitHub Actions**, then run **Actions → Documentation website → Run workflow**
-from `main`. The expected project URL is `https://eimg.github.io/fairway-xmp/`.
+The repository uses **GitHub Actions** as its Pages source. After pushing reviewed
+changes to `main`, run **Actions → Documentation website → Run workflow** from
+`main` to update the [published guides](https://eimg.github.io/fairway-xmp/).
 See [GitHub's custom workflow documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages).
 
 Upload only `website/dist`, not the desktop app's root `dist`. The site uses
