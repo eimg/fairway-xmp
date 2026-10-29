@@ -4,6 +4,8 @@ Choose checks for the behavior being changed. Device checks help investigate pla
 
 ## Automated checks
 
+Run the commands below locally as needed. For the complete Windows/macOS source checks and Chromium/WebKit suite in CI, use **Actions → Build and verify Fairway XMP → Run workflow**. Application verification and cache warming run only when explicitly requested; pushes and pull requests do not start them. Release candidates still run their full checks.
+
 ```sh
 npm run build
 npm run test:unit

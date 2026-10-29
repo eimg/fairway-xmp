@@ -1,9 +1,6 @@
 name: Build and verify Fairway XMP
 
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
     inputs:
       warm_inputs:
@@ -15,12 +12,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: verify-${{ github.event.pull_request.number || github.ref }}
+  group: verify-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   warm-inputs:
-    if: github.event_name == 'workflow_dispatch' && inputs.warm_inputs
+    if: inputs.warm_inputs
     uses: ./.github/workflows/warm-build-cache.yml
 
   ui-review:

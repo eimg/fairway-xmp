@@ -38,7 +38,7 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D w
 
 Use the [testing guide](docs/testing.md) for browser/native bridge suites, real-runtime smoke checks, PHP version switching, PostgreSQL connections and optional platform checks. Use a fresh isolated home/data directory for service tests. Installer lifecycle tests are for disposable hosted accounts, not your personal profile.
 
-Routine source checks run on Windows/macOS, with browser assertions/screenshots in Chromium/WebKit. Installer workflows add real services, database restore, process recovery, native bridge and installation/update/removal checks. Browser fixtures establish UI behavior, not native dialogs or a platform's exact WebView rendering.
+Run **Actions → Build and verify Fairway XMP → Run workflow** for Windows/macOS source checks and Chromium/WebKit browser assertions/screenshots. Ordinary pushes and pull requests do not start these checks or cache warming. Installer workflows add real services, database restore, process recovery, native bridge and installation/update/removal checks. Browser fixtures establish UI behavior, not native dialogs or a platform's exact WebView rendering.
 
 ## Windows builds
 

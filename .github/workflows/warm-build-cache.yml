@@ -3,22 +3,6 @@ name: Warm build inputs
 on:
   workflow_call:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'src-tauri/Cargo.toml'
-      - 'src-tauri/Cargo.lock'
-      - 'src-tauri/tauri.conf.json'
-      - 'runtime-manifest.json'
-      - 'runtime*lock.json'
-      - 'THIRD_PARTY_NOTICES.md'
-      - 'scripts/prepare*runtime.py'
-      - 'scripts/package_sources.py'
-      - 'scripts/fnm_sources.py'
-      - 'tests/fixtures/runtime-alpha1-*.json'
-      - '.github/actions/**'
-      - '.github/workflows/warm-build-cache.yml'
-      - '.github/workflows/*-test-build.yml'
 
 permissions:
   contents: read
