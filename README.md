@@ -10,24 +10,24 @@ A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. 
 
 ## Downloads
 
-Latest published release: **[v0.1.0](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0)**.
+Latest published release: **[v0.1.1](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.1)**.
 
 | Computer | Requirements | Download |
 | --- | --- | --- |
-| Windows | Windows 10 22H2 or Windows 11, x64 | [Windows installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0/fairway-xmp-0.1.0-windows-x64-setup.exe) |
-| Mac | macOS 15 or later, Apple Silicon (M-series) | [Mac installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0/fairway-xmp-0.1.0-macos-arm64.pkg) |
-| Linux | x86_64, glibc 2.35 or newer | [Terminal installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0/fairway-xmp-0.1.0-linux-x86_64.run) · [Archive](https://github.com/eimg/fairway-xmp/releases/download/v0.1.0/fairway-xmp-0.1.0-linux-x86_64.tar.gz) |
+| Windows | Windows 10 22H2 or Windows 11, x64 | [Windows installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.1/fairway-xmp-0.1.1-windows-x64-setup.exe) |
+| Mac | macOS 15 or later, Apple Silicon (M-series) | [Mac installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.1/fairway-xmp-0.1.1-macos-arm64.pkg) |
+| Linux | x86_64, glibc 2.35 or newer | [Terminal installer](https://github.com/eimg/fairway-xmp/releases/download/v0.1.1/fairway-xmp-0.1.1-linux-x86_64.run) · [Archive](https://github.com/eimg/fairway-xmp/releases/download/v0.1.1/fairway-xmp-0.1.1-linux-x86_64.tar.gz) |
 
-See the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0) for these downloads and [current limitations](docs/maintenance.md#current-limitations). Download the installer for your computer and follow its prompts. The Mac app and installer are Developer ID signed and notarized by Apple. Windows installers do not yet have Authenticode signatures and may show an unknown-publisher warning; in-app updates use a separate cryptographic signature.
+See the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.1) for these downloads and [current limitations](docs/maintenance.md#current-limitations). Download the installer for your computer and follow its prompts. The Mac app and installer are Developer ID signed and notarized by Apple. Windows installers do not yet have Authenticode signatures and may show an unknown-publisher warning; in-app updates use a separate cryptographic signature.
 
-The first stable release includes optional Node.js management on macOS and Windows and the native fnm CLI on Linux. On macOS, closing the window now hides the Dock icon while the menu bar and services stay available. Existing desktop beta and RC clients can update to stable through the preview feed; stable installations use the stable feed for future updates. See the [release notes](docs/release-notes.md).
+Version 0.1.1 fixes Laravel development servers losing Fairway’s PHP configuration and emitting SNMP warnings. Restart existing Artisan servers after updating. Desktop installations receive the update through their stable or preview feed; Linux users rerun the installer. See the [release notes](docs/release-notes.md).
 
 ## Linux terminal edition
 
 Download the Linux `.run` installer or `.tar.gz` archive from the table above. Linux requires x86_64 and glibc 2.35 or newer; Alpine/musl and ARM are not supported. No desktop, root access, distro packages, Docker or systemd service is required.
 
 ```sh
-sh fairway-xmp-0.1.0-linux-x86_64.run
+sh fairway-xmp-0.1.1-linux-x86_64.run
 # Reopen your shell after installation:
 fairway                      # terminal dashboard
 fairway start                # start all services
@@ -208,4 +208,4 @@ See the [technical documentation index](docs/README.md) for development, testing
 
 For problems or suggestions, [open an issue](https://github.com/eimg/fairway-xmp/issues). Include your operating system, what you tried, and any error shown in Fairway XMP.
 
-Fairway XMP’s application code uses the [MIT license](LICENSE). Included tools have [their own licenses](THIRD_PARTY_NOTICES.md). Release checksums and bundled-tool sources are available on the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0). For contributing to the app, see [Contributing](CONTRIBUTING.md).
+Fairway XMP’s application code uses the [MIT license](LICENSE). Included tools have [their own licenses](THIRD_PARTY_NOTICES.md). Release checksums and bundled-tool sources are available on the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.1). For contributing to the app, see [Contributing](CONTRIBUTING.md).

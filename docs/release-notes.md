@@ -2,6 +2,8 @@
 
 This patch fixes Laravel development servers losing Fairway's PHP configuration when started with `php artisan serve`.
 
+Published from [candidate run 40710498846](https://github.com/eimg/fairway-xmp/actions/runs/40710498846), source `e3e92f05fbc946b09a1df92f1c2c499281c38e4c`, using the tested installers and updater payloads without rebuilding. Automated installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows.
+
 - Preserve Fairway's managed `php.ini`, PHP settings and SNMP startup settings in the child server process, including automatic restarts after `.env` changes.
 - Prevent repeated SNMP `Cannot find module` warnings caused by the child process losing Fairway's environment settings.
 - Use PHP's standard development `variables_order=GPCS`. Host environment variables remain available through `getenv()` and `$_SERVER`; application code such as Dotenv populates `$_ENV`.
