@@ -1,6 +1,21 @@
 # Maintenance
 
-Work from current behavior in [PROJECT_SPEC.md](../PROJECT_SPEC.md), reproduce a problem, then update the relevant implementation, tests and guide. There is no inherited release freeze, audit-pass sequence or blanket deferral of new work. Git history and published releases retain prior decisions and evidence.
+Work from current behavior in [PROJECT_SPEC.md](../PROJECT_SPEC.md), reproduce a problem, then update the relevant implementation, tests and guide. Git history and published releases retain prior decisions and evidence.
+
+## Repository cleanup
+
+Generated files are ignored by Git. Before removing them, stop any development servers, test bridges and services using those directories. Smoke-test homes/data contain disposable databases; check that a directory is a test profile before deleting it.
+
+| Path | Cleanup guidance |
+| --- | --- |
+| `dist/`, `website/dist/` | Generated frontend/website output; rebuild with `npm run build` or `npm run site:build`. |
+| `playwright-report/`, `test-results/` | Generated browser reports, traces and screenshots; retain any evidence still needed for a current failure or review. |
+| `artifacts/` | Generated local bundles and source archives; remove obsolete copies after retaining required distribution sources and release evidence. |
+| `.runtime-work/` | Runtime staging, one-off scripts/logs and isolated smoke-test profiles; remove completed work after checking no process uses it. |
+| `.runtime-cache/`, `.build-tools/`, `src-tauri/target/` | Reusable downloads, toolchains and compiler caches; keep for ordinary cleanup. |
+| `src-tauri/resources/runtime/` | Staged native runtime required for local desktop/service checks; keep unless deliberately restaging it. |
+
+Keep committed runtime/source locks, `tests/fixtures/runtime-alpha1-*.json` and installer/updater probes: older versions remain active compatibility inputs. Keep release history in [CHANGELOG.md](../CHANGELOG.md), current publication notes in [release-notes.md](release-notes.md), and implementation behavior in the specification and focused guides. Do not use broad `git clean -fdx` commands for routine cleanup; they also remove useful ignored runtimes and tools.
 
 ## Runtime updates
 

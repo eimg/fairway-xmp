@@ -4,6 +4,13 @@ Past entries record released changes; they are not current development or releas
 
 ## Unreleased
 
+## 0.1.1 — 2026-10-29
+
+- Preserve Fairway's PHP configuration and SNMP startup settings in Laravel development-server child processes, including restarts after `.env` changes. Restart existing Artisan servers after updating.
+- Use PHP's standard development `variables_order=GPCS`; host variables remain available through `getenv()` and `$_SERVER`, while application code such as Dotenv populates `$_ENV`.
+
+Published from [candidate run 40710498846](https://github.com/eimg/fairway-xmp/actions/runs/40710498846), commit `e3e92f05fbc946b09a1df92f1c2c499281c38e4c`, using the tested installers and updater payloads without rebuilding. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows. Bundled runtimes and supported platforms are unchanged from 0.1.0.
+
 ## 0.1.0 — 2026-10-27
 
 - Release the first stable version for Windows x64, Apple Silicon macOS and Linux x86_64, carrying forward RC 5's features and pinned runtimes. Stable desktop builds use the stable update feed.

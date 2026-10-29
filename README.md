@@ -4,7 +4,9 @@ A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. 
 
 [How-to guides](https://eimg.github.io/fairway-xmp/) · [မြန်မာလမ်းညွှန်](https://eimg.github.io/fairway-xmp/mm/)
 
-![Fairway XMP on macOS showing the Environment page with services stopped](docs/images/control-panel.png)
+![Fairway XMP showing the Environment page with services running](website/assets/environment.png)
+
+*Desktop interface with simulated sample data.*
 
 *Fairway XMP on macOS.*
 

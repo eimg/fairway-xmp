@@ -12,6 +12,7 @@ The guides below provide technical and contributor reference. Start with
 | Guide | Use it for |
 | --- | --- |
 | [Build and release](build-and-release.md) | Packaging, signing, candidate CI, publication and update feeds |
+| [Release notes](release-notes.md) | Latest release changes and upgrade instructions |
 | [Testing](testing.md) | Automated checks, isolated development profiles and optional device checks |
 | [Maintenance](maintenance.md) | Updating runtime dependencies, current limitations and future improvements |
 | [CI performance](ci-build-performance.md) | Cache reuse, build retries and artifact cleanup |
@@ -23,4 +24,4 @@ The guides below provide technical and contributor reference. Start with
 | [Backup and restore](backup-and-restore.md) | Creating and restoring database backups |
 | [Security boundaries](security-boundaries.md) | Process, HTTP, certificate, trust and renderer boundaries |
 
-Development follows the current product requirements, without a prerelease feature freeze or a mandatory device-acceptance checklist. Build workflows verify artifacts; the owner decides when to publish. Older investigations and release records remain available in Git history and published GitHub releases. They are not current development instructions.
+Build workflows verify artifacts; the owner decides when to publish. [CHANGELOG.md](../CHANGELOG.md) records released changes. Older investigations remain in Git history; published GitHub releases retain their release notes and assets.

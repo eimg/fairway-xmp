@@ -1,6 +1,6 @@
 # Testing
 
-Choose checks for the behavior being changed. Device checks help investigate platform behavior; they are not release approval requirements. Record observed results without carrying old release checklists into new work.
+Choose checks for the behavior being changed. Device checks help investigate platform behavior; they are not release approval requirements. Record observed results.
 
 ## Automated checks
 
@@ -14,6 +14,8 @@ cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D w
 ```
 
 Use `python` on Windows. Desktop/all-feature tests additionally need the platform's Tauri prerequisites. Network-listener, process-ownership and PostgreSQL checks need normal local socket/process access; sandbox permission failures are not evidence of an application defect.
+
+For documentation website changes, run `npm run site:check`. With `npm run site:dev` serving the preview, run `npm run site:test:navigation` and `npm run site:test:theme` for browser navigation, accessibility and theme behavior. See the [website source guide](../website/README.md) for setup and screenshot capture. These checks use `website/dist/`, independently of the desktop frontend.
 
 After staging the runtime, use a fresh isolated directory:
 

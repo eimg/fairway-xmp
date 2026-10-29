@@ -1,6 +1,6 @@
 # Fairway XMP development environment
 
-This specification describes current behavior. It does not impose a release-stage feature freeze. Development follows current requirements; successful automated builds are published when the owner authorizes them. See [documentation](docs/README.md).
+This specification describes current behavior. Development follows current requirements; successful automated builds are published when the owner authorizes them. See [documentation](docs/README.md).
 
 ## Product
 
@@ -137,6 +137,8 @@ Data browser navigation preserves its workspace state across sidebar visits. Dat
 - Application data contains settings, generated service configs, logs, MySQL data, phpMyAdmin's writable overlay, PHP sessions, temporary files, Composer home, backups, and CLI launchers.
 - Runtime files remain inside the installed application resources and are not mutated at startup.
 - The initial welcome page is created only if `index.php` is absent; existing `index.php` content is never replaced during initialization.
+
+Generated build output, local artifacts and disposable test profiles are separate from product sources and user data. [Repository cleanup](docs/maintenance.md#repository-cleanup) identifies removable output and the runtime/toolchain caches to retain. Historical runtime fixtures and lifecycle probes remain part of compatibility verification.
 
 The welcome page is a self-contained PHP landing page with the existing Fairway leaf/wordmark, the escaped document-root path, a first-page example using the actual server port, and links to Getting started, the PHP manual and project support. It shows only the executing PHP version, with no service dashboard, database credentials, project listing, scripts, remote fonts or automatic external requests. It is created only when `index.php` is absent; updating Fairway does not replace an existing or customized index. It is included in staged sources; existing welcome files stay untouched.
 
@@ -289,7 +291,7 @@ Linux CI exercises offline installation, concurrent first clients, real terminal
 
 ## Development and release policy
 
-There is no inherited feature freeze or prerelease-only restriction. Current product requirements drive development. New behavior should preserve existing coursework, credentials and saved choices, and keep this specification synchronized. Open opportunities and practical limitations are in [Maintenance](docs/maintenance.md).
+Current product requirements drive development. New behavior should preserve existing coursework, credentials and saved choices, and keep this specification synchronized. Open opportunities and practical limitations are in [Maintenance](docs/maintenance.md).
 
 Builds and publication are separate. Successful automated candidates report `ready-for-publication`; the owner can authorize publishing them without device acceptance JSON or manual checklist completion. `publish-release.yml` publishes the exact successful candidate after checking version/source/tag identity, artifact hashes and update signatures. Changes to application/runtime inputs require a new automated build. Device testing is optional and reported only when performed. The publisher never claims unperformed manual tests passed.
 

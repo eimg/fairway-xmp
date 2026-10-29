@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Create update metadata pointing only at verified versioned release assets."""
 from datetime import datetime, timezone
-import json
 from pathlib import Path
 from urllib.parse import quote
 from release_candidate import verify_files

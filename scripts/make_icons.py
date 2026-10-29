@@ -1,8 +1,6 @@
 """Generate Fairway's simple application mark using Pillow (build-time only)."""
 from pathlib import Path
 from PIL import Image, ImageDraw
-import subprocess
-import sys
 
 root = Path(__file__).resolve().parent.parent / 'src-tauri/icons'
 root.mkdir(parents=True, exist_ok=True)
