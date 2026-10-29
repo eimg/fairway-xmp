@@ -1,12 +1,8 @@
 use super::Status;
 use crate::{desktop, lifecycle::Lifecycle, manager::Snapshot};
-use muda::{ContextMenu, Menu, MenuItem, PredefinedMenuItem, Submenu};
-use objc2::{rc::Retained, AllocAnyThread};
-use objc2_app_kit::{
-    NSBaselineOffsetAttributeName, NSColor, NSFont, NSFontAttributeName,
-    NSForegroundColorAttributeName, NSMenu,
-};
-use objc2_foundation::{NSMutableAttributedString, NSNumber, NSRange, NSString};
+use muda::{ContextMenu, Icon, Menu, MenuItem, PredefinedMenuItem, Submenu};
+use objc2::{msg_send, rc::Retained, runtime::NSObjectProtocol, sel};
+use objc2_app_kit::NSMenu;
 use std::cell::RefCell;
 use tauri::{
     tray::{TrayIcon, TrayIconBuilder},
@@ -21,7 +17,7 @@ thread_local! {
 
 struct Service {
     id: &'static str,
-    name: &'static str,
+    menu: Submenu,
     row: isize,
     start: MenuItem,
     stop: MenuItem,
@@ -52,12 +48,13 @@ impl MacMenu {
         ] {
             let start = MenuItem::with_id(format!("start:{id}"), "Start", false, None);
             let stop = MenuItem::with_id(format!("stop:{id}"), "Stop", false, None);
-            submenus.push(
-                Submenu::with_items(name, true, &[&start, &stop]).map_err(|e| e.to_string())?,
-            );
+            let menu =
+                Submenu::with_items(name, true, &[&start, &stop]).map_err(|e| e.to_string())?;
+            menu.set_icon(Some(status_icon(Status::Stopped)?));
+            submenus.push(menu.clone());
             services.push(Service {
                 id,
-                name,
+                menu,
                 row,
                 start,
                 stop,
@@ -112,49 +109,18 @@ impl MacMenu {
             let item = menu
                 .itemAtIndex(service.row)
                 .ok_or("A tray menu item is unavailable.")?;
-            let text = NSString::from_str(&format!("{}  ●", service.name));
-            let title = NSMutableAttributedString::initWithString(
-                NSMutableAttributedString::alloc(),
-                &text,
-            );
-            let dot = NSRange::new(text.length() - 1, 1);
-            let (red, green, blue) = service.status.rgb();
-            let text_color = if item.isEnabled() {
-                NSColor::labelColor()
-            } else {
-                NSColor::disabledControlTextColor()
-            };
-            // SAFETY: AppKit attribute keys accept these NSFont, NSColor, and
-            // NSNumber values. The ranges cover valid UTF-16 indices in text.
-            unsafe {
-                title.addAttribute_value_range(
-                    NSFontAttributeName,
-                    &NSFont::menuFontOfSize(0.0),
-                    NSRange::new(0, text.length()),
-                );
-                title.addAttribute_value_range(
-                    NSForegroundColorAttributeName,
-                    &text_color,
-                    NSRange::new(0, text.length()),
-                );
-                title.addAttribute_value_range(
-                    NSFontAttributeName,
-                    &NSFont::menuFontOfSize(10.0),
-                    dot,
-                );
-                title.addAttribute_value_range(
-                    NSForegroundColorAttributeName,
-                    &NSColor::colorWithSRGBRed_green_blue_alpha(red, green, blue, 1.0),
-                    dot,
-                );
-                title.addAttribute_value_range(
-                    NSBaselineOffsetAttributeName,
-                    &NSNumber::numberWithDouble(1.0),
-                    dot,
-                );
+            let image = item.image().ok_or("A tray status image is unavailable.")?;
+            image.setTemplate(false);
+            // macOS 27 hides even bitmap menu images for SDK 27 builds unless
+            // visibility is requested. Muda/objc2 do not expose this API yet.
+            // Check the selector so older macOS keeps its normal image behavior.
+            if item.respondsToSelector(sel!(setPreferredImageVisibility:)) {
+                // SAFETY: This main-thread NSMenuItem implements the setter;
+                // NSMenuItemImageVisibilityVisible is an NSInteger with value 1.
+                unsafe {
+                    let _: () = msg_send![&item, setPreferredImageVisibility: 1isize];
+                }
             }
-            item.setTitle(&text);
-            item.setAttributedTitle(Some(&title));
         }
         Ok(())
     }
@@ -181,7 +147,11 @@ impl MacMenu {
             .set_enabled(!matches!(self.overall, Status::Stopped));
         for service in &mut self.services {
             if let Some(status) = snapshot.services.iter().find(|s| s.id == service.id) {
-                service.status = Status::service(status.ready);
+                let next_status = Status::service(status.ready);
+                if service.status != next_status {
+                    service.menu.set_icon(Some(status_icon(next_status)?));
+                    service.status = next_status;
+                }
                 service.start.set_enabled(
                     snapshot.runtime_ready
                         && !status.running
@@ -208,6 +178,40 @@ pub(crate) struct NativeTray {
 
 fn error(message: String) -> tauri::Error {
     tauri::Error::Io(std::io::Error::other(message))
+}
+
+fn status_icon(status: Status) -> Result<Icon, String> {
+    // Muda displays menu images at 18 points. A 36-pixel bitmap keeps the
+    // seven-point dot sharp on Retina screens, with a transparent icon gutter.
+    let (red, green, blue) = status.rgb();
+    let color = [
+        (red * 255.0) as u8,
+        (green * 255.0) as u8,
+        (blue * 255.0) as u8,
+    ];
+    let mut rgba = vec![0; 36 * 36 * 4];
+    for y in 0..36 {
+        for x in 0..36 {
+            let mut coverage = 0;
+            for sy in 0..4 {
+                for sx in 0..4 {
+                    let dx = x as f32 + (sx as f32 + 0.5) / 4.0 - 18.0;
+                    let dy = y as f32 + (sy as f32 + 0.5) / 4.0 - 18.0;
+                    if dx * dx + dy * dy <= 49.0 {
+                        coverage += 1;
+                    }
+                }
+            }
+            let pixel = (y * 36 + x) * 4;
+            rgba[pixel..pixel + 4].copy_from_slice(&[
+                color[0],
+                color[1],
+                color[2],
+                (coverage * 255 / 16) as u8,
+            ]);
+        }
+    }
+    Icon::from_rgba(rgba, 36, 36).map_err(|e| e.to_string())
 }
 
 fn tray_icon() -> tauri::image::Image<'static> {
