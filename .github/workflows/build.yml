@@ -49,6 +49,10 @@ jobs:
       - run: npm run build
       - run: npm run test:unit
       - run: npm run test:scripts
+      - name: Test Visual C++ prerequisite upgrade decisions
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tests/windows_vc_runtime.ps1
       - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --locked
       - run: cargo test --manifest-path src-tauri/Cargo.toml --lib --locked ${{ runner.os == 'macOS' && '--all-features' || '' }}
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked ${{ runner.os == 'macOS' && '--all-features' || '' }} -- -D warnings

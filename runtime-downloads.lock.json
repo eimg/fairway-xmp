@@ -259,8 +259,8 @@
     "url": "https://files.pythonhosted.org/packages/0b/a7/71ac2cff56fec219ed242bb11b8efb69fcc4bec75db06fb7bfe35de520e6/certifi-2026.7.22-py3-none-any.whl"
   },
   "composer": {
-    "sha256": "7a2d379d5b8ffdaa028580ef26494c36d2feef4b178d3dd1473a4dbc5e17c8d6",
-    "url": "https://getcomposer.org/download/2.10.3/composer.phar"
+    "sha256": "6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c",
+    "url": "https://getcomposer.org/download/2.11.1/composer.phar"
   },
   "fnm-macos": {
     "sha256": "f046483e85c53b3278efe49a3620c8680f22efa58a8dabfd03eafc6b59b31a25",
@@ -275,12 +275,12 @@
     "url": "https://github.com/Schniz/fnm/releases/download/v1.39.0/fnm-windows.zip"
   },
   "mailpit-macos": {
-    "sha256": "23709bd727f20da2290de6a2a40c4685c48a3127586d77370efd1a3a595f9ef6",
-    "url": "https://github.com/axllent/mailpit/releases/download/v1.32.0/mailpit-darwin-arm64.tar.gz"
+    "sha256": "0c4abbf289c6d8ee3c11adc2f93d9a1b45084e25104e19a0d9b06e847e98e0fb",
+    "url": "https://github.com/axllent/mailpit/releases/download/v1.33.0/mailpit-darwin-arm64.tar.gz"
   },
   "mailpit-windows": {
-    "sha256": "16915767a6c95dca569336e8f561f91cf355e9a33c57b91deedcc10a4bba7fd4",
-    "url": "https://github.com/axllent/mailpit/releases/download/v1.32.0/mailpit-windows-amd64.zip"
+    "sha256": "47122dd828ff80dcaef62b2952c478b178afadadf066c990489608e537121bfd",
+    "url": "https://github.com/axllent/mailpit/releases/download/v1.33.0/mailpit-windows-amd64.zip"
   },
   "mysql-windows": {
     "sha256": "641bdaf01004927194c561b956f14f915a3166c9b0f9b1b5464ae63152bf4b96",
@@ -315,7 +315,7 @@
     "url": "https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.zip"
   },
   "vc-runtime": {
-    "sha256": "cc0ff0eb1dc3f5188ae6300faef32bf5beeba4bdd6e8e445a9184072096b713b",
-    "url": "https://aka.ms/vs/17/release/vc_redist.x64.exe"
+    "sha256": "843068991daaa1f73ad9f6239bce4d0f6a07a51f18c37ea2a867e9beca71295c",
+    "url": "https://aka.ms/vc14/vc_redist.x64.exe"
   }
 }

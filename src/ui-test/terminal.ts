@@ -44,7 +44,7 @@ export function terminalRequest(command: string, args: Record<string, unknown>, 
         else {
           if (line === 'pwd' || line === 'cd') session.output += session.directory;
           else if (line === 'php --version') session.output += `PHP ${version} (cli) (simulated)`;
-          else if (line === 'composer --version') session.output += 'Composer version 2.10.3 (simulated)';
+          else if (line === 'composer --version') session.output += 'Composer version 2.11.1 (simulated)';
           else if (line === 'seq 1 120') session.output += Array.from({ length: 120 }, (_, index) => String(index + 1)).join('\r\n');
           else if (line.startsWith('echo ')) session.output += line.slice(5);
           else if (line) session.output += 'UI test only: this command was not executed.';

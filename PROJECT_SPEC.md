@@ -251,7 +251,7 @@ There are no splits, remote shells, or saved terminal transcripts. Commands run 
 
 ## Installation and removal
 
-Windows NSIS current-user installer checks OS build, handles Visual C++ and WebView2 prerequisites, enables CLI integration, and exposes uninstall cleanup choices. macOS pkg installs the app and enables integration only for the logged-in account; a resource-bundled uninstall utility removes integration and moves the app to Trash.
+Windows NSIS current-user installer checks OS build, handles Visual C++ and WebView2 prerequisites, enables CLI integration, and exposes uninstall cleanup choices. The shared x64 Visual C++ v14 runtime is installed when absent or older than the bundled installer's file version; equal/newer installations are preserved, and successful installation must leave a sufficient registered runtime. Windows runtime-building jobs install that same checksum-pinned prerequisite before staging executes PHP. macOS pkg installs the app and enables integration only for the logged-in account; a resource-bundled uninstall utility removes integration and moves the app to Trash.
 
 Uninstall requires stopped services and preserves coursework/data by default. Deleting data and deleting coursework are separate explicit choices. Shared prerequisites are not removed. Installation/update/removal must not terminate unrelated PHP, Nginx, or MySQL processes.
 

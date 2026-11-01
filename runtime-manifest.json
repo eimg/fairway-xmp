@@ -10,8 +10,8 @@
   "mysql": "9.7.4",
   "nginx": "1.30.6",
   "phpmyadmin": "5.2.3",
-  "composer": "2.10.3",
-  "mailpit": "1.32.0",
+  "composer": "2.11.1",
+  "mailpit": "1.33.0",
   "fnm": "1.39.0",
   "minimumOS": {
     "windows": "Windows 10 22H2 x64",

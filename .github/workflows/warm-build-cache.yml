@@ -49,6 +49,9 @@ jobs:
         id: downloads
       - uses: ./.github/actions/prepare-linux-runtime
         if: runner.os == 'Linux'
+      - name: Install pinned Visual C++ runtime before PHP verification
+        if: runner.os == 'Windows'
+        run: python scripts/prepare_runtime.py --windows-prerequisites
       - name: Stage locked desktop runtime
         if: runner.os != 'Linux'
         run: python scripts/prepare_runtime.py

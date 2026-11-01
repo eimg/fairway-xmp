@@ -8,12 +8,12 @@
     "url": "https://files.pythonhosted.org/packages/a3/c2/24167ea9858356b47a87a50d39908bfdb72ceeefe0041586e704e5376b3a/certifi-2026.7.22.tar.gz"
   },
   "composer": {
-    "sha256": "7a2d379d5b8ffdaa028580ef26494c36d2feef4b178d3dd1473a4dbc5e17c8d6",
-    "url": "https://getcomposer.org/download/2.10.3/composer.phar"
+    "sha256": "6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c",
+    "url": "https://getcomposer.org/download/2.11.1/composer.phar"
   },
   "composer-linux-source": {
-    "sha256": "803a3de1c096cc6ba4b568de3859c6debcfd95a09b80404ee2fb6a19ddd22680",
-    "url": "https://codeload.github.com/composer/composer/tar.gz/refs/tags/2.10.3"
+    "sha256": "6116a9b9129774c1ae23c2c58ce77e053a21e78f52ca97dd4f674e5b020a77cd",
+    "url": "https://codeload.github.com/composer/composer/tar.gz/refs/tags/2.11.1"
   },
   "fnm-linux": {
     "sha256": "7807664f39d39fc518da1c35ba0181e4b3267603c4b1dedeb4b5fc6ae440a224",
@@ -24,16 +24,16 @@
     "url": "https://codeload.github.com/Schniz/fnm/tar.gz/refs/tags/v1.39.0"
   },
   "mailpit-linux": {
-    "sha256": "4b5993c978e8604c70d43927e2ad103b311bba3b1822fa0cf1d4ee4ec890a93c",
-    "url": "https://github.com/axllent/mailpit/releases/download/v1.32.0/mailpit-linux-amd64.tar.gz"
+    "sha256": "d0ec50080cbf3e7c1fa2cda2ee68125d7894175811084b1f8f47c6cfc6f487c8",
+    "url": "https://github.com/axllent/mailpit/releases/download/v1.33.0/mailpit-linux-amd64.tar.gz"
   },
   "mailpit-linux-arm64": {
-    "sha256": "e1e45d1dc72bd497fb262a1e4100178eee057c42c5fc36d143eb8621769e1137",
-    "url": "https://github.com/axllent/mailpit/releases/download/v1.32.0/mailpit-linux-arm64.tar.gz"
+    "sha256": "1d27c819e1a5dd2761ed9fd07022443e35a47793b2e92de5b49cf3656a649ef9",
+    "url": "https://github.com/axllent/mailpit/releases/download/v1.33.0/mailpit-linux-arm64.tar.gz"
   },
   "mailpit-linux-source": {
-    "sha256": "239e28527f83a7e76765de1a23b4b0c5e49a782f4009ec9788af6703d25397fe",
-    "url": "https://codeload.github.com/axllent/mailpit/tar.gz/refs/tags/v1.32.0"
+    "sha256": "4c43bef67f3aabd8eb1e571829ddafad42da33061a911ae9cea19ad209ba3c64",
+    "url": "https://codeload.github.com/axllent/mailpit/tar.gz/refs/tags/v1.33.0"
   },
   "mysql-linux-aarch64": {
     "sha256": "bd1035e35a1b2c39a9f5dd0447b2ad62a6acf809ac1a6fcaf854297b99b8ebfc",

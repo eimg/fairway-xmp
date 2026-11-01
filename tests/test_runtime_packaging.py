@@ -15,6 +15,53 @@ SPEC.loader.exec_module(runtime)
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_windows_php_toolsets_cover_extra_and_default_8_6_without_changing_old_urls(self):
+        manifest = {**runtime.MANIFEST, 'phpVersions': {**runtime.MANIFEST['phpVersions'], '8.6': '8.6.0'}}
+        sources = runtime.windows_php_sources(manifest)
+        for minor, toolset in [('8.2', 'vs16'), ('8.3', 'vs16'), ('8.4', 'vs17'), ('8.5', 'vs17'), ('8.6', 'vs18')]:
+            key = 'php-windows' if manifest['phpVersions'][minor] == manifest['php'] else f'php-{minor}-windows'
+            self.assertIn(f'-nts-Win32-{toolset}-x64.zip', sources[key][0])
+        self.assertEqual(sources['php-8.6-windows'][1], 'php-8.6')
+        sources = runtime.windows_php_sources({**manifest, 'php': '8.6.0'})
+        self.assertIn('php-8.6.0-nts-Win32-vs18-x64.zip', sources['php-windows'][0])
+        self.assertNotIn('php-8.6-windows', sources)
+        self.assertIn('php-8.5-windows', sources)
+        with self.assertRaisesRegex(RuntimeError, 'No reviewed Windows toolset'):
+            runtime.windows_php_url('8.7.0')
+
+    def test_macos_default_formula_preserves_locked_bottles_and_handles_major_rollover(self):
+        lock = {'brew-php-arm64-sequoia': {'version': runtime.MANIFEST['php']}}
+        with patch.object(runtime, 'RESUME_LOCK', False):
+            self.assertEqual(runtime.macos_default_php_formula(lock), 'php')
+            self.assertEqual(runtime.macos_default_php_formula(lock, refresh=True), 'php@8.5')
+        with patch.object(runtime, 'RESUME_LOCK', True):
+            self.assertEqual(runtime.macos_default_php_formula(lock, refresh=True), 'php')
+        self.assertEqual(runtime.macos_default_php_formula({}), 'php@8.5')
+        self.assertEqual(runtime.macos_default_php_formula({'brew-php-arm64-sequoia': {'version': '8.6.0'}}), 'php@8.5')
+
+    def test_windows_prerequisite_installs_the_verified_pin_and_preserves_historical_installer(self):
+        installer = Path('/verified/cache/installer')
+        lock = {'vc-runtime': {'url': 'https://aka.ms/vs/17/release/vc_redist.x64.exe', 'sha256': 'a' * 64}}
+        with patch.object(runtime.platform, 'system', return_value='Windows'), \
+                patch.object(runtime, 'lock_download', return_value=installer) as download, \
+                patch.object(runtime, 'copy') as copy, \
+                patch.object(runtime.subprocess, 'run') as run:
+            runtime.install_windows_prerequisites(lock)
+            download.assert_called_once_with('vc-runtime', lock['vc-runtime']['url'], refresh=False, lock=lock)
+            staged = copy.call_args.args[1]
+            self.assertEqual(copy.call_args.args[0], installer)
+            self.assertEqual(staged.name, 'vc_redist.x64.exe')
+            self.assertEqual(run.call_args.args[0][-2:], ['-Installer', str(staged)])
+            self.assertTrue(run.call_args.kwargs['check'])
+        with patch.object(runtime, 'lock_download', return_value=installer) as download:
+            runtime.windows_vc_runtime({}, True)
+            self.assertEqual(download.call_args.args[1], 'https://aka.ms/vc14/vc_redist.x64.exe')
+        with patch.object(runtime.platform, 'system', return_value='Darwin'), \
+                patch.object(runtime, 'lock_download') as download:
+            with self.assertRaisesRegex(RuntimeError, 'only be installed on Windows'):
+                runtime.install_windows_prerequisites(lock)
+            download.assert_not_called()
+
     def test_fnm_stages_unchanged_executable_and_matching_license_on_each_platform(self):
         for system in ('windows', 'macos', 'linux'):
             with self.subTest(system=system), tempfile.TemporaryDirectory() as temporary:
@@ -39,7 +86,14 @@ class ArchiveTests(unittest.TestCase):
                 self.assertFalse((target / 'node').exists())
 
     def test_verification_rejects_missing_client_or_worker_extension_on_each_php_version(self):
-        for folder in ('php', 'php-8.2', 'php-8.3', 'php-8.4'):
+        # Exercise the next branch without advertising unreleased downloads.
+        manifest = {**runtime.MANIFEST, 'phpVersions': {**runtime.MANIFEST['phpVersions'], '8.6': '8.6.0'}}
+        with patch.object(runtime, 'MANIFEST', manifest):
+            self.check_missing_extensions()
+
+    def check_missing_extensions(self):
+        folders = ['php', *(f'php-{minor}' for minor, version in runtime.MANIFEST['phpVersions'].items() if version != runtime.MANIFEST['php'])]
+        for folder in folders:
             for extension in ('pdo_pgsql', 'pgsql', 'sockets', 'soap', 'ldap', 'pcntl', 'posix'):
                 def output(command, **kwargs):
                     php_folder = Path(command[0]).parts[-3]
@@ -86,7 +140,7 @@ class ArchiveTests(unittest.TestCase):
                 patch('sys.stdout', new=io.StringIO()):
             target = Path(temporary)
             (target / 'manifest.json').write_text(json.dumps(runtime.MANIFEST))
-            for folder in ('php', 'php-8.2', 'php-8.3', 'php-8.4'):
+            for folder in ['php', *(f'php-{minor}' for minor, version in runtime.MANIFEST['phpVersions'].items() if version != runtime.MANIFEST['php'])]:
                 ext = target / folder / 'ext'
                 ext.mkdir(parents=True)
                 for name in ('sockets', 'soap', 'ldap'):
@@ -146,7 +200,10 @@ class ArchiveTests(unittest.TestCase):
     def test_php_8_0_and_8_1_are_not_bundled(self):
         root = Path(__file__).resolve().parents[1]
         manifest = json.loads((root / 'runtime-manifest.json').read_text())
-        self.assertEqual(list(manifest['phpVersions']), ['8.2', '8.3', '8.4', '8.5'])
+        self.assertTrue(manifest['phpVersions'])
+        self.assertEqual(manifest['phpVersions']['.'.join(manifest['php'].split('.')[:2])], manifest['php'])
+        for minor, version in manifest['phpVersions'].items():
+            self.assertTrue(version.startswith(minor + '.'))
         self.assertFalse((root / 'scripts/windows_legacy_sources.json').exists())
         downloads = json.loads((root / 'runtime-downloads.lock.json').read_text())
         linux = json.loads((root / 'runtime-linux-downloads.lock.json').read_text())

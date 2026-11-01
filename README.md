@@ -63,11 +63,11 @@ node --version
 ## What’s included
 
 - **PHP 8.5.12** with common extensions for PHP projects and Laravel.
-- **Composer 2.10.3** for installing PHP packages.
+- **Composer 2.11.1** for installing PHP packages.
 - **Nginx 1.30.6** for serving your projects.
 - **MySQL 9.7.4 LTS** for local databases.
 - **phpMyAdmin 5.2.3** for managing tables and data in your browser.
-- **Mailpit 1.32.0** for catching the emails your apps send.
+- **Mailpit 1.33.0** for catching the emails your apps send.
 
 The control panel provides service controls, port settings, logs, database backups, and persistent PHP settings for each bundled version.
 

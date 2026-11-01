@@ -4,6 +4,10 @@ Past entries record released changes; they are not current development or releas
 
 ## Unreleased
 
+- Prepare Windows PHP toolset selection for PHP 8.6, retain the existing PHP 8.2–8.5 branches and 8.5.12 default, and use a versioned Homebrew formula when recording new default-PHP inputs.
+- Bundle a newer shared Visual C++ v14 x64 prerequisite. Upgrade older installations, preserve equal/newer ones, and install the pinned prerequisite before Windows runtime verification.
+- Update Composer to 2.11.1, including security and PHP 8.6 compatibility fixes, and Mailpit to 1.33.0, including image-cache memory and search fixes. Retain the existing MySQL, stable Nginx and phpMyAdmin pins pending release-time review and compatibility checks.
+
 ## 0.1.1 — 2026-10-29
 
 - Preserve Fairway's PHP configuration and SNMP startup settings in Laravel development-server child processes, including restarts after `.env` changes. Restart existing Artisan servers after updating.

@@ -1395,14 +1395,14 @@
   },
   {
     "name": "composer",
-    "url": "https://codeload.github.com/composer/composer/tar.gz/refs/tags/2.10.3",
-    "sha256": "803a3de1c096cc6ba4b568de3859c6debcfd95a09b80404ee2fb6a19ddd22680",
+    "url": "https://codeload.github.com/composer/composer/tar.gz/refs/tags/2.11.1",
+    "sha256": "6116a9b9129774c1ae23c2c58ce77e053a21e78f52ca97dd4f674e5b020a77cd",
     "file": "composer.tar.gz"
   },
   {
     "name": "mailpit",
-    "url": "https://codeload.github.com/axllent/mailpit/tar.gz/refs/tags/v1.32.0",
-    "sha256": "239e28527f83a7e76765de1a23b4b0c5e49a782f4009ec9788af6703d25397fe",
+    "url": "https://codeload.github.com/axllent/mailpit/tar.gz/refs/tags/v1.33.0",
+    "sha256": "4c43bef67f3aabd8eb1e571829ddafad42da33061a911ae9cea19ad209ba3c64",
     "file": "mailpit.tar.gz"
   },
   {

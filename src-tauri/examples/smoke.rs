@@ -702,6 +702,14 @@ fn main() -> Result<(), String> {
                     assert!(without_startup_warnings(composer)?.contains("Composer version"));
                     manager.start_all()?;
                     assert!(http(chosen.website, "/php-version.php").contains(full));
+                    let pma = http(chosen.phpmyadmin, "/");
+                    assert!(
+                        pma.starts_with("HTTP/1.1 200")
+                            && pma.contains("phpMyAdmin")
+                            && !pma.contains("Fatal error")
+                            && !pma.contains("Parse error"),
+                        "PHP {minor} phpMyAdmin startup failed: {pma}"
+                    );
                     if cfg!(windows) {
                         let logs = manager.layout.data.join("logs");
                         for name in ["php.log", "php-process.log"] {

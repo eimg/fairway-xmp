@@ -1,6 +1,40 @@
 !include "LogicLib.nsh"
 !include "WinVer.nsh"
+!include "FileFunc.nsh"
+!include "WordFunc.nsh"
 Var FairwayRefreshCli
+Var FairwayVcRequiredVersion
+
+; The 14.0 registry family covers all supported toolsets. Presence alone is
+; insufficient: PHP built with newer tools can require a newer v14 runtime.
+Function FairwayVcRuntimeIsCurrent
+  SetRegView 64
+  Call FairwayVcRuntimeCheckRegistry
+  ${If} $0 != 1
+    SetRegView 32
+    Call FairwayVcRuntimeCheckRegistry
+  ${EndIf}
+  SetRegView 64
+FunctionEnd
+
+Function FairwayVcRuntimeCheckRegistry
+  StrCpy $0 0
+  ReadRegDWORD $1 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
+  ${If} $1 == 1
+    ReadRegStr $1 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Version"
+    StrCpy $2 $1 1
+    ${If} $2 == "v"
+      StrCpy $1 $1 "" 1
+    ${EndIf}
+    ${If} $1 != ""
+      ${VersionCompare} $1 $FairwayVcRequiredVersion $2
+      ${If} $2 == 0
+      ${OrIf} $2 == 1
+        StrCpy $0 1
+      ${EndIf}
+    ${EndIf}
+  ${EndIf}
+FunctionEnd
 
 !macro NSIS_HOOK_PREINSTALL
   StrCpy $FairwayRefreshCli 1
@@ -30,14 +64,29 @@ Var FairwayRefreshCli
 !macroend
 
 !macro NSIS_HOOK_POSTINSTALL
-  SetRegView 64
-  ReadRegDWORD $0 HKLM "SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x64" "Installed"
+  ${GetFileVersion} "$INSTDIR\runtime\vc_redist.x64.exe" $FairwayVcRequiredVersion
+  ${If} $FairwayVcRequiredVersion == ""
+    MessageBox MB_ICONSTOP "The bundled Microsoft Visual C++ runtime version could not be read. Run Fairway XMP Setup again."
+    Abort
+  ${EndIf}
+  Call FairwayVcRuntimeIsCurrent
   ${If} $0 != 1
+    ClearErrors
     ExecWait '"$INSTDIR\runtime\vc_redist.x64.exe" /install /quiet /norestart' $0
+    ${If} ${Errors}
+      MessageBox MB_ICONSTOP "The Microsoft Visual C++ runtime installer could not be started. Run Fairway XMP Setup again."
+      Abort
+    ${EndIf}
     ${If} $0 == 3010
       SetRebootFlag true
     ${ElseIf} $0 != 0
+    ${AndIf} $0 != 1638
       MessageBox MB_ICONSTOP "The Microsoft Visual C++ runtime could not be installed. Install it and run Fairway XMP Setup again."
+      Abort
+    ${EndIf}
+    Call FairwayVcRuntimeIsCurrent
+    ${If} $0 != 1
+      MessageBox MB_ICONSTOP "The Microsoft Visual C++ runtime is still missing or outdated. Restart Windows and run Fairway XMP Setup again."
       Abort
     ${EndIf}
   ${EndIf}

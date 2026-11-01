@@ -189,18 +189,61 @@ def mailpit(target, lock, refresh):
         copy(Path(folder) / 'LICENSE', target / 'licenses/mailpit/LICENSE')
 
 
+WINDOWS_PHP_TOOLSETS = {'8.2': 'vs16', '8.3': 'vs16', '8.4': 'vs17', '8.5': 'vs17', '8.6': 'vs18'}
+VC_RUNTIME_URL = 'https://aka.ms/vc14/vc_redist.x64.exe'
+
+
+def windows_php_url(version):
+    minor = '.'.join(version.split('.')[:2])
+    try:
+        toolset = WINDOWS_PHP_TOOLSETS[minor]
+    except KeyError:
+        raise RuntimeError(f'No reviewed Windows toolset for PHP {minor}') from None
+    return f'https://downloads.php.net/~windows/releases/php-{version}-nts-Win32-{toolset}-x64.zip'
+
+
+def windows_php_sources(manifest):
+    sources = {'php-windows': (windows_php_url(manifest['php']), 'php')}
+    for minor, version in manifest.get('phpVersions', {}).items():
+        if version != manifest['php']:
+            sources[f'php-{minor}-windows'] = (windows_php_url(version), f'php-{minor}')
+    return sources
+
+
+def windows_vc_runtime(lock, refresh=False):
+    # Historical upgrade fixtures keep their reviewed installer URL and checksum.
+    url = lock.get('vc-runtime', {}).get('url', VC_RUNTIME_URL)
+    return lock_download('vc-runtime', url, refresh=refresh, lock=lock)
+
+
+def install_windows_prerequisites(lock, refresh=False):
+    if platform.system() != 'Windows':
+        raise RuntimeError('Windows prerequisites can only be installed on Windows')
+    verified = windows_vc_runtime(lock, refresh)
+    # The cache has extensionless names; ShellExecute needs an executable name.
+    with tempfile.TemporaryDirectory(prefix='fairway-vc-') as folder:
+        installer = Path(folder) / 'vc_redist.x64.exe'
+        copy(verified, installer)
+        subprocess.run(['powershell.exe', '-NoProfile', '-NonInteractive', '-File',
+                        str(ROOT / 'scripts/install_windows_vc_runtime.ps1'), '-Installer', str(installer)], check=True)
+
+
+def macos_default_php_formula(lock, refresh=False):
+    # Reuse the existing unversioned bottle while its pin matches the default.
+    # New pins use a versioned formula so a Homebrew major switch cannot move it.
+    stored = lock.get('brew-php-arm64-sequoia')
+    if stored and stored['version'] == MANIFEST['php'] and (not refresh or RESUME_LOCK):
+        return 'php'
+    return 'php@' + '.'.join(MANIFEST['php'].split('.')[:2])
+
+
 def windows(target, lock, refresh):
-    php = MANIFEST['php']
     mysql_series = '.'.join(MANIFEST['mysql'].split('.')[:2])
     sources = {
-        'php-windows': (f'https://downloads.php.net/~windows/releases/php-{php}-nts-Win32-vs17-x64.zip', 'php'),
+        **windows_php_sources(MANIFEST),
         'mysql-windows': (f'https://cdn.mysql.com/Downloads/MySQL-{mysql_series}/mysql-{MANIFEST["mysql"]}-winx64.zip', 'mysql'),
         'nginx-windows': (f'https://nginx.org/download/nginx-{MANIFEST["nginx"]}.zip', 'nginx'),
     }
-    for minor, version in MANIFEST.get('phpVersions', {}).items():
-        if version != php:
-            toolset = 'vs16' if minor in ('8.2', '8.3') else 'vs17'
-            sources[f'php-{minor}-windows'] = (f'https://downloads.php.net/~windows/releases/php-{version}-nts-Win32-{toolset}-x64.zip', f'php-{minor}')
     for name, (url, service) in sources.items():
         archive = lock_download(name, url, refresh=refresh, lock=lock)
         with tempfile.TemporaryDirectory() as folder:
@@ -229,8 +272,7 @@ def windows(target, lock, refresh):
                 for file in base.glob('*LICENSE*'): copy(file, target / 'licenses/mysql' / file.name)
     if 'fnm' in MANIFEST: fnm_runtime(target, lock, refresh, 'windows')
     # The Microsoft redistributable is installed by our NSIS hook if required.
-    url = 'https://aka.ms/vs/17/release/vc_redist.x64.exe'
-    copy(lock_download('vc-runtime', url, refresh=refresh, lock=lock), target / 'vc_redist.x64.exe')
+    copy(windows_vc_runtime(lock, refresh), target / 'vc_redist.x64.exe')
 
 
 class Bottles:
@@ -376,7 +418,7 @@ def macos(target, lock, refresh):
     if platform.machine() != 'arm64': raise RuntimeError('Only Apple Silicon builders are supported')
     with tempfile.TemporaryDirectory(prefix='fairway-bottles-') as folder:
         bottles = Bottles(Path(folder), lock, refresh)
-        php = bottles.fetch('php', MANIFEST['php'])
+        php = bottles.fetch(macos_default_php_formula(lock, refresh), MANIFEST['php'])
         mysql = bottles.fetch('mysql@9.7', MANIFEST['mysql'])
         php_builds = [('php', php)]
         for minor, version in MANIFEST.get('phpVersions', {}).items():
@@ -506,10 +548,13 @@ def main():
     parser.add_argument('--refresh-lock', action='store_true', help='Trust upstream HTTPS once; review and commit resulting SHA256 lock before release')
     parser.add_argument('--resume-lock', action='store_true', help='Resume interrupted preparation, retaining existing pins and recording missing inputs')
     parser.add_argument('--verify-only', action='store_true')
+    parser.add_argument('--windows-prerequisites', action='store_true', help='Install the pinned VC++ runtime before Windows staging executes PHP')
     parser.add_argument('--manifest', type=Path, help='Version manifest for an isolated historical runtime')
     parser.add_argument('--lockfile', type=Path, help='Download lock for an isolated historical runtime')
     parser.add_argument('--destination', type=Path, help='Stage into a separate runtime folder')
     args = parser.parse_args()
+    if args.windows_prerequisites and args.verify_only:
+        parser.error('--windows-prerequisites cannot be combined with --verify-only')
     if args.manifest: MANIFEST = json.loads(args.manifest.read_text())
     if args.lockfile: LOCK_PATH = args.lockfile.resolve()
     if args.destination: DEST = args.destination.resolve()
@@ -517,6 +562,10 @@ def main():
     refresh = args.refresh_lock or args.resume_lock
     if args.verify_only: verify(DEST); return
     lock = json.loads(LOCK_PATH.read_text()) if LOCK_PATH.exists() else {}
+    if args.windows_prerequisites:
+        install_windows_prerequisites(lock, refresh)
+        if refresh: LOCK_PATH.write_text(json.dumps(lock, indent=2, sort_keys=True) + '\n')
+        return
     work = ROOT / '.runtime-work/staged'
     if work.exists(): shutil.rmtree(work)
     work.mkdir(parents=True)
