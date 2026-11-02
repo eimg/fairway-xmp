@@ -71,3 +71,14 @@ Stable versions are ordinary GitHub releases marked latest. Preview versions are
 Installed preview clients use `beta-feed/latest.json`; stable clients use `stable-feed/latest.json`. The legacy preview URL stays valid for installed clients. Preview/stable ordering prevents downgrades and unwanted preview delivery to stable installations. Publishing a stable version can advance both feeds while preserving a newer next-version preview.
 
 Feed promotion is explicit and off by default. It runs after the numbered release exists. If promotion fails, the release remains available for manual download; retry `scripts/publish_release_feed.py` with `GH_REPO` and `FAIRWAY_TAG`. Do not rebuild or replace published installers to retry metadata delivery.
+
+## Agent skill in source releases
+
+`skills/fairway-xmp` contains the portable Fairway XMP agent skill and optional
+agent UI metadata. Keep this directory tracked. GitHub's **Source code** archives
+and the existing `git archive` source bundles include the folder with the exact
+release commit; there is no separate skill archive to build or upload. Users
+extract and copy the whole folder into their agent application's supported skills
+directory. The skill requires a Fairway XMP build with the management CLI; it does
+not install or upgrade the desktop application. The published guide is `#cli` on
+the documentation website, with a For agents block before the human procedure.

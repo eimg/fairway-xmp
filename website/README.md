@@ -31,7 +31,7 @@ preview does not watch files. For another port: `SITE_PORT=4174 npm run site:dev
 
 ### Source files and checks
 
-- `guides.mjs`: paired English/Myanmar task guides and navigation groups.
+- `guides.mjs`: paired English/Myanmar task guides and navigation groups; optional `agent` blocks render immediately below a guide heading.
 - `content.mjs`: translated site labels, common-task links and connection reference.
 - `build.mjs`: shared page templates and static output in ignored `dist/`.
 - `styles.css`: responsive layout, including Myanmar typography.
@@ -60,7 +60,7 @@ Fix a problem, Manage Fairway XMP, and Connection reference. Task titles
 are used for both navigation and headings. The desktop sidebar scrolls independently;
 on mobile the directory is a collapsed, keyboard-accessible disclosure in the home
 section, keeping the common tasks within reach. All guides remain in static HTML.
-Existing chapter IDs are retained so previously shared links still resolve.
+Existing chapter IDs are retained so previously shared links still resolve. The management group includes `#cli`, with a brief translated For agents block above its procedure and source-release installation instructions for `skills/fairway-xmp`.
 
 With `npm run site:dev` running, `npm run site:test:navigation` runs the language
 scroll regression checks in Chromium and WebKit (requires the repository's npm

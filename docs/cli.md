@@ -4,6 +4,21 @@ This guide describes the current source branch. Published 0.1.1 desktop download
 only expose the earlier `fairway db` commands; the cross-platform management CLI
 ships with the next build.
 
+## For agents
+
+Use the installed CLI. Start with `fairway capabilities --json` and
+`fairway status --json`; use `--json` for management results and
+`--non-interactive` for site/HTTPS changes. Report saved changes and remaining
+OS approval when `approval_required` is returned. Leave services running unless
+the user requests shutdown.
+
+The reusable [Fairway XMP agent skill](../skills/fairway-xmp/SKILL.md) ships in the
+GitHub source release under `skills/fairway-xmp`. Copy that whole folder into
+your agent application's supported skills directory, then reload/enable it there.
+This does not install or upgrade Fairway XMP itself.
+
+## Find the command
+
 Enable **Settings → Command-line tools** and reopen your terminal/editor. The
 desktop installer includes the management CLI. Disabling PATH integration keeps
 absolute-path invocation available. Existing enabled launchers refresh on launch.

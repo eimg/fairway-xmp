@@ -990,6 +990,144 @@ export const guides = [
     ]
   },
   {
+    "id": "cli",
+    "group": "management",
+    "title": [
+      "Manage Fairway XMP from the command line",
+      "CLI ဖြင့် Fairway XMP စီမံရန်"
+    ],
+    "agent": {
+      "title": [
+        "For agents",
+        "Agent များအတွက်"
+      ],
+      "body": [
+        "Use the installed Fairway XMP CLI. Inspect capabilities and status before changes; request JSON and use <code>--non-interactive</code> for site/HTTPS changes. If <code>approval_required</code> is returned, report saved changes and the remaining OS approval step. Leave services running unless asked to stop them. Reusable instructions: <a href=\"https://github.com/eimg/fairway-xmp/tree/main/skills/fairway-xmp\">Fairway XMP agent skill</a>.",
+        "ထည့်သွင်းထားသည့် Fairway XMP CLI ကို သုံးပါ။ မပြင်ဆင်မီ Capabilities နှင့် Status ကို စစ်ပါ။ JSON ရလဒ်တောင်း၍ Site/HTTPS ပြောင်းလဲမှုတွင် <code>--non-interactive</code> သုံးပါ။ <code>approval_required</code> ရလျှင် သိမ်းပြီးသည့် ပြောင်းလဲမှုနှင့် ကျန်ရှိသည့် OS ခွင့်ပြုချက်အဆင့်ကို အသိပေးပါ။ ရပ်ရန် မတောင်းဆိုလျှင် Service များ ဆက်ဖွင့်ထားပါ။ ပြန်သုံးနိုင်သည့် လမ်းညွှန် — <a href=\"https://github.com/eimg/fairway-xmp/tree/main/skills/fairway-xmp\">Fairway XMP agent skill</a>။"
+      ],
+      "command": "fairway capabilities --json\nfairway status --json"
+    },
+    "intro": [
+      "The cross-platform management CLI ships with the next release. Published v0.1.1 Windows/macOS downloads expose only the earlier <code>fairway db</code> commands; check capabilities before using these examples.",
+      "Platform အားလုံးအတွက် Management CLI ကို လာမည့် Release တွင် ထည့်သွင်းမည်။ ထုတ်ဝေပြီး v0.1.1 Windows/macOS တွင် ယခင် <code>fairway db</code> Command များသာ ပါဝင်သေးသည်။ အောက်ပါဥပမာများ မသုံးမီ Capabilities ကို စစ်ပါ။"
+    ],
+    "steps": [
+      [
+        "On Windows/macOS, enable <strong>Settings → Command-line tools</strong>, then reopen your terminal or editor. Linux installation already exposes <code>fairway</code>. Without PATH integration, use the installed executable shown in the platform examples below.",
+        "Run <code>fairway capabilities --json</code> and <code>fairway status --json</code>. Read the available commands, running services, saved ports, PHP selection and site roots.",
+        "Start only the services needed: <code>fairway start nginx --wait --json</code> starts web/PHP; <code>fairway start mysql --wait --json</code> starts MySQL. Command-line actions and the desktop use the same environment.",
+        "Use <code>fairway site list --json</code> before adding or editing a site. Select the existing folder to serve; use <code>--index</code> for a front controller such as a Laravel <code>public</code> folder. Add <code>--non-interactive</code> when an agent must return an OS approval handoff instead of opening a prompt.",
+        "For reusable agent instructions, download the GitHub release’s <strong>Source code</strong> archive and extract <code>skills/fairway-xmp</code>. Copy the whole <code>fairway-xmp</code> folder into your agent application’s supported skills directory, then enable/reload it as that application requires. The skill is included from the next source release.",
+        "Use the command examples below for configuration, logs and backups. Port/PHP selection changes require all services stopped; active PHP settings require web/PHP stopped. Backups require MySQL running. See the <a href=\"https://github.com/eimg/fairway-xmp/blob/main/docs/cli.md\">full CLI reference (English)</a> and <a href=\"#import-sql\">SQL import instructions</a> for data-changing operations."
+      ],
+      [
+        "Windows/macOS တွင် <strong>Settings → Command-line tools</strong> ကို Enable လုပ်ပြီး Terminal သို့မဟုတ် Editor ကို ပြန်ဖွင့်ပါ။ Linux Installer က <code>fairway</code> ကို အသင့်သတ်မှတ်ပေးသည်။ PATH မသုံးလျှင် အောက်ပါ Platform ဥပမာများအတိုင်း ထည့်သွင်းထားသော Executable လမ်းကြောင်းကို သုံးပါ။",
+        "<code>fairway capabilities --json</code> နှင့် <code>fairway status --json</code> ကို Run ပါ။ အသုံးပြုနိုင်သည့် Command၊ လည်ပတ်နေသည့် Service၊ သိမ်းထားသော Port၊ PHP version နှင့် Site root များကို စစ်ပါ။",
+        "လိုအပ်သည့် Service ကိုသာ စတင်ပါ။ <code>fairway start nginx --wait --json</code> က Web/PHP ကို စတင်ပြီး <code>fairway start mysql --wait --json</code> က MySQL ကို စတင်သည်။ CLI နှင့် Desktop တို့က Environment တစ်ခုတည်းကို စီမံသည်။",
+        "Site မထည့်မီ၊ မပြင်မီ <code>fairway site list --json</code> ကို စစ်ပါ။ Serve လုပ်မည့် ရှိပြီးသား Folder ကို ရွေး၍ Laravel ၏ <code>public</code> ကဲ့သို့ Front controller အတွက် <code>--index</code> သုံးပါ။ Agent က OS ခွင့်ပြုချက် Prompt မဖွင့်ဘဲ လိုအပ်သည့်အဆင့်ကို ပြန်အသိပေးရန် <code>--non-interactive</code> ထည့်ပါ။",
+        "Agent လမ်းညွှန်ကို ပြန်သုံးရန် GitHub Release ၏ <strong>Source code</strong> Archive ကို Download လုပ်၍ <code>skills/fairway-xmp</code> ကို ဖြည်ပါ။ <code>fairway-xmp</code> Folder တစ်ခုလုံးကို သင်သုံးသည့် Agent App ၏ Skills directory ထဲသို့ ကူးပြီး လိုအပ်သလို Enable/Reload လုပ်ပါ။ Skill ကို လာမည့် Source release မှစ၍ ထည့်သွင်းပေးမည်။",
+        "Configuration၊ Logs နှင့် Backup များအတွက် အောက်ပါ Command ဥပမာများကို သုံးပါ။ Port/PHP version ပြောင်းမည်ဆိုလျှင် Service အားလုံးကို ရပ်ထားရမည်။ လက်ရှိ PHP settings ပြောင်းရန် Web/PHP ကို ရပ်ထားရမည်။ Backup သိမ်းရန် MySQL လည်ပတ်နေရမည်။ Data ပြောင်းလဲသည့် လုပ်ဆောင်ချက်များအတွက် <a href=\"https://github.com/eimg/fairway-xmp/blob/main/docs/cli.md\">CLI လမ်းညွှန်အပြည့်အစုံ (English)</a> နှင့် <a href=\"#import-sql\">SQL import လမ်းညွှန်</a> ကို ကြည့်ပါ။"
+      ]
+    ],
+    "platformCommands": [
+      {
+        "title": [
+          "Service controls and diagnostics",
+          "Service စီမံရန်နှင့် ပြဿနာ စစ်ရန်"
+        ],
+        "command": "fairway status --json\nfairway start nginx --wait --json\nfairway start mysql --wait --json\nfairway restart mail --json\nfairway logs php --json\nfairway diagnostics --json\nfairway stop nginx --json\nfairway shutdown --json",
+        "body": [
+          "Nginx manages PHP. Shutdown waits for accepted work, then stops all services and the supervisor; closing a normal CLI command leaves services running.",
+          "Nginx က PHP ကို စီမံသည်။ Shutdown က စတင်ပြီးသည့် လုပ်ဆောင်ချက်ကို စောင့်၍ Service အားလုံးနှင့် Supervisor ကို ရပ်သည်။ ပုံမှန် CLI Command ပြီးဆုံးသွားခြင်းက Service များကို မရပ်ပါ။"
+        ]
+      },
+      {
+        "title": [
+          "Register and inspect sites",
+          "Site သတ်မှတ်ရန်နှင့် စစ်ရန်"
+        ],
+        "command": "fairway site list --json\nfairway site add shop \"ABSOLUTE_WEB_ROOT\" --name \"Shop\" --index --non-interactive --json\nfairway site https shop on --non-interactive --json\nfairway site hosts --non-interactive --json",
+        "body": [
+          "Replace ABSOLUTE_WEB_ROOT with the folder to serve. A saved site can still need OS approval; inspect status before retrying. Site addresses include the saved website/HTTPS port.",
+          "ABSOLUTE_WEB_ROOT နေရာတွင် Serve လုပ်မည့် Folder လမ်းကြောင်းအပြည့်အစုံကို ထည့်ပါ။ Site သိမ်းပြီးသော်လည်း OS ခွင့်ပြုချက် လိုနိုင်သေးသည်။ ပြန်လုပ်မီ Status ကို စစ်ပါ။ Site လိပ်စာတွင် သိမ်းထားသော Website/HTTPS port ပါဝင်သည်။"
+        ]
+      },
+      {
+        "title": [
+          "PHP, ports and backups",
+          "PHP၊ Port နှင့် Backup"
+        ],
+        "command": "fairway ports --json\nfairway php-version --json\nfairway php-settings --json\nfairway php-version 8.4 --json\nfairway backup --json\nfairway db --help",
+        "body": [
+          "PHP version/port changes affect every site and require stopped services. Backup requires running MySQL and returns the saved backup path.",
+          "PHP version/Port ပြောင်းလဲမှုက Site အားလုံးအပေါ် သက်ရောက်၍ Service များ ရပ်ထားရန် လိုသည်။ Backup သိမ်းရန် MySQL လည်ပတ်နေရမည်။ ရလဒ်တွင် Backup ဖိုင်လမ်းကြောင်းကို ပြမည်။"
+        ]
+      },
+      {
+        "title": [
+          "macOS: invoke without PATH integration",
+          "macOS — PATH မသုံးဘဲ Run ရန်"
+        ],
+        "command": "\"/Applications/Fairway XMP.app/Contents/MacOS/fairway\" capabilities --json"
+      },
+      {
+        "title": [
+          "Windows PowerShell: invoke without PATH integration",
+          "Windows PowerShell — PATH မသုံးဘဲ Run ရန်"
+        ],
+        "command": "& \"INSTALL_FOLDER\\cli\\fairway-cli.exe\" capabilities --json",
+        "body": [
+          "Replace INSTALL_FOLDER with your actual installation folder. The console executable preserves output and exit status for agents.",
+          "INSTALL_FOLDER နေရာတွင် ထည့်သွင်းထားသည့် Folder လမ်းကြောင်းအမှန်ကို ထည့်ပါ။ Console executable က Agent အတွက် Output နှင့် Exit status ကို ထိန်းထားပေးသည်။"
+        ]
+      }
+    ],
+    "check": [
+      "The CLI and desktop show the same services, PHP selection, ports and sites. Agent actions return JSON or an explicit approval handoff, and the source release contains the reusable skill folder.",
+      "CLI နှင့် Desktop တို့တွင် Service၊ PHP version၊ Port နှင့် Site အချက်အလက်များ တူညီနေမည်။ Agent လုပ်ဆောင်ချက်မှ JSON ရလဒ် သို့မဟုတ် ခွင့်ပြုချက်အဆင့်ကို ရှင်းလင်းစွာ ရရှိပြီး Source release တွင် ပြန်သုံးနိုင်သည့် Skill folder ပါဝင်မည်။"
+    ],
+    "trouble": [
+      [
+        [
+          "The command is missing or capabilities are unavailable",
+          "Command မတွေ့ခြင်း သို့မဟုတ် Capabilities မရခြင်း"
+        ],
+        [
+          "Use the installed executable path or <a href=\"#command-not-found\">check command-line integration</a>. If capability discovery is unsupported, use a management-CLI release; installing the skill alone does not upgrade the application.",
+          "ထည့်သွင်းထားသည့် Executable လမ်းကြောင်းကို သုံးပါ သို့မဟုတ် <a href=\"#command-not-found\">Command-line integration ကို စစ်ပါ</a>။ Capabilities မပံ့ပိုးလျှင် Management CLI ပါသော Release ကို သုံးရမည်။ Skill ထည့်ရုံဖြင့် App ကို Update မဖြစ်ပါ။"
+        ]
+      ],
+      [
+        [
+          "The result says approval_required",
+          "ရလဒ်တွင် approval_required ဟု ပြခြင်း"
+        ],
+        [
+          "The site change may already be saved. Check status, then complete the described address/certificate approval in Fairway XMP or rerun interactively. Do not bypass OS approval or assume the change rolled back.",
+          "Site ပြောင်းလဲမှုကို သိမ်းပြီး ဖြစ်နိုင်သည်။ Status ကို စစ်ပြီး Fairway XMP တွင် ဖော်ပြထားသည့် Address/Certificate ခွင့်ပြုချက်ကို ဖြည့်စွက်ပါ သို့မဟုတ် ကိုယ်တိုင် Command ပြန် Run ပါ။ OS ခွင့်ပြုချက်ကို မကျော်ပါနှင့်။ ပြောင်းလဲမှုကို ပြန်ဖျက်ပြီးဟု မယူဆပါနှင့်။"
+        ]
+      ],
+      [
+        [
+          "The controller is busy, updating, or a command timed out",
+          "Controller အလုပ်လုပ်နေခြင်း၊ Update လုပ်နေခြင်း သို့မဟုတ် Command timeout ဖြစ်ခြင်း"
+        ],
+        [
+          "Read the error and let the competing operation finish. Inspect status before retrying a mutation. Repeated attempts cannot approve an OS prompt, and an interrupted SQL import may have partially changed data.",
+          "Error ကို ဖတ်၍ လက်ရှိလုပ်ဆောင်ချက် ပြီးအောင် စောင့်ပါ။ ပြောင်းလဲသည့် Command ကို ပြန်မလုပ်မီ Status ကို စစ်ပါ။ အကြိမ်ကြိမ် Run ခြင်းဖြင့် OS ခွင့်ပြုချက် မရနိုင်ပါ။ ရပ်တန့်သွားသော SQL import က Data တစ်စိတ်တစ်ပိုင်း ပြောင်းထားနိုင်သည်။"
+        ]
+      ]
+    ],
+    "related": [
+      "command-not-found",
+      "sites",
+      "settings",
+      "logs",
+      "backups",
+      "lifecycle"
+    ]
+  },
+  {
     "id": "lifecycle",
     "group": "management",
     "title": [

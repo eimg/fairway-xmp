@@ -117,7 +117,7 @@ fairway logs php --json
 fairway shutdown --json
 ```
 
-The CLI and desktop share one background supervisor. Enable **Settings → Command-line tools**, or invoke the bundled executable by absolute path. Agents can discover commands with `fairway capabilities --json` and use `--non-interactive` for site changes that must return an approval handoff instead of opening OS prompts. Published 0.1.1 desktop downloads retain the earlier database-only CLI until the next release. See the [CLI reference](docs/cli.md).
+The CLI and desktop share one background supervisor. Enable **Settings → Command-line tools**, or invoke the bundled executable by absolute path. Agents can discover commands with `fairway capabilities --json` and use `--non-interactive` for site changes that must return an approval handoff instead of opening OS prompts. Published 0.1.1 desktop downloads retain the earlier database-only CLI until the next release. See the [CLI reference](docs/cli.md) and [Fairway XMP agent skill](skills/fairway-xmp/SKILL.md). GitHub source releases include the portable `skills/fairway-xmp` folder; copy it into your agent’s supported skills directory.
 
 ## PHP and Composer in your terminal
 

@@ -69,7 +69,7 @@ export const copy = {
     "contents": "Guides",
     "overview": "How-to guides",
     "intro": "Instructions for configuring and using Fairway XMP.",
-    "scopeNote": "Desktop steps apply to Windows and macOS. Linux commands are in expandable notes. Example addresses use default ports; saved values are shown in Fairway XMP.",
+    "scopeNote": "Desktop steps apply to Windows and macOS. The CLI guide covers all three platforms; other Linux commands are in expandable notes. Example addresses use default ports; saved values are shown in Fairway XMP.",
     "popular": "Common tasks",
     "stuck": "Troubleshooting",
     "quickTasks": [
@@ -179,7 +179,7 @@ export const copy = {
     "contents": "လမ်းညွှန်များ",
     "overview": "အသုံးပြုနည်း လမ်းညွှန်",
     "intro": "Fairway XMP အား အသုံးပြုခြင်းနှင့် လိုအပ်သလို ပြင်ဆင်ခြင်း လမ်းညွှန်များ။",
-    "scopeNote": "Windows နှင့် macOS အတွက်သာ ဖြစ်သည်။ Linux command များကို ဖွင့်ကြည့်နိုင်သော မှတ်စုအဖြစ် ထည့်ပေးထားသည်။ နမူနာများတွင် မူလ Port များကို သုံး၍ ပြထားသည်။",
+    "scopeNote": "Desktop အဆင့်များမှာ Windows နှင့် macOS အတွက် ဖြစ်သည်။ CLI လမ်းညွှန်တွင် Platform သုံးမျိုးလုံးအတွက် ပါဝင်ပြီး အခြား Linux command များကို ဖွင့်ကြည့်နိုင်သော မှတ်စုအဖြစ် ထည့်ပေးထားသည်။ နမူနာများတွင် မူလ Port များကို သုံး၍ ပြထားသည်။",
     "popular": "လိုအပ်လေ့ရှိသော လမ်းညွှန်များ",
     "stuck": "ပြဿနာအဖြေရှာနည်း",
     "quickTasks": [
