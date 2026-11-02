@@ -195,7 +195,7 @@ fn expand_windows(
 
 /// Keep the controlled terminal's startup/history/prompt and working directory.
 /// Tool variables (PATH, SDK homes, package-manager settings, etc.) are imported.
-#[cfg(feature = "terminal")]
+#[cfg(any(feature = "terminal", all(test, target_os = "macos")))]
 pub(crate) fn is_tool_variable(key: &std::ffi::OsStr) -> bool {
     !matches!(
         key.to_string_lossy().to_ascii_uppercase().as_str(),

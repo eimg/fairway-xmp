@@ -173,11 +173,20 @@ pub fn write_windows_launchers(layout: &Layout) -> Result<()> {
         if executable.to_string_lossy().contains('%') {
             return Err("The application path contains a percent sign, which Windows command launchers cannot support.".into());
         }
+        let console = executable
+            .parent()
+            .ok_or("Cannot locate Fairway.")?
+            .join("cli/fairway-cli.exe");
+        let launcher = if console.is_file() {
+            &console
+        } else {
+            &executable
+        };
         atomic_write(
             &layout.bin.join("fairway.cmd"),
             format!(
-                "@echo off\r\nchcp 65001 >nul\r\n\"{}\" %*\r\n",
-                executable.display()
+                "@echo off\r\nchcp 65001 >nul\r\n\"{}\" %*\r\nexit /b %errorlevel%\r\n",
+                launcher.display()
             )
             .as_bytes(),
         )?;

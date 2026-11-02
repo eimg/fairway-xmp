@@ -24,8 +24,16 @@ read_pid() {
 # The installed app and a build copy share this data folder and bundle id.
 app_running() {
   pid_alive "$(read_pid "$DATA/app.pid")" && return 0
+  pid_alive "$(read_pid "$DATA/supervisor.pid")" && return 0
   /usr/bin/pgrep -f '/Applications/Fairway XMP.app/Contents/MacOS/fairway' >/dev/null 2>&1
 }
+
+# A terminal-only session has no AppleEvent loop. Stop its controller through the
+# installed CLI before asking a desktop window to quit. Installation identity is
+# checked by the controller; a different build must be stopped with its own CLI.
+if pid_alive "$(read_pid "$DATA/supervisor.pid")" && [ -x "$APP" ]; then
+  /bin/launchctl asuser "$USER_ID" /usr/bin/sudo -u "$USER_NAME" -H "$APP" shutdown
+fi
 
 # Quit uses the app's existing menu-bar path, which stops MySQL, Nginx, and PHP first.
 if app_running; then

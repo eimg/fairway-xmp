@@ -1,8 +1,8 @@
 //! Keep startup failures visible without replacing invalid settings or credentials.
 use crate::{
+    cli::client::Client,
     config::{Layout, Result},
     integration,
-    manager::Manager,
 };
 use serde::Serialize;
 use std::path::PathBuf;
@@ -18,7 +18,7 @@ pub(crate) struct Status {
 pub(crate) struct Startup {
     runtime: PathBuf,
     pub layout: Option<Layout>,
-    pub manager: Option<Manager>,
+    pub manager: Option<Client>,
     errors: Vec<String>,
     persistent_errors: Vec<String>,
 }
@@ -46,7 +46,7 @@ impl Startup {
         }
         if let Some(layout) = &self.layout {
             if self.manager.is_none() {
-                match Manager::new(layout.clone()) {
+                match Client::new(layout.clone()) {
                     Ok(manager) => self.manager = Some(manager),
                     Err(error) => self.errors.push(error),
                 }
@@ -56,15 +56,24 @@ impl Startup {
                     self.errors.push(format!(
                         "{error} Open Settings to choose a bundled PHP version."
                     ));
-                } else if let Err(error) = integration::refresh(layout) {
-                    self.errors.push(format!(
-                        "Command-line tools could not be refreshed: {error}"
-                    ));
+                } else if let Some(client) = &self.manager {
+                    let already_reserved = client.reserved();
+                    let result = if already_reserved {
+                        integration::refresh(layout)
+                    } else {
+                        client.begin().and_then(|()| {
+                            let result = integration::refresh(layout);
+                            client.end();
+                            result
+                        })
+                    };
+                    if let Err(error) = result {
+                        self.errors.push(format!(
+                            "Command-line tools could not be refreshed: {error}"
+                        ));
+                    }
                 }
-                if let Err(error) = crate::config::atomic_write(
-                    &layout.data.join("app.pid"),
-                    std::process::id().to_string().as_bytes(),
-                ) {
+                if let Err(error) = mark_desktop(layout) {
                     self.errors.push(format!(
                         "The application marker could not be saved: {error}"
                     ));
@@ -94,11 +103,17 @@ impl Startup {
         self.persistent_errors.push(error);
     }
 
-    pub fn manager(&mut self) -> Result<&mut Manager> {
+    pub fn manager(&mut self) -> Result<&mut Client> {
         self.manager
             .as_mut()
             .ok_or_else(|| format!("Startup needs attention. {}", self.errors.join("\n")))
     }
+}
+
+pub(crate) fn mark_desktop(layout: &Layout) -> Result<()> {
+    let pid = std::process::id().to_string();
+    crate::config::atomic_write(&layout.data.join("desktop-supervisor"), pid.as_bytes())?;
+    crate::config::atomic_write(&layout.data.join("app.pid"), pid.as_bytes())
 }
 
 #[cfg(test)]
@@ -144,7 +159,8 @@ mod tests {
                 invalid
             );
             layout.save_ports(&crate::config::Ports::default()).unwrap();
-            assert!(!startup.retry().blocking);
+            let status = startup.retry();
+            assert!(!status.blocking, "{:?}", status.errors);
             assert_eq!(
                 fs::read_to_string(layout.data.join("credentials")).unwrap(),
                 credentials
@@ -153,6 +169,7 @@ mod tests {
                 .manager()
                 .unwrap()
                 .snapshot()
+                .unwrap()
                 .services
                 .iter()
                 .all(|service| !service.running));
@@ -172,9 +189,12 @@ mod tests {
                 .join(if cfg!(windows) { "php.cmd" } else { "php" });
             fs::write(&launcher, "previous launcher").unwrap();
             let status = startup.retry();
-            assert!(!status.blocking);
+            assert!(!status.blocking, "{:?}", status.errors);
             assert!(status.errors[0].contains("Open Settings"));
-            assert_eq!(startup.manager().unwrap().snapshot().php_version, removed);
+            assert_eq!(
+                startup.manager().unwrap().snapshot().unwrap().php_version,
+                removed
+            );
             assert_eq!(
                 fs::read_to_string(layout.data.join("php-version")).unwrap(),
                 removed
@@ -214,7 +234,8 @@ mod tests {
             "preserved certificate"
         );
         layout.save_projects(&[]).unwrap();
-        assert!(!startup.retry().blocking);
+        let status = startup.retry();
+        assert!(!status.blocking, "{:?}", status.errors);
         fs::remove_dir_all(root).unwrap();
     }
 

@@ -30,7 +30,7 @@ required-features = ["terminal"]
 [features]
 default = ["desktop"]
 cli = []
-desktop = ["terminal", "dep:tauri", "dep:tauri-build", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-updater", "dep:tauri-plugin-dialog", "dep:muda", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:reqwest", "dep:rustls"]
+desktop = ["cli", "terminal", "dep:tauri", "dep:tauri-build", "dep:tauri-plugin-single-instance", "dep:tauri-plugin-updater", "dep:tauri-plugin-dialog", "dep:muda", "dep:objc2", "dep:objc2-app-kit", "dep:objc2-foundation", "dep:reqwest", "dep:rustls"]
 terminal = ["dep:portable-pty"]
 native-macos-hosts = ["desktop"]
 native-hosts-writer = []
@@ -70,7 +70,7 @@ objc2-foundation = { version = "0.3", optional = true, default-features = false,
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_UI_WindowsAndMessaging", "Win32_System_JobObjects", "Win32_System_Console", "Win32_System_Threading", "Win32_System_Pipes"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Storage_FileSystem", "Win32_System_IO", "Win32_UI_WindowsAndMessaging", "Win32_System_JobObjects", "Win32_System_Console", "Win32_System_Threading", "Win32_System_Pipes"] }
 
 [[example]]
 name = "updater_probe"

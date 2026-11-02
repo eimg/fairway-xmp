@@ -131,7 +131,7 @@ impl Overrides {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PhpSettingsView {
     pub version: String,

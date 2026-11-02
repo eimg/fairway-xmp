@@ -88,3 +88,7 @@ Use these when the changed behavior warrants them, without treating unperformed 
 - Check a subsequent-version signed update and restart when investigating updater behavior. The automated same-version reinstall drill has a narrower scope; neither result implies the other was performed.
 
 Before moving/deleting a standalone Mac helper test app, quit it and run its own executable with `--remove-native-hosts-helper`. This unregisters that helper without deleting projects or rewriting sites. Avoid running multiple app copies against the same data/helper registration while diagnosing approval state.
+
+## Shared supervisor and management CLI
+
+Build debug entry points with `cargo build --manifest-path src-tauri/Cargo.toml --bin fairway --bin fairway-cli --locked`. With the native runtime staged, run `python3 tests/shared_cli_smoke.py --cli src-tauri/target/debug/fairway-cli --peer src-tauri/target/debug/fairway --runtime src-tauri/resources/runtime` (append `.exe` to both binaries on Windows). The smoke rejects release binaries using build identity before changing anything; it uses isolated debug home/data paths and temporary ports. It never edits system hosts, certificate trust or PATH integration. Native macOS/Windows build workflows run it after runtime staging. Rust CLI tests exercise controller reservations, disconnect recovery, shutdown ordering and installation exclusion.

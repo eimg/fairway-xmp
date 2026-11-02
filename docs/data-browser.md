@@ -77,7 +77,7 @@ Query UPDATE summaries count changed rows on MySQL, so assigning an existing val
 
 ## Desktop command line
 
-Choose **Enable command-line tools** in Settings and open a new terminal. On macOS and Windows, the compact section lists PHP, Composer, and `fairway db`. Its question-mark help contains terminal checks, MySQL requirements, and upgrade guidance; command paths/detection are under Command details. Existing installations may need **Remove from user PATH** then **Enable command-line tools** once to create the new `fairway` launcher (`fairway.cmd` on Windows). Direct invocation also works:
+Choose **Enable command-line tools** in Settings and open a new terminal. On macOS and Windows, the compact section lists PHP, Composer, and `fairway`. The current source branch also exposes environment management commands; see [CLI reference](cli.md). Its question-mark help contains terminal checks, MySQL requirements, and upgrade guidance; command paths/detection are under Command details. Existing installations may need **Remove from user PATH** then **Enable command-line tools** once to create the new `fairway` launcher (`fairway.cmd` on Windows). Direct invocation also works:
 
 ```sh
 "/Applications/Fairway XMP.app/Contents/MacOS/fairway" db --help

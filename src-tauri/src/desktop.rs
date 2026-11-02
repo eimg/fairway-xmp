@@ -1,8 +1,9 @@
 use crate::{
+    cli::client::Client,
     config::{Layout, Ports, ProjectConfig, Result},
     integration,
     lifecycle::{Lifecycle, Operation},
-    manager::{Manager, Snapshot},
+    manager::Snapshot,
     tray::NativeTray,
 };
 use serde::Serialize;
@@ -60,10 +61,18 @@ struct DesktopControl {
 struct DesktopOperation {
     operation: Option<Operation>,
     app: tauri::AppHandle,
+    reserved: bool,
 }
 
 impl Drop for DesktopOperation {
     fn drop(&mut self) {
+        if self.reserved {
+            if let Ok(startup) = self.app.state::<Shared>().lock() {
+                if let Some(manager) = &startup.manager {
+                    manager.end();
+                }
+            }
+        }
         // Release the operation before publishing status or waking shutdown.
         self.operation.take();
         let control = self.app.state::<DesktopControl>();
@@ -76,6 +85,18 @@ impl Drop for DesktopOperation {
 
 fn begin_operation(app: &tauri::AppHandle, label: &str) -> Result<DesktopOperation> {
     let operation = app.state::<DesktopControl>().lifecycle.begin()?;
+    let reserved = {
+        let state = app.state::<Shared>();
+        let startup = state
+            .lock()
+            .map_err(|_| "Service controller is unavailable.")?;
+        if let Some(manager) = &startup.manager {
+            manager.begin()?;
+            true
+        } else {
+            false
+        }
+    };
     if let Some(tray) = app.try_state::<NativeTray>() {
         let _ = tray.set_busy(false);
     }
@@ -83,6 +104,7 @@ fn begin_operation(app: &tauri::AppHandle, label: &str) -> Result<DesktopOperati
     Ok(DesktopOperation {
         operation: Some(operation),
         app: app.clone(),
+        reserved,
     })
 }
 
@@ -124,17 +146,18 @@ fn refresh_status(app: &tauri::AppHandle) {
     let app = app.clone();
     let state = app.state::<Shared>().inner().clone();
     tauri::async_runtime::spawn(async move {
-        if let Ok(snapshot) = access(state, |m| Ok(m.snapshot())).await {
+        if let Ok(snapshot) = access(state, |m| m.snapshot()).await {
             publish_status(&app, &snapshot);
         }
     });
 }
 
-fn remove_app_marker(manager: &Manager) -> Result<()> {
+fn remove_app_marker(manager: &Client) -> Result<()> {
     let marker = manager.layout.data.join("app.pid");
     if marker.exists() {
         std::fs::remove_file(marker).map_err(|e| e.to_string())?;
     }
+    let _ = std::fs::remove_file(manager.layout.data.join("desktop-supervisor"));
     Ok(())
 }
 
@@ -157,7 +180,7 @@ pub(crate) fn request_quit(app: &tauri::AppHandle) {
                 "The service manager is unavailable. Restart Fairway XMP.".to_string()
             })?;
             let manager = manager.manager()?;
-            manager.stop_all()?;
+            manager.shutdown()?;
             // Terminal processes are owned separately from managed services.
             // A hidden window keeps them alive; explicit Quit closes them.
             remove_app_marker(manager)
@@ -242,13 +265,15 @@ pub(crate) fn tray_action(app: &tauri::AppHandle, id: &str) {
 
 async fn access<T: Send + 'static>(
     state: Shared,
-    f: impl FnOnce(&mut Manager) -> Result<T> + Send + 'static,
+    f: impl FnOnce(&mut Client) -> Result<T> + Send + 'static,
 ) -> Result<T> {
     tauri::async_runtime::spawn_blocking(move || {
         let mut manager = state
             .lock()
             .map_err(|_| "The service manager is unavailable. Restart Fairway XMP.")?;
-        f(manager.manager()?)
+        let manager = manager.manager()?;
+        manager.refresh()?;
+        f(manager)
     })
     .await
     .map_err(|e| e.to_string())?
@@ -256,7 +281,7 @@ async fn access<T: Send + 'static>(
 
 #[tauri::command]
 async fn snapshot(state: State<'_, Shared>) -> Result<Snapshot> {
-    access(state.inner().clone(), |m| Ok(m.snapshot())).await
+    access(state.inner().clone(), |m| m.snapshot()).await
 }
 
 #[tauri::command]
@@ -443,7 +468,7 @@ async fn cancel_data_browser(app: tauri::AppHandle, id: String) -> Result<()> {
 #[tauri::command]
 async fn diagnostic_report(state: State<'_, Shared>) -> Result<String> {
     access(state.inner().clone(), |m| {
-        serde_json::to_string_pretty(&crate::diagnostics::report(&m.snapshot()))
+        serde_json::to_string_pretty(&crate::diagnostics::report(&m.snapshot()?))
             .map_err(|e| e.to_string())
     })
     .await
@@ -485,7 +510,7 @@ async fn perform_service_action(
             "restart" => {
                 let id = service.as_deref().ok_or("Choose a service.")?;
                 let restore_web = id == "php"
-                    && m.snapshot()
+                    && m.snapshot()?
                         .services
                         .iter()
                         .any(|s| s.id == "nginx" && s.running);
@@ -497,7 +522,7 @@ async fn perform_service_action(
             }
             _ => return Err("Unknown action.".into()),
         }
-        Ok(m.snapshot())
+        m.snapshot()
     })
     .await
 }
@@ -512,7 +537,7 @@ async fn save_settings(
     let _operation = begin_operation(&app, "Saving settings…")?;
     access(state.inner().clone(), move |m| {
         m.save_settings(ports, version)?;
-        Ok(m.snapshot())
+        m.snapshot()
     })
     .await
 }
@@ -592,7 +617,7 @@ async fn save_project(
     sync_hosts(state.clone())
         .await
         .map_err(|e| format!("The site was saved, but the hosts file was not updated: {e}"))?;
-    access(state, |m| Ok(m.snapshot())).await
+    access(state, |m| m.snapshot()).await
 }
 
 #[tauri::command]
@@ -614,7 +639,7 @@ async fn remove_project(
     if access(state.clone(), |m| Ok(m.domains_approval_pending)).await? {
         // Complete the address handoff first. Unused certificate trust remains
         // visible for an explicit retry, rather than opening a second OS prompt.
-        return access(state, |m| Ok(m.snapshot())).await;
+        return access(state, |m| m.snapshot()).await;
     }
     if let Some(layout) = unused_trust {
         tauri::async_runtime::spawn_blocking(move || crate::tls::remove_trust(&layout))
@@ -624,7 +649,7 @@ async fn remove_project(
                 format!("The site was removed, but certificate trust was not removed: {e}")
             })?;
     }
-    access(state, |m| Ok(m.snapshot())).await
+    access(state, |m| m.snapshot()).await
 }
 
 #[tauri::command]
@@ -646,7 +671,7 @@ async fn sync_domains(
         let _ = check_approval;
         sync_hosts(state.clone()).await?;
     }
-    access(state, |m| Ok(m.snapshot())).await
+    access(state, |m| m.snapshot()).await
 }
 
 #[cfg(all(target_os = "macos", feature = "native-macos-hosts"))]
@@ -723,7 +748,7 @@ async fn set_project_https(
                 format!("HTTPS is off for {changed_domain}.test, but certificate cleanup did not finish. Choose Remove certificate trust to retry. {e}")
             })?;
     }
-    access(shared, |m| Ok(m.snapshot())).await
+    access(shared, |m| m.snapshot()).await
 }
 
 #[tauri::command]
@@ -740,7 +765,7 @@ async fn remove_https_trust(app: tauri::AppHandle, state: State<'_, Shared>) -> 
     tauri::async_runtime::spawn_blocking(move || crate::tls::remove_trust(&layout))
         .await
         .map_err(|e| e.to_string())??;
-    access(shared, |m| Ok(m.snapshot())).await
+    access(shared, |m| m.snapshot()).await
 }
 
 #[tauri::command]
@@ -851,7 +876,7 @@ async fn cli_integration(
         } else {
             integration::remove(&m.layout)?;
         }
-        Ok(m.snapshot())
+        m.snapshot()
     })
     .await
 }
@@ -1045,9 +1070,11 @@ async fn install_update(
     // Only verified bytes may reserve normal operations and bundle replacement.
     // Wait for an active service/database action; Quit cancels this wait too.
     let operation = download.begin_operation().await?;
+    access(state.inner().clone(), |m| m.begin()).await?;
     let _operation = DesktopOperation {
         operation: Some(operation),
         app: app.clone(),
+        reserved: true,
     };
     if let Some(tray) = app.try_state::<NativeTray>() {
         let _ = tray.set_busy(false);
@@ -1058,10 +1085,17 @@ async fn install_update(
         "fairway-update-progress",
         serde_json::json!({"phase": "preparing"}),
     );
-    access(state.inner().clone(), crate::updates::prepare).await?;
+    access(state.inner().clone(), |m| m.prepare_update()).await?;
     app.state::<crate::terminal::Terminals>().close_all();
+    // Hold this OS lock through replacement. New CLI clients cannot restart the
+    // supervisor after it exits, including when an installation fails.
+    let _replacement = access(state.inner().clone(), |m| m.reserve_installation()).await?;
     // Windows exits inside install(); post-install cleanup is unreachable.
-    access(state.inner().clone(), |m| remove_app_marker(m)).await?;
+    access(state.inner().clone(), |m| {
+        m.shutdown()?;
+        remove_app_marker(m)
+    })
+    .await?;
     let _ = app.emit(
         "fairway-update-progress",
         serde_json::json!({"phase": "installing"}),
@@ -1078,10 +1112,7 @@ async fn install_update(
     .and_then(|r| r);
     if let Err(error) = result {
         access(state.inner().clone(), |m| {
-            crate::config::atomic_write(
-                &m.layout.data.join("app.pid"),
-                std::process::id().to_string().as_bytes(),
-            )
+            crate::startup::mark_desktop(&m.layout)
         })
         .await?;
         return Err(format!("The update could not be installed. Your projects and backups are kept. Services are stopped; you can start them again or retry the update. {error}"));
@@ -1127,14 +1158,11 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
         )?;
         return Ok(true);
     }
-    if action == "db" {
-        #[cfg(debug_assertions)]
-        let runtime = std::env::var_os("FAIRWAY_RUNTIME_DIR")
-            .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources/runtime"));
-        #[cfg(not(debug_assertions))]
-        let runtime = runtime_location(&std::env::current_exe().map_err(|e| e.to_string())?)?;
-        crate::data_browser::cli(&Layout::new(runtime)?, &args[2..])?;
+    if action == "__serve"
+        || (!action.starts_with("--") && action != "__sync-hosts")
+        || matches!(action.as_str(), "--help" | "-h" | "--version" | "-V")
+    {
+        crate::cli::run()?;
         return Ok(true);
     }
     #[cfg(all(target_os = "macos", feature = "native-macos-hosts"))]
@@ -1162,7 +1190,8 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
     ]
     .contains(&action.as_str())
     {
-        return Ok(false);
+        crate::cli::run()?;
+        return Ok(true);
     }
     let runtime = runtime_location(&std::env::current_exe().map_err(|e| e.to_string())?)?;
     let layout = Layout::new(runtime)?;
@@ -1173,7 +1202,14 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
     ]
     .contains(&action.as_str())
     {
-        for name in ["app.pid", "mysql.pid", "nginx.pid", "php.pid", "mail.pid"] {
+        for name in [
+            "app.pid",
+            "supervisor.pid",
+            "mysql.pid",
+            "nginx.pid",
+            "php.pid",
+            "mail.pid",
+        ] {
             let path = layout.data.join(name);
             if let Ok(text) = std::fs::read_to_string(&path) {
                 // Nginx can leave an empty PID file after a failed start.
@@ -1225,10 +1261,7 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
 pub fn run() {
     let args = std::env::args().collect::<Vec<_>>();
     #[cfg(windows)]
-    if args
-        .get(1)
-        .is_some_and(|arg| arg == "db" || arg == "--build-info")
-    {
+    if args.len() > 1 {
         use windows_sys::Win32::{Foundation::INVALID_HANDLE_VALUE, System::Console::*};
         // A GUI executable has no console when launched from cmd. Attach for
         // command-line use, preserving any pipes supplied by the caller.
@@ -1246,7 +1279,7 @@ pub fn run() {
     match maintenance(&args) {
         Ok(true) => return,
         Err(error) => {
-            eprintln!("{error}");
+            crate::cli::report_error(&error);
             std::process::exit(1);
         }
         _ => (),
@@ -1291,7 +1324,7 @@ pub fn run() {
                 // Native monitoring keeps working when the hidden webview is
                 // throttled. Never hold the manager lock while updating menus.
                 if !control.lifecycle.busy() {
-                    let snapshot = state.try_lock().ok().and_then(|mut startup| startup.manager.as_mut().map(Manager::snapshot));
+                    let snapshot = state.try_lock().ok().and_then(|mut startup| startup.manager.as_mut().and_then(|m| m.snapshot().ok()));
                     if let Some(snapshot) = snapshot {
                         publish_status(&handle, &snapshot);
                         #[cfg(all(target_os = "macos", feature = "native-macos-hosts"))]

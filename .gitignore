@@ -14,3 +14,6 @@ test-results/
 __pycache__/
 src-tauri/gen/
 VERIFICATION.md
+
+src-tauri/resources/cli/*
+!src-tauri/resources/cli/.gitkeep
