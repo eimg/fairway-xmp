@@ -1,4 +1,4 @@
-use super::{client::Client, supervisor, Request};
+use super::{client::Client, supervisor, transport, Request};
 use crate::config::{Layout, Ports};
 use std::{
     fs,
@@ -8,6 +8,28 @@ use std::{
 struct Fixture {
     root: std::path::PathBuf,
     layout: Layout,
+}
+
+#[test]
+fn concurrent_installation_probes_do_not_look_like_an_update() {
+    let fixture = Fixture::new();
+    fixture.layout.initialize().unwrap();
+    let path = fixture.layout.data.join("installation.lock");
+    let first_probe = transport::shared_lock(&path).unwrap().unwrap();
+    let second_probe = transport::shared_lock(&path).unwrap().unwrap();
+    let desktop = Client::new(fixture.layout.clone()).unwrap();
+    desktop.begin().unwrap();
+    assert!(transport::lock_path(&path).unwrap().is_none());
+    let release = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(25));
+        drop(first_probe);
+        drop(second_probe);
+    });
+    let installation = desktop.reserve_installation().unwrap();
+    release.join().unwrap();
+    assert!(transport::shared_lock(&path).unwrap().is_none());
+    drop(installation);
+    desktop.end();
 }
 impl Fixture {
     fn new() -> Self {

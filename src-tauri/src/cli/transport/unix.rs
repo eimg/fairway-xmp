@@ -78,6 +78,12 @@ pub(in crate::cli) fn lock(layout: &Layout) -> Result<Option<File>> {
     lock_path(&layout.data.join("supervisor.lock"))
 }
 pub(in crate::cli) fn lock_path(path: &std::path::Path) -> Result<Option<File>> {
+    file_lock(path, libc::LOCK_EX)
+}
+pub(in crate::cli) fn shared_lock(path: &std::path::Path) -> Result<Option<File>> {
+    file_lock(path, libc::LOCK_SH)
+}
+fn file_lock(path: &std::path::Path, mode: libc::c_int) -> Result<Option<File>> {
     let file = OpenOptions::new()
         .read(true)
         .write(true)
@@ -86,7 +92,7 @@ pub(in crate::cli) fn lock_path(path: &std::path::Path) -> Result<Option<File>> 
         .mode(0o600)
         .open(path)
         .map_err(|e| e.to_string())?;
-    if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } != 0 {
+    if unsafe { libc::flock(file.as_raw_fd(), mode | libc::LOCK_NB) } != 0 {
         let error = std::io::Error::last_os_error();
         return if error.kind() == std::io::ErrorKind::WouldBlock {
             Ok(None)

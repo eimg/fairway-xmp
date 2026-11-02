@@ -283,12 +283,18 @@ pub(in crate::cli) fn lock(layout: &Layout) -> Result<Option<File>> {
     lock_path(&layout.data.join("supervisor.lock"))
 }
 pub(in crate::cli) fn lock_path(path: &std::path::Path) -> Result<Option<File>> {
+    file_lock(path, 0)
+}
+pub(in crate::cli) fn shared_lock(path: &std::path::Path) -> Result<Option<File>> {
+    file_lock(path, 3) // FILE_SHARE_READ | FILE_SHARE_WRITE: probes can coexist.
+}
+fn file_lock(path: &std::path::Path, share_mode: u32) -> Result<Option<File>> {
     match OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
         .truncate(false)
-        .share_mode(0)
+        .share_mode(share_mode)
         .open(path)
     {
         Ok(file) => Ok(Some(file)),

@@ -28,7 +28,7 @@ pub(crate) fn available(layout: &Layout) -> bool {
 
 pub(crate) fn ensure(layout: &Layout) -> Result<()> {
     layout.initialize()?;
-    if transport::lock_path(&layout.data.join("installation.lock"))?.is_none() {
+    if transport::shared_lock(&layout.data.join("installation.lock"))?.is_none() {
         return Err("Fairway is being updated. Retry when installation finishes.".into());
     }
     if available(layout) {
@@ -262,7 +262,7 @@ pub(crate) fn serve(layout: &Layout) -> Result<()> {
             }
         }
     }
-    if transport::lock_path(&layout.data.join("installation.lock"))?.is_none() {
+    if transport::shared_lock(&layout.data.join("installation.lock"))?.is_none() {
         return Err("Fairway is being updated. Retry when installation finishes.".into());
     }
     let manager = Arc::new(Mutex::new(Manager::new(layout.clone())?));
@@ -429,7 +429,7 @@ fn handle_connection(
                 }
             }
         };
-        if transport::lock_path(&layout.data.join("installation.lock"))?.is_none() {
+        if transport::shared_lock(&layout.data.join("installation.lock"))?.is_none() {
             return Err("Fairway is being updated. Retry when installation finishes.".into());
         }
         if !shutdown_requested && quitting.load(Ordering::Acquire) {

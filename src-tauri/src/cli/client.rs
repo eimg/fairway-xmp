@@ -174,8 +174,19 @@ impl Client {
         self.call(Request::Backup)
     }
     pub fn reserve_installation(&self) -> Result<std::fs::File> {
-        super::transport::lock_path(&self.layout.data.join("installation.lock"))?
-            .ok_or_else(|| "Fairway is already being updated.".into())
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(250);
+        loop {
+            if let Some(lock) =
+                super::transport::lock_path(&self.layout.data.join("installation.lock"))?
+            {
+                return Ok(lock);
+            }
+            // A short-lived shared status probe is not another installation.
+            if std::time::Instant::now() >= deadline {
+                return Err("Fairway is already being updated.".into());
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
     }
     pub fn prepare_update(&self) -> Result<()> {
         self.action(Request::PrepareDesktopUpdate)
