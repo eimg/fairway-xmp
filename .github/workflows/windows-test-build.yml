@@ -104,12 +104,23 @@ jobs:
           }
       - name: Verify fnm Node management in isolated storage
         run: cargo run --manifest-path src-tauri/Cargo.toml --example node_tools_windows_smoke --no-default-features --locked -- .runtime-work/fnm-windows-smoke
-      - name: Verify shared desktop and console CLI with isolated real services
+      - name: Build shared desktop and console CLI smoke binaries
         run: |
           cargo build --manifest-path src-tauri/Cargo.toml --bin fairway --bin fairway-cli --locked
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          python tests/shared_cli_smoke.py --cli src-tauri/target/debug/fairway-cli.exe --peer src-tauri/target/debug/fairway.exe --runtime src-tauri/resources/runtime
+      - name: Verify shared desktop and console CLI with isolated real services
+        timeout-minutes: 10
+        run: |
+          python -u tests/shared_cli_smoke.py --cli src-tauri/target/debug/fairway-cli.exe --peer src-tauri/target/debug/fairway.exe --runtime src-tauri/resources/runtime --output .runtime-work/shared-cli-smoke
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Save shared CLI smoke diagnostics
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-shared-cli-diagnostics
+          path: .runtime-work/shared-cli-smoke/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Verify persistent PHP settings and real uploads
         run: cargo run --manifest-path src-tauri/Cargo.toml --example php_settings_smoke --no-default-features --locked -- .runtime-work/php-settings-smoke
       - name: Verify PHP client extensions and Unix worker support

@@ -130,7 +130,7 @@ pub(crate) fn response_timeout(request: &Request) -> Option<Duration> {
     }
 }
 
-pub(crate) fn send_request(layout: &Layout, request: &Request) -> Result<Stream> {
+pub(super) fn send_request(layout: &Layout, request: &Request) -> Result<Stream> {
     let socket =
         transport::connect(layout).map_err(|e| format!("Cannot connect to supervisor: {e}"))?;
     socket
@@ -143,7 +143,7 @@ pub(crate) fn send_request(layout: &Layout, request: &Request) -> Result<Stream>
     Ok(socket)
 }
 
-pub(crate) fn write_request(layout: &Layout, mut socket: &Stream, request: &Request) -> Result<()> {
+pub(super) fn write_request(layout: &Layout, mut socket: &Stream, request: &Request) -> Result<()> {
     let mut bytes =
         serde_json::to_vec(&serde_json::json!({"runtime": layout.runtime, "request": request}))
             .map_err(|e| e.to_string())?;
@@ -154,7 +154,7 @@ pub(crate) fn write_request(layout: &Layout, mut socket: &Stream, request: &Requ
     socket.write_all(&bytes).map_err(|e| e.to_string())
 }
 
-pub(crate) fn receive_response(layout: &Layout, socket: &Stream) -> Result<serde_json::Value> {
+pub(super) fn receive_response(layout: &Layout, socket: &Stream) -> Result<serde_json::Value> {
     let response: Response =
         serde_json::from_slice(&read_line(socket, MAX_RESPONSE)?).map_err(|e| e.to_string())?;
     #[cfg(windows)]
@@ -182,6 +182,7 @@ pub(crate) fn pid(layout: &Layout) -> Option<u32> {
         .parse()
         .ok()
 }
+#[cfg(any(unix, test))]
 pub(crate) fn wait_shutdown(layout: &Layout) -> Result<()> {
     wait_shutdown_pid(layout, pid(layout))
 }
