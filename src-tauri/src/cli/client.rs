@@ -42,6 +42,7 @@ impl Client {
     pub fn reserved(&self) -> bool {
         self.session.lock().is_ok_and(|session| session.is_some())
     }
+    #[cfg(test)]
     pub fn clear_session(&self) {
         if let Ok(mut session) = self.session.lock() {
             session.take();

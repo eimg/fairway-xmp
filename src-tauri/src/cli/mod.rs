@@ -376,7 +376,6 @@ pub fn run() -> Result<()> {
                 crate::tls::ensure_trust(&client.layout)?;
             }
         }
-        let shutdown = matches!(request, Request::Shutdown | Request::PrepareUpdate);
         let https_enable = matches!(request, Request::ProjectHttps { enabled: true, .. });
         let https_disable = matches!(request, Request::ProjectHttps { enabled: false, .. });
         let site_change = command == "site"
@@ -384,13 +383,7 @@ pub fn run() -> Result<()> {
                 args.get(1).map(String::as_str),
                 Some("add" | "edit" | "remove" | "hosts")
             );
-        let supervisor_pid = supervisor::pid(&client.layout);
         let mut data: serde_json::Value = client.call(request)?;
-        if shutdown {
-            // Shutdown closes the reservation server-side.
-            client.clear_session();
-            supervisor::wait_shutdown_pid(&client.layout, supervisor_pid)?;
-        }
         if https_enable && !non_interactive {
             crate::tls::finish_trust_update(&client.layout)?;
         }
