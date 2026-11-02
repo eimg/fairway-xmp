@@ -79,6 +79,5 @@ agent UI metadata. Keep this directory tracked. GitHub's **Source code** archive
 and the existing `git archive` source bundles include the folder with the exact
 release commit; there is no separate skill archive to build or upload. Users
 extract and copy the whole folder into their agent application's supported skills
-directory. The skill requires a Fairway XMP build with the management CLI; it does
-not install or upgrade the desktop application. The published guide is `#cli` on
+directory. The skill operates the installed Fairway XMP application through its CLI. The published guide is `#cli` on
 the documentation website, with a For agents block before the human procedure.

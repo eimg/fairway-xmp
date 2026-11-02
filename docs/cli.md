@@ -1,9 +1,5 @@
 # Fairway XMP command line
 
-This guide describes the current source branch. Published 0.1.1 desktop downloads
-only expose the earlier `fairway db` commands; the cross-platform management CLI
-ships with the next build.
-
 ## For agents
 
 Use the installed CLI. Start with `fairway capabilities --json` and
@@ -15,7 +11,6 @@ the user requests shutdown.
 The reusable [Fairway XMP agent skill](../skills/fairway-xmp/SKILL.md) ships in the
 GitHub source release under `skills/fairway-xmp`. Copy that whole folder into
 your agent application's supported skills directory, then reload/enable it there.
-This does not install or upgrade Fairway XMP itself.
 
 ## Find the command
 
@@ -34,7 +29,7 @@ the managed `fairway.cmd` launcher. The console executable preserves stdin,
 stdout, stderr and exit status for PowerShell, Command Prompt and agent processes.
 The desktop `fairway.exe` also accepts management commands.
 
-Linux keeps its installed `bin/fairway` command and terminal dashboard. On desktop
+On Linux, use the installed `bin/fairway` command and terminal dashboard. On desktop
 platforms, launching the desktop executable without arguments opens the panel;
 the Windows console executable without arguments shows help.
 
@@ -113,7 +108,7 @@ Errors exit with status 1 and write:
 {"ok":false,"schemaVersion":1,"error":{"code":"operation_failed","message":"..."}}
 ```
 
-The other current error code is `approval_required`. A competing operation returns
+The other error code is `approval_required`. A competing operation returns
 `operation_failed` with a busy explanation. Check current state before retrying
 a timed-out mutation. Read-only requests wait briefly for the controller and then
 report busy rather than freezing behind a long backup or approval.
@@ -123,31 +118,14 @@ output, arguments and exit code; their output is not wrapped in JSON. Database
 administration commands produce JSON; see [database CLI](data-browser.md#desktop-command-line).
 Destructive database actions retain their confirmation and protective-backup rules.
 
-## Shared supervisor
+## Shared environment
 
-One detached process per user-data directory owns the service manager. Desktop,
-CLI and Linux TUI use the same operations. Unix uses a private socket and lifetime
-file lock; long paths use a verified private directory beneath `/tmp`. Windows
-uses a named pipe with a current-user-only ACL and rejects remote clients.
-Requests and responses are bounded and check runtime installation identity.
+The desktop, CLI and Linux dashboard share one background controller. Use
+Fairway XMP commands to manage services so their state stays consistent across
+interfaces. An operation already in progress can make other commands report busy.
+During application updates, commands report that installation is in progress;
+retry after the update finishes.
 
-Multi-step desktop/CLI actions reserve the controller over one connection. The
-reservation remains active through database work and OS approval, and releases
-when the action ends or the client disconnects. Updates reserve installation
-separately, back up initialized databases, stop the supervisor and prevent new
-clients from restarting it during replacement. A failed installation releases
-that reservation so service controls can reconnect.
-
-No HTTP API or MCP server is included. Node management remains available through
-the bundled upstream `fnm` CLI. Desktop UI preferences, mail browsing, SQLite
-browsing, interactive updater controls and uninstall dialogs retain their existing
-interfaces; this CLI covers environment management plus the MySQL command surface.
-
-## Verification
-
-Rust controller tests cover shared settings, contention, disconnect recovery,
-shutdown ordering, installation locking and installation-identity rejection.
-`tests/shared_cli_smoke.py` exercises debug CLI/desktop entry points against real
-isolated runtimes, including HTTP/PDO, backups/import/export and PHP settings.
-Debug-only identity checks reject release binaries before any isolated operation.
-The smoke never enables PATH integration or changes system hosts/certificate trust.
+The CLI manages the environment and MySQL databases. Use the bundled upstream
+`fnm` CLI for Node management, and the desktop for UI preferences, mail browsing,
+SQLite browsing, updates and uninstall dialogs.

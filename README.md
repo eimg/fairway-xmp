@@ -106,9 +106,9 @@ On Linux, use `fairway site add shop ~/code/shop/public --name "My Shop" --index
 
 Closing or minimizing the window keeps Fairway XMP and its services running. Use its macOS menu bar or Windows system tray icon to reopen the panel, start/stop all services or individual Nginx/MySQL/Mail services, open phpMyAdmin, or **Quit**. Nginx automatically manages its PHP worker; PHP CLI works without starting services. Quit gracefully stops all services before exiting.
 
-## Management CLI (current source builds)
+## Management CLI
 
-macOS and Windows source builds now support the management CLI alongside Linux:
+Manage Fairway XMP from the command line on Windows, macOS and Linux:
 
 ```sh
 fairway status --json
@@ -117,7 +117,7 @@ fairway logs php --json
 fairway shutdown --json
 ```
 
-The CLI and desktop share one background supervisor. Enable **Settings → Command-line tools**, or invoke the bundled executable by absolute path. Agents can discover commands with `fairway capabilities --json` and use `--non-interactive` for site changes that must return an approval handoff instead of opening OS prompts. Published 0.1.1 desktop downloads retain the earlier database-only CLI until the next release. See the [CLI reference](docs/cli.md) and [Fairway XMP agent skill](skills/fairway-xmp/SKILL.md). GitHub source releases include the portable `skills/fairway-xmp` folder; copy it into your agent’s supported skills directory.
+The CLI and desktop share one background supervisor. Enable **Settings → Command-line tools**, or invoke the bundled executable by absolute path. Agents can discover commands with `fairway capabilities --json` and use `--non-interactive` for site changes that must return an approval handoff instead of opening OS prompts. See the [CLI reference](docs/cli.md) and [Fairway XMP agent skill](skills/fairway-xmp/SKILL.md). GitHub source releases include the portable `skills/fairway-xmp` folder; copy it into your agent’s supported skills directory.
 
 ## PHP and Composer in your terminal
 

@@ -82,6 +82,10 @@ contrast, download controls, and desktop/mobile layouts in both languages.
 
 ## Editorial approach
 
+Describe the behavior of the release the documentation accompanies. Keep
+development status, planned availability and release chronology in release notes,
+rather than in user procedures or agent instructions.
+
 Write for someone who has a specific task or is stuck, rather than introducing
 every feature or explaining the app's architecture. The interface handles routine
 discovery; the guide supplies the missing steps and decisions.

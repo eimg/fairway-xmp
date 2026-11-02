@@ -15,9 +15,8 @@ generated configuration bypasses its ownership and validation.
 Start with `fairway capabilities --json`, then `fairway status --json` and
 `fairway --help`. Check the returned platform, supported commands, service state,
 ports, selected PHP version, and registered sites before changing the environment.
-If capability discovery is unavailable or does not return the expected JSON,
-report that the installation needs the management CLI release. Published desktop
-v0.1.1 has only the earlier database CLI; do not assume this skill upgrades it.
+If discovery fails or does not return the expected JSON, check the executable
+path and report the exact error before changing services.
 
 If `fairway` is missing from PATH, use its installed executable:
 

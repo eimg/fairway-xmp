@@ -1007,17 +1007,13 @@ export const guides = [
       ],
       "command": "fairway capabilities --json\nfairway status --json"
     },
-    "intro": [
-      "The cross-platform management CLI ships with the next release. Published v0.1.1 Windows/macOS downloads expose only the earlier <code>fairway db</code> commands; check capabilities before using these examples.",
-      "Platform အားလုံးအတွက် Management CLI ကို လာမည့် Release တွင် ထည့်သွင်းမည်။ ထုတ်ဝေပြီး v0.1.1 Windows/macOS တွင် ယခင် <code>fairway db</code> Command များသာ ပါဝင်သေးသည်။ အောက်ပါဥပမာများ မသုံးမီ Capabilities ကို စစ်ပါ။"
-    ],
     "steps": [
       [
         "On Windows/macOS, enable <strong>Settings → Command-line tools</strong>, then reopen your terminal or editor. Linux installation already exposes <code>fairway</code>. Without PATH integration, use the installed executable shown in the platform examples below.",
         "Run <code>fairway capabilities --json</code> and <code>fairway status --json</code>. Read the available commands, running services, saved ports, PHP selection and site roots.",
         "Start only the services needed: <code>fairway start nginx --wait --json</code> starts web/PHP; <code>fairway start mysql --wait --json</code> starts MySQL. Command-line actions and the desktop use the same environment.",
         "Use <code>fairway site list --json</code> before adding or editing a site. Select the existing folder to serve; use <code>--index</code> for a front controller such as a Laravel <code>public</code> folder. Add <code>--non-interactive</code> when an agent must return an OS approval handoff instead of opening a prompt.",
-        "For reusable agent instructions, download the GitHub release’s <strong>Source code</strong> archive and extract <code>skills/fairway-xmp</code>. Copy the whole <code>fairway-xmp</code> folder into your agent application’s supported skills directory, then enable/reload it as that application requires. The skill is included from the next source release.",
+        "For reusable agent instructions, download the GitHub release’s <strong>Source code</strong> archive and extract <code>skills/fairway-xmp</code>. Copy the whole <code>fairway-xmp</code> folder into your agent application’s supported skills directory, then enable/reload it as that application requires.",
         "Use the command examples below for configuration, logs and backups. Port/PHP selection changes require all services stopped; active PHP settings require web/PHP stopped. Backups require MySQL running. See the <a href=\"https://github.com/eimg/fairway-xmp/blob/main/docs/cli.md\">full CLI reference (English)</a> and <a href=\"#import-sql\">SQL import instructions</a> for data-changing operations."
       ],
       [
@@ -1025,7 +1021,7 @@ export const guides = [
         "<code>fairway capabilities --json</code> နှင့် <code>fairway status --json</code> ကို Run ပါ။ အသုံးပြုနိုင်သည့် Command၊ လည်ပတ်နေသည့် Service၊ သိမ်းထားသော Port၊ PHP version နှင့် Site root များကို စစ်ပါ။",
         "လိုအပ်သည့် Service ကိုသာ စတင်ပါ။ <code>fairway start nginx --wait --json</code> က Web/PHP ကို စတင်ပြီး <code>fairway start mysql --wait --json</code> က MySQL ကို စတင်သည်။ CLI နှင့် Desktop တို့က Environment တစ်ခုတည်းကို စီမံသည်။",
         "Site မထည့်မီ၊ မပြင်မီ <code>fairway site list --json</code> ကို စစ်ပါ။ Serve လုပ်မည့် ရှိပြီးသား Folder ကို ရွေး၍ Laravel ၏ <code>public</code> ကဲ့သို့ Front controller အတွက် <code>--index</code> သုံးပါ။ Agent က OS ခွင့်ပြုချက် Prompt မဖွင့်ဘဲ လိုအပ်သည့်အဆင့်ကို ပြန်အသိပေးရန် <code>--non-interactive</code> ထည့်ပါ။",
-        "Agent လမ်းညွှန်ကို ပြန်သုံးရန် GitHub Release ၏ <strong>Source code</strong> Archive ကို Download လုပ်၍ <code>skills/fairway-xmp</code> ကို ဖြည်ပါ။ <code>fairway-xmp</code> Folder တစ်ခုလုံးကို သင်သုံးသည့် Agent App ၏ Skills directory ထဲသို့ ကူးပြီး လိုအပ်သလို Enable/Reload လုပ်ပါ။ Skill ကို လာမည့် Source release မှစ၍ ထည့်သွင်းပေးမည်။",
+        "Agent လမ်းညွှန်ကို ပြန်သုံးရန် GitHub Release ၏ <strong>Source code</strong> Archive ကို Download လုပ်၍ <code>skills/fairway-xmp</code> ကို ဖြည်ပါ။ <code>fairway-xmp</code> Folder တစ်ခုလုံးကို သင်သုံးသည့် Agent App ၏ Skills directory ထဲသို့ ကူးပြီး လိုအပ်သလို Enable/Reload လုပ်ပါ။",
         "Configuration၊ Logs နှင့် Backup များအတွက် အောက်ပါ Command ဥပမာများကို သုံးပါ။ Port/PHP version ပြောင်းမည်ဆိုလျှင် Service အားလုံးကို ရပ်ထားရမည်။ လက်ရှိ PHP settings ပြောင်းရန် Web/PHP ကို ရပ်ထားရမည်။ Backup သိမ်းရန် MySQL လည်ပတ်နေရမည်။ Data ပြောင်းလဲသည့် လုပ်ဆောင်ချက်များအတွက် <a href=\"https://github.com/eimg/fairway-xmp/blob/main/docs/cli.md\">CLI လမ်းညွှန်အပြည့်အစုံ (English)</a> နှင့် <a href=\"#import-sql\">SQL import လမ်းညွှန်</a> ကို ကြည့်ပါ။"
       ]
     ],
@@ -1089,12 +1085,12 @@ export const guides = [
     "trouble": [
       [
         [
-          "The command is missing or capabilities are unavailable",
-          "Command မတွေ့ခြင်း သို့မဟုတ် Capabilities မရခြင်း"
+          "The fairway command is not found",
+          "fairway Command မတွေ့ခြင်း"
         ],
         [
-          "Use the installed executable path or <a href=\"#command-not-found\">check command-line integration</a>. If capability discovery is unsupported, use a management-CLI release; installing the skill alone does not upgrade the application.",
-          "ထည့်သွင်းထားသည့် Executable လမ်းကြောင်းကို သုံးပါ သို့မဟုတ် <a href=\"#command-not-found\">Command-line integration ကို စစ်ပါ</a>။ Capabilities မပံ့ပိုးလျှင် Management CLI ပါသော Release ကို သုံးရမည်။ Skill ထည့်ရုံဖြင့် App ကို Update မဖြစ်ပါ။"
+          "Use the installed executable path or <a href=\"#command-not-found\">check command-line integration</a>. Reopen your terminal or editor after enabling command-line tools.",
+          "ထည့်သွင်းထားသည့် Executable လမ်းကြောင်းကို သုံးပါ သို့မဟုတ် <a href=\"#command-not-found\">Command-line integration ကို စစ်ပါ</a>။ Command-line tools ကို Enable လုပ်ပြီး Terminal သို့မဟုတ် Editor ကို ပြန်ဖွင့်ပါ။"
         ]
       ],
       [
