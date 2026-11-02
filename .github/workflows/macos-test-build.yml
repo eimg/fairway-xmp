@@ -86,12 +86,17 @@ jobs:
       - run: npm run test:unit
       - run: npm run test:scripts
       - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --locked
       - run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --locked -- -D warnings
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - uses: ./.github/actions/restore-runtime-downloads
         id: downloads
       - name: Stage verified macOS runtimes
         run: python scripts/prepare_runtime.py
+      - name: Verify shared desktop and console CLI with isolated real services
+        run: |
+          cargo build --manifest-path src-tauri/Cargo.toml --bin fairway --bin fairway-cli --locked
+          python tests/shared_cli_smoke.py --cli src-tauri/target/debug/fairway-cli --peer src-tauri/target/debug/fairway --runtime src-tauri/resources/runtime
       - name: Verify native fnm and isolated Node activation
         run: cargo run --manifest-path src-tauri/Cargo.toml --example node_tools_smoke --no-default-features --features terminal --locked -- "$PWD/.runtime-work/fnm-check"
       - name: Collect exact sources before signing or installer tests

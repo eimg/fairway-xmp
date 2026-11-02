@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'website/**'
+      - 'skills/fairway-xmp/**'
       - 'runtime-manifest.json'
       - 'src-tauri/icons/128x128.png'
       - 'package.json'

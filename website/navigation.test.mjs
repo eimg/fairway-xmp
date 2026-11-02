@@ -23,7 +23,7 @@ for (const [name, engine] of Object.entries({ chromium, webkit })) {
           await expect.poll(async () => new URL(await link.getAttribute('href'), page.url()).hash).toBe('#logs');
 
           // Reading another chapter without clicking the TOC leaves #logs in the URL.
-          for (const chapter of ['terminal', 'sites', 'settings', 'updates']) {
+          for (const chapter of ['terminal', 'sites', 'settings', 'cli', 'updates']) {
             await page.evaluate(id => {
               const section = document.getElementById(id);
               window.scrollTo({ top: section.getBoundingClientRect().top + scrollY - 44, behavior: 'instant' });
@@ -66,6 +66,13 @@ for (const [name, engine] of Object.entries({ chromium, webkit })) {
           await expect(help.locator('p')).toBeVisible();
           await page.locator('#sites .guide-related a[href="#mysql"]').click();
           await expect(page.locator('#mysql pre')).toContainText('DB_HOST=127.0.0.1');
+          await page.goto(`${base}${route}#cli`);
+          const cli = page.locator('#cli');
+          await expect(cli.locator('.guide-agent')).toBeVisible();
+          await expect(cli.locator('.guide-agent pre')).toContainText('fairway capabilities --json');
+          await expect(cli.locator('.guide-agent pre')).toContainText('fairway status --json');
+          await expect(cli.locator('.guide-agent a')).toHaveAttribute('href', 'https://github.com/eimg/fairway-xmp/tree/main/skills/fairway-xmp');
+          assert(await cli.evaluate(section => section.querySelector('.guide-agent').compareDocumentPosition(section.querySelector('.guide-steps')) & Node.DOCUMENT_POSITION_FOLLOWING), `${route}: agent instructions precede the procedure`);
           if (width < 760) {
             // The mobile directory stays available without client-side code.
             await page.goto(`${base}${route}`);

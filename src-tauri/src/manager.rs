@@ -437,7 +437,6 @@ impl Manager {
             .collect())
     }
 
-    #[cfg(feature = "desktop")]
     pub(crate) fn remember_address_approval(&mut self, pending: bool) -> Result<()> {
         self.domains_approval_pending = false;
         let marker = self.layout.data.join("address-approval-pending");

@@ -25,7 +25,7 @@ pub mod updates;
 #[cfg(feature = "terminal")]
 pub mod terminal;
 
-#[cfg(all(feature = "cli", unix))]
+#[cfg(feature = "cli")]
 pub mod cli;
 
 #[cfg(any(feature = "desktop", test))]

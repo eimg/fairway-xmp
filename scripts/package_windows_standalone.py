@@ -22,6 +22,11 @@ def main():
     stage = output / 'Fairway XMP Permissions Test'
     stage.mkdir()  # Refuse to mix an old build with new files.
     shutil.copy2(executable, stage / 'fairway.exe')
+    console = ROOT / 'src-tauri/resources/cli/fairway-cli.exe'
+    if not console.is_file():
+        raise RuntimeError('Build the console entry point with node scripts/build_cli.mjs before packaging')
+    (stage / 'cli').mkdir()
+    shutil.copy2(console, stage / 'cli/fairway-cli.exe')
     loader = executable.with_name('WebView2Loader.dll')
     if loader.is_file():
         shutil.copy2(loader, stage / loader.name)
@@ -34,6 +39,9 @@ def main():
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
     if identity['commit'] != commit or identity['modifiedSources']:
         raise RuntimeError('Standalone executable does not match the clean workflow source')
+    console_identity = json.loads(subprocess.check_output([str(stage / 'cli/fairway-cli.exe'), '--build-info'], creationflags=subprocess.CREATE_NO_WINDOW))
+    if console_identity['commit'] != commit or console_identity['modifiedSources'] or console_identity['version'] != identity['version']:
+        raise RuntimeError('Console executable does not match the clean desktop workflow source')
     identity.update({'purpose': 'Standalone permissions test; no installer', 'authenticodeSigned': False})
     (stage / 'BUILD-INFO.json').write_text(json.dumps(identity, indent=2) + '\n', encoding='utf-8')
     archive = output / f'fairway-xmp-permissions-{commit[:8]}-windows-x64.zip'

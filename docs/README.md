@@ -16,6 +16,8 @@ The guides below provide technical and contributor reference. Start with
 | [Testing](testing.md) | Automated checks, isolated development profiles and optional device checks |
 | [Maintenance](maintenance.md) | Updating runtime dependencies, current limitations and future improvements |
 | [CI performance](ci-build-performance.md) | Cache reuse, build retries and artifact cleanup |
+| [Management CLI](cli.md) | Cross-platform commands, agent JSON contract and shared supervisor |
+| [Fairway XMP agent skill](../skills/fairway-xmp/SKILL.md) | Portable agent instructions included in the GitHub source release |
 | [Desktop data browser](data-browser.md) | MySQL/SQLite operations, limits and desktop CLI commands |
 | [Node tools](node-tools.md) | Native fnm, existing Node detection, activation, storage and removal |
 | [PostgreSQL clients](postgres-client-support.md) | Connecting PHP applications to a user-supplied server |

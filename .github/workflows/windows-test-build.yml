@@ -76,6 +76,7 @@ jobs:
       - run: npm run test:scripts
       - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
       - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --locked
+      - run: cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --features cli --locked
       - name: Record release version
         id: metadata
         run: |
@@ -103,6 +104,23 @@ jobs:
           }
       - name: Verify fnm Node management in isolated storage
         run: cargo run --manifest-path src-tauri/Cargo.toml --example node_tools_windows_smoke --no-default-features --locked -- .runtime-work/fnm-windows-smoke
+      - name: Build shared desktop and console CLI smoke binaries
+        run: |
+          cargo build --manifest-path src-tauri/Cargo.toml --bin fairway --bin fairway-cli --locked
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Verify shared desktop and console CLI with isolated real services
+        timeout-minutes: 10
+        run: |
+          python -u tests/shared_cli_smoke.py --cli src-tauri/target/debug/fairway-cli.exe --peer src-tauri/target/debug/fairway.exe --runtime src-tauri/resources/runtime --output .runtime-work/shared-cli-smoke
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Save shared CLI smoke diagnostics
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-shared-cli-diagnostics
+          path: .runtime-work/shared-cli-smoke/
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Verify persistent PHP settings and real uploads
         run: cargo run --manifest-path src-tauri/Cargo.toml --example php_settings_smoke --no-default-features --locked -- .runtime-work/php-settings-smoke
       - name: Verify PHP client extensions and Unix worker support
@@ -170,6 +188,8 @@ jobs:
       - name: Build native updater probe
         if: inputs.signed_release
         run: cargo build --release --example updater_probe --manifest-path src-tauri/Cargo.toml --target x86_64-pc-windows-msvc --locked
+      - name: Build Windows console entry point before collecting unsigned inputs
+        run: node scripts/build_cli.mjs
       - name: Build updater-enabled x64 NSIS installer without credentials
         if: inputs.signed_release
         run: |
@@ -379,7 +399,10 @@ jobs:
           npm run tauri -- build --no-bundle --target x86_64-pc-windows-msvc --config artifacts/permissions-build.json
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Package app, complete runtime, identity and test guide
-        run: python scripts/package_windows_standalone.py --executable src-tauri/target/x86_64-pc-windows-msvc/release/fairway.exe --output artifacts/windows-standalone
+        run: |
+          node scripts/build_cli.mjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python scripts/package_windows_standalone.py --executable src-tauri/target/x86_64-pc-windows-msvc/release/fairway.exe --output artifacts/windows-standalone
       - uses: actions/upload-artifact@v6
         with:
           name: fairway-xmp-windows-permissions-${{ github.sha }}

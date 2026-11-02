@@ -43,6 +43,7 @@ for (const locale of ['en', 'mm']) {
   const renderGuide = guide => `<section id="${guide.id}" class="task-guide">
     <p class="eyebrow guide-category">${escape(groups.find(group => group.id === guide.group).name[i])}</p>
     <h2><a class="heading-link" href="#${guide.id}">${escape(guide.title[i])}</a></h2>
+    ${guide.agent ? `<aside class="guide-agent" aria-labelledby="${guide.id}-for-agents"><h3 id="${guide.id}-for-agents">${escape(guide.agent.title[i])}</h3><p>${guide.agent.body[i]}</p>${code(guide.agent.command)}</aside>` : ''}
     ${guide.intro ? `<p>${guide.intro[i]}</p>` : ''}
     <ol class="guide-steps">${guide.steps[i].map(step => `<li>${step}</li>`).join('')}</ol>
     ${guide.platformCommands?.map(platform => `<details class="guide-platform"><summary>${escape(platform.title[i])}</summary>${platform.body ? `<p>${platform.body[i]}</p>` : ''}${code(platform.command)}</details>`).join('') || ''}

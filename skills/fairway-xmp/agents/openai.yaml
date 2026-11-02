@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fairway XMP"
+  short_description: "Manage local Fairway XMP services through its CLI"
+  default_prompt: "Use $fairway-xmp to manage my local Fairway XMP environment through its CLI."

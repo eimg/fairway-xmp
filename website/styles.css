@@ -175,6 +175,11 @@ html[lang="my"] .download-other-title{line-height:1.7}
 .guide-result{margin:24px 0;padding:16px 20px;border-left:3px solid var(--highlight-border);background:var(--soft)}
 .guide-result h3{font-size:13px;letter-spacing:0;line-height:1.7;margin:0 0 6px}
 .guide-result p{font-size:14px;margin:0}
+.guide-agent{margin:24px 0;padding:18px 20px;border:1px solid var(--highlight-border);border-radius:6px;background:var(--soft)}
+.guide-agent h3{font-size:14px;letter-spacing:0;line-height:1.7;margin:0 0 8px}
+.guide-agent p{font-size:14px;margin:0}
+.guide-agent p code{white-space:nowrap}
+.docs-content .guide-agent pre{margin:14px 0 0;padding:16px}
 .guide-troubleshooting{margin:24px 0}
 .guide-troubleshooting h3,.guide-related h3{font-size:13px;letter-spacing:0;line-height:1.7;margin:0 0 8px}
 .guide-troubleshooting summary,.guide-screenshot summary,.mobile-contents>summary{cursor:pointer;font-size:14px;font-weight:550;padding:12px 0;color:var(--green);line-height:1.8}

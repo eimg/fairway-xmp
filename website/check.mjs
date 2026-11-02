@@ -8,6 +8,7 @@ const root = new URL('./dist/', import.meta.url);
 const base = new URL('https://example.test/fairway-xmp/');
 const routes = ['', 'mm/'];
 let checked = 0;
+assert((await stat(new URL('../skills/fairway-xmp/SKILL.md', import.meta.url))).isFile(), 'linked agent skill exists in the source checkout');
 assert.equal(new Set(guides.map(guide => guide.id)).size, guides.length, 'unique task IDs');
 for (const guide of guides) {
   assert(groups.some(group => group.id === guide.group), `${guide.id}: known task group`);
@@ -18,6 +19,10 @@ for (const guide of guides) {
     assert(guide.check[i]?.length, `${guide.id}: translated result check`);
     for (const [title, body] of guide.trouble || []) assert(title[i]?.length && body[i]?.length, `${guide.id}: translated troubleshooting`);
     if (guide.linux) assert(guide.linux[i]?.length, `${guide.id}: translated Linux guidance`);
+    if (guide.agent) {
+      assert(guide.agent.title[i]?.length && guide.agent.body[i]?.length, `${guide.id}: translated agent instructions`);
+      assert(guide.agent.command?.length, `${guide.id}: agent discovery commands`);
+    }
   }
   for (const id of guide.related || []) assert(id === 'default-ports' || guides.some(item => item.id === id), `${guide.id}: valid next step ${id}`);
 }
@@ -34,6 +39,13 @@ for (const route of routes) {
   for (const guide of guides) {
     assert(ids.includes(guide.id), `${route}: missing ${guide.id}`);
     assert(html.includes(`<h2><a class="heading-link" href="#${guide.id}">${guide.title[i]}</a></h2>`), `${route}: translated task heading`);
+    if (guide.agent) {
+      const start = html.indexOf(`<section id="${guide.id}"`);
+      const section = html.slice(start, html.indexOf('</section>', start));
+      const block = section.indexOf('class="guide-agent"');
+      assert(block >= 0 && block < section.indexOf('class="guide-steps"'), `${route}: agent block precedes the procedure`);
+      assert(ids.includes(`${guide.id}-for-agents`), `${route}: accessible agent block heading`);
+    }
   }
   for (const id of ['getting-started', 'lifecycle', 'nginx', 'php', 'mysql', 'phpmyadmin', 'mailpit', 'composer', 'terminal', 'logs', 'sites', 'settings', 'updates', 'ports', 'default-ports']) assert(ids.includes(id), `${route}: preserved section link ${id}`);
   for (const id of [...copy[locale].quickTasks, ...copy[locale].quickFixes]) assert(guides.some(guide => guide.id === id), `${route}: valid home task`);

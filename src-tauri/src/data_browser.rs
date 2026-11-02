@@ -683,6 +683,14 @@ pub fn cli(layout: &Layout, args: &[String]) -> Result<()> {
         println!("Fairway database tools\n\nfairway db list\nfairway db tables DATABASE\nfairway db create DATABASE\nfairway db rename DATABASE NEW_NAME --yes\nfairway db drop DATABASE --yes\nfairway db query DATABASE SQL\nfairway db export DATABASE [--table TABLE] [--mode all|structure|data] [--output FILE]\nfairway db import DATABASE FILE --yes\n\nResults are JSON. MySQL must already be running. Exports never overwrite files.\nImports back up the target database first; SQL files can change other schemas.\nDatabase rename currently supports empty databases only.");
         return Ok(());
     }
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&cli_value(layout, args)?).map_err(|e| e.to_string())?
+    );
+    Ok(())
+}
+
+pub(crate) fn cli_value(layout: &Layout, args: &[String]) -> Result<Value> {
     let get = |n| {
         args.get(n)
             .cloned()
@@ -704,22 +712,14 @@ pub fn cli(layout: &Layout, args: &[String]) -> Result<()> {
             }
             i += 2;
         }
-        println!(
-            "{}",
-            json!({"path":export(layout,&db,table.as_deref(),output.as_deref(),&mode)?})
-        );
-        return Ok(());
+        return Ok(json!({"path":export(layout,&db,table.as_deref(),output.as_deref(),&mode)?}));
     }
     if args[0] == "import" {
         if args.len() != 4 || args[3] != "--yes" {
             return Err("Use: fairway db import DATABASE FILE --yes".into());
         }
         import(layout, &get(1)?, Path::new(&get(2)?))?;
-        println!(
-            "{}",
-            json!({"message":"SQL imported. A backup was saved first."})
-        );
-        return Ok(());
+        return Ok(json!({"message":"SQL imported. A backup was saved first."}));
     }
     let request = match args[0].as_str() {
         "list" if args.len() == 1 => json!({"op":"databases"}),
@@ -734,12 +734,7 @@ pub fn cli(layout: &Layout, args: &[String]) -> Result<()> {
         "query" if args.len() == 3 => json!({"op":"query","database":get(1)?,"sql":get(2)?}),
         _ => return Err("Unknown command or missing confirmation. Run fairway db --help.".into()),
     };
-    println!(
-        "{}",
-        serde_json::to_string_pretty(&execute(layout, request, Arc::new(AtomicBool::new(false)))?)
-            .map_err(|e| e.to_string())?
-    );
-    Ok(())
+    execute(layout, request, Arc::new(AtomicBool::new(false)))
 }
 
 #[cfg(all(test, windows))]
