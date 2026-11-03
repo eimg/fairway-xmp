@@ -446,6 +446,16 @@ pub fn project_url(project: &crate::config::ProjectConfig, website: u16) -> Stri
     }
 }
 
+#[cfg(feature = "desktop")]
+pub fn open_guide(section: &str) -> Result<()> {
+    let url = match section {
+        "getting-started" => "https://eimg.github.io/fairway-xmp/#getting-started",
+        "cli" => "https://eimg.github.io/fairway-xmp/#cli",
+        _ => return Err("Unknown guide.".into()),
+    };
+    open_path(url)
+}
+
 pub fn open(layout: &Layout, target: &str, ports: &crate::config::Ports) -> Result<()> {
     let website = ports.website;
     let path = match target {

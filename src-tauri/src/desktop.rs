@@ -828,6 +828,12 @@ async fn open_mail_link(url: String) -> Result<()> {
 
 #[tauri::command]
 async fn open_target(state: State<'_, Shared>, target: String) -> Result<()> {
+    if let Some(section) = target.strip_prefix("guide:") {
+        let section = section.to_owned();
+        return tauri::async_runtime::spawn_blocking(move || integration::open_guide(&section))
+            .await
+            .map_err(|error| error.to_string())?;
+    }
     if target == "data" {
         let state = state.inner().clone();
         return tauri::async_runtime::spawn_blocking(move || {

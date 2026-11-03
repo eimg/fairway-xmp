@@ -5,14 +5,14 @@ $port = (int) ($_SERVER['SERVER_PORT'] ?? 8800);
 if ($port < 1 || $port > 65535) {
     $port = 8800;
 }
-$exampleUrl = 'http://127.0.0.1:' . $port . '/hello/';
+$exampleUrl = 'http://127.0.0.1:' . $port . '/project-name/';
 ?>
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Welcome to Fairway XMP</title>
+  <title>Fairway XMP — Local server</title>
   <style>
     :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #253b32; background: #f5f7f4; }
     * { box-sizing: border-box; }
@@ -31,6 +31,7 @@ $exampleUrl = 'http://127.0.0.1:' . $port . '/hello/';
     .root { display: block; padding: 14px 16px; border: 1px solid #e4ebe6; border-radius: 8px; background: #f6f9f6; color: #355945; }
     .start { margin-top: 28px; }
     .start p { margin: 0; color: #63756a; font-size: 14px; line-height: 1.8; }
+    .start p + p { margin-top: 10px; }
     .start p code { color: #355945; }
     .example { display: block; margin-top: 10px; color: #355945; }
     .app-hint { margin: 28px 0 0; color: #627266; font-size: 13px; line-height: 1.7; }
@@ -55,18 +56,24 @@ $exampleUrl = 'http://127.0.0.1:' . $port . '/hello/';
       <div><div class="brand-name">fairway<span>.</span></div><span class="brand-edition">XMP</span></div>
     </header>
     <section class="welcome" aria-labelledby="welcome-title">
-      <h1 id="welcome-title">Your next idea starts here.</h1>
-      <p class="intro">PHP is running. You’re ready to build.</p>
-      <h2>Your document root</h2>
+      <h1 id="welcome-title">Local server</h1>
+      <p class="intro">Nginx is serving this page through PHP.</p>
+      <h2>Document root</h2>
       <code class="root"><?= $escape($documentRoot) ?></code>
       <div class="start">
-        <h2>Start with a page</h2>
-        <p>Create <code>hello/index.php</code> in this folder, then visit:</p>
+        <h2>Open a project</h2>
+        <p>Place a PHP project folder inside the document root. For a folder named <code>project-name</code>, open:</p>
         <code class="example"><?= $escape($exampleUrl) ?></code>
       </div>
-      <p class="app-hint">For custom site addresses, databases and test mail, open Fairway XMP.</p>
+      <p class="app-hint">To serve a project from another location, use <strong>Manage Sites → Add site</strong> in Fairway XMP. For Laravel, keep the project outside this document root and select its <code>public</code> folder as the web root.</p>
+      <div class="start">
+        <h2>Command-line tools</h2>
+        <p>Open <strong>Terminal</strong> in Fairway XMP to run PHP, Composer and <code>fairway</code> commands. Run <code>fairway --help</code> to list commands, or <code>fairway status</code> to check services, ports and sites.</p>
+        <p>For an external terminal or editor, enable <strong>Settings → Command-line tools</strong>, then open a new terminal or restart the editor.</p>
+      </div>
       <nav aria-label="Helpful links">
-        <a href="https://github.com/eimg/fairway-xmp#your-first-php-project">Getting started <span class="external" aria-hidden="true">↗</span></a>
+        <a href="https://eimg.github.io/fairway-xmp/#getting-started">Getting started <span class="external" aria-hidden="true">↗</span></a>
+        <a href="https://eimg.github.io/fairway-xmp/#cli">CLI guide <span class="external" aria-hidden="true">↗</span></a>
         <a href="https://www.php.net/manual/en/">PHP manual <span class="external" aria-hidden="true">↗</span></a>
         <a href="https://github.com/eimg/fairway-xmp/issues">Get help <span class="external" aria-hidden="true">↗</span></a>
       </nav>

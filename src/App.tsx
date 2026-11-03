@@ -7,6 +7,7 @@ import {
 import { canControl, invoke, isDesktop, isUiTest, listen, preview } from './bridge';
 import type { NodeStatus, PhpSettingsView, Ports, Project, ProjectConfig, ServiceId, ServiceStatus, Snapshot, StartupStatus, UpdateInfo, UpdateProgress } from './types';
 import HelpTip from './HelpTip';
+import GuideLink from './GuideLink';
 import PhpSettingsCard from './PhpSettings';
 import NodeTools from './NodeTools';
 import DataBrowser from './data/DataBrowser';
@@ -112,7 +113,6 @@ function AppContent() {
   const [report, setReport] = useState<string | null>(null);
   const [nodeTools, setNodeTools] = useState<NodeStatus | null>(null);
   const [nodePreviewRevision, setNodePreviewRevision] = useState(0);
-  const [help, setHelp] = useState(false);
   const [sidebarFolded, setSidebarFolded] = useState(false);
   const [mailSettings, setMailSettings] = useState(false);
   const [ports, setPorts] = useState<Ports>(preview.ports);
@@ -134,8 +134,8 @@ function AppContent() {
   const anyRunning = data.services.some(service => service.running);
   const usable = canControl && data.runtimeReady && !busy;
   const canSelectPhp = data.runtimeReady || ['8.0', '8.1'].includes(data.phpVersion);
-  const databaseCliAvailable = isDesktop || isUiTest;
-  const cliTools = databaseCliAvailable ? 'PHP, Composer, and database commands' : 'PHP and Composer commands';
+  const managementCliAvailable = isDesktop || isUiTest;
+  const cliTools = managementCliAvailable ? 'PHP, Composer, and the Fairway XMP CLI' : 'PHP and Composer commands';
 
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
@@ -179,7 +179,7 @@ function AppContent() {
         setPorts(current.ports); setPhpVersion(current.phpVersion);
         setNodeTools(null); setNodePreviewRevision(value => value + 1);
         setNoticeState(null); lastBackendError.current = null;
-        setUpdate(null); setUpdateProgress(null); setUpdatePending(false); setStartup(null); setReport(null); setHelp(false); setCopied(null);
+        setUpdate(null); setUpdateProgress(null); setUpdatePending(false); setStartup(null); setReport(null); setCopied(null);
       })] : []),
       listen('fairway-status', payload => {
         const current = payload as Snapshot; setData(current);
@@ -334,7 +334,7 @@ function AppContent() {
         </div>
       </nav>
       <div className="sidebar-bottom">
-        <button className="help-button" title={foldTitle('Getting started')} onClick={() => setHelp(true)}><CircleHelp size={17} /><span className="nav-label">Getting started</span><ArrowUpRight size={14} /></button>
+        <GuideLink section="getting-started" className="help-button" title={foldTitle('Getting started')} onError={reportBackendError}><CircleHelp size={17} aria-hidden="true" /><span className="nav-label">Getting started</span></GuideLink>
         <div className="sidebar-footer" aria-label="App version">v{data.version}</div>
       </div>
     </aside>
@@ -430,16 +430,17 @@ function AppContent() {
           }} />
           {(data.os === 'macos' || data.os === 'windows') && <NodeTools key={`${data.os}-${nodePreviewRevision}`} windows={data.os === 'windows'} disabled={!!busy} onChange={setNodeTools} run={run} />}
           <section className="settings-card cli-tools" aria-label="Command-line tools">
-            <div className="card-title"><h2>Command-line tools</h2><div className="cli-title-actions"><HelpTip label="Command-line tools help"><p>Open a new terminal or restart VS Code after enabling these tools.</p><p>Check with <code>php --version</code>, <code>composer --version</code>{databaseCliAvailable && <>, and <code>fairway --help</code></>}.</p>{databaseCliAvailable && <p>Fairway commands manage services, sites, PHP settings, logs and backups. Database tools support SQL export/import; start MySQL for database operations. If fairway is missing after an upgrade, disable and enable these tools once.</p>}<p>App detection can differ from your terminal. The embedded terminal uses Fairway XMP’s commands.</p></HelpTip><span className={`status-label ${data.pathInstalled ? 'ready' : ''}`}>{data.pathInstalled ? 'Added to PATH' : 'Not added to PATH'}</span></div></div>
+            <div className="card-title"><h2>Command-line tools</h2><div className="cli-title-actions"><HelpTip label="Command-line tools help"><p>Open a new terminal or restart VS Code after enabling these tools.</p><p>Check with <code>php --version</code>, <code>composer --version</code>{managementCliAvailable && <>, and <code>fairway --help</code></>}.</p>{managementCliAvailable && <p>The Fairway XMP CLI manages services, sites, ports, PHP versions and settings, logs, diagnostics, backups and MySQL databases on Windows and macOS. Use <code>fairway status</code> to inspect the environment. Database operations require MySQL running.</p>}<p>App detection can differ from your terminal. The embedded terminal has Fairway XMP’s tools without enabling user PATH integration.</p></HelpTip><span className={`status-label ${data.pathInstalled ? 'ready' : ''}`}>{data.pathInstalled ? 'Added to PATH' : 'Not added to PATH'}</span></div></div>
+            {managementCliAvailable && <p>Use <code>fairway</code> to manage services, sites, PHP settings and databases from your terminal.</p>}
             <p>{data.pathInstalled ? 'Available in new terminals and restarted editors.' : 'Add these commands to your user PATH.'}</p>
-            <div className="cli-commands" aria-label="Terminal commands"><code>php</code><code>composer</code>{databaseCliAvailable && <code>fairway</code>}{(data.os === 'macos' || data.os === 'windows') && nodeTools?.fnmVersion && <code>fnm</code>}{(data.os === 'macos' || data.os === 'windows') && (nodeTools?.enabled ? nodeTools.managed ?? nodeTools.detected : nodeTools?.detected) && <><code>node</code><code>npm</code><code>npx</code></>}</div>
-            <button className="secondary" disabled={!canControl || !!busy || (!data.pathInstalled && !data.runtimeReady)} onClick={() => { void run('Updating user PATH…', async () => {
+            <div className="cli-commands" aria-label="Terminal commands"><code>php</code><code>composer</code>{managementCliAvailable && <code>fairway</code>}{(data.os === 'macos' || data.os === 'windows') && nodeTools?.fnmVersion && <code>fnm</code>}{(data.os === 'macos' || data.os === 'windows') && (nodeTools?.enabled ? nodeTools.managed ?? nodeTools.detected : nodeTools?.detected) && <><code>node</code><code>npm</code><code>npx</code></>}</div>
+            <div className="button-row"><button className="secondary" disabled={!canControl || !!busy || (!data.pathInstalled && !data.runtimeReady)} onClick={() => { void run('Updating user PATH…', async () => {
               const enabled = !data.pathInstalled;
               setData(await invoke<Snapshot>('cli_integration', { enabled }));
               setNotice({ kind: 'success', text: enabled ? `${cliTools} added to your user PATH. Open a new terminal or restart VS Code.` : 'Fairway XMP’s commands removed from your user PATH. Open a new terminal or restart VS Code.' });
-            }); }}>{data.pathInstalled ? 'Remove from user PATH' : 'Enable command-line tools'}</button>
+            }); }}>{data.pathInstalled ? 'Remove from user PATH' : 'Enable command-line tools'}</button><GuideLink section="cli" onError={reportBackendError}>CLI guide</GuideLink></div>
             <details className="cli-diagnostics"><summary>Command details</summary>
-              {data.pathInstalled && <dl className="path-list cli-paths"><div><dt>PHP command</dt><dd>{data.cliPhp ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div><div><dt>Composer command</dt><dd>{data.cliComposer ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div>{databaseCliAvailable && <div><dt>Fairway commands</dt><dd>fairway --help</dd></div>}</dl>}
+              {data.pathInstalled && <dl className="path-list cli-paths"><div><dt>PHP command</dt><dd>{data.cliPhp ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div><div><dt>Composer command</dt><dd>{data.cliComposer ?? 'Command location unavailable. Enable command-line tools again.'}</dd></div>{managementCliAvailable && <div><dt>Fairway XMP CLI</dt><dd>fairway --help</dd></div>}</dl>}
               <dl className="path-list"><div><dt>PHP detected by this app</dt><dd>{data.pathPhp ?? 'Not detected in the app’s PATH'}</dd></div><div><dt>Composer detected by this app</dt><dd>{data.pathComposer ?? 'Not detected in the app’s PATH'}</dd></div></dl>
             </details>
           </section>
@@ -480,7 +481,6 @@ function AppContent() {
 
     {report !== null && <Modal title="Diagnostic report" onClose={() => setReport(null)}><p>Copy this report when asking for help. You can review everything included below.</p><pre className="log-output">{report}</pre><button className="secondary" onClick={() => { void copy(report, 'diagnostics'); }}>{copied === 'diagnostics' ? <Check size={14} /> : <Clipboard size={14} />}{copied === 'diagnostics' ? 'Copied' : 'Copy diagnostic report'}</button></Modal>}
     {mailSettings && <Modal title="Mail connection" onClose={() => setMailSettings(false)}><p>PHP’s <code>mail()</code> already sends here. Frameworks that send through SMTP need these settings.</p><dl className="mail-settings"><div><dt>SMTP host</dt><dd>127.0.0.1</dd></div><div><dt>Port</dt><dd>{data.ports.smtp}</dd></div><div><dt>Username / password</dt><dd>Not required</dd></div></dl><div className="card-title mail-env-title"><h2>Laravel .env</h2><button className="secondary" aria-label="Copy Laravel mail settings" onClick={() => { void copy(mailEnv, 'mail-env'); }}>{copied === 'mail-env' ? <Check size={14} /> : <Clipboard size={14} />}{copied === 'mail-env' ? 'Copied' : 'Copy'}</button></div><pre className="log-output">{mailEnv}</pre></Modal>}
-    {help && <Modal title="Your first PHP project" onClose={() => setHelp(false)}><ol className="help-steps"><li>Click <strong>Start all</strong> and wait for the services to become ready.</li><li>Open the default web folder: <code>fairway/www</code>.</li><li>Create a folder called <code>lesson-01</code> and add an <code>index.php</code> file.</li><li>Open <code>http://127.0.0.1:{data.ports.website}/lesson-01/</code> in your browser.</li></ol><p>Log into phpMyAdmin with username <code>fairway</code> and password <code>fairway</code>. Reopen your terminal after installation to use PHP and Composer. If they are unavailable, enable them in Settings.</p><p className="settings-hint">Closing this window keeps services running. Use the Fairway XMP menu bar or system tray icon to reopen the panel, control services, or quit. Quitting stops all services.</p></Modal>}
     {projectForm && <Modal title={projectForm.previous ? 'Edit site' : 'Add site'} onClose={() => setProjectForm(null)} backdropCloses={false}><form className="project-form modal-form" onSubmit={event => { event.preventDefault(); saveProject(projectForm); }}><div className="modal-form-body">
       <label><span>Site name</span><input aria-label="Site name" disabled={!!busy} value={projectForm.name} maxLength={80} required onChange={event => { const name = event.target.value; setProjectForm({ ...projectForm, name, domain: projectForm.domainEdited ? projectForm.domain : suggestDomain(name) }); }} /></label>
       <div className="site-field"><div className="site-field-title"><label htmlFor="site-domain">Domain</label><HelpTip label="About site domains"><p>Use lowercase letters, numbers and hyphens. The site name can use any language.</p><p>Your address ends in <code>.test</code> and works only on this computer.</p></HelpTip></div><span className="domain-input"><input id="site-domain" aria-label="Domain" disabled={!!busy} value={projectForm.domain} maxLength={63} required pattern="[a-z0-9]([a-z0-9-]*[a-z0-9])?" onChange={event => setProjectForm({ ...projectForm, domain: event.target.value.toLowerCase(), domainEdited: true })} /><span>.test</span></span></div>

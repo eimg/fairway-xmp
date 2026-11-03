@@ -4,28 +4,33 @@ import { detectPlatform } from './device.js';
 // Link to the chapter actually in view, or the top when reading the introduction.
 const languageLinks = [...document.querySelectorAll('.languages a')];
 const chapters = [...document.querySelectorAll('.docs-content > section[id]')];
-function updateLanguageLinks() {
+const chapterLinks = [...document.querySelectorAll('.toc-group a')];
+function updateChapterNavigation() {
   const readingLine = Math.min(128, window.innerHeight / 4);
   const chapter = chapters.find(section => {
     const bounds = section.getBoundingClientRect();
     return bounds.top <= readingLine && bounds.bottom > readingLine;
   });
   languageLinks.forEach(link => { link.hash = chapter ? `#${chapter.id}` : ''; });
+  chapterLinks.forEach(link => {
+    if (chapter && link.hash === `#${chapter.id}`) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  });
 }
 let navigationFrame = null;
-function scheduleLanguageLinks() {
+function scheduleChapterNavigation() {
   if (navigationFrame !== null) return;
   navigationFrame = requestAnimationFrame(() => {
     navigationFrame = null;
-    updateLanguageLinks();
+    updateChapterNavigation();
   });
 }
-languageLinks.forEach(link => link.addEventListener('click', updateLanguageLinks));
-updateLanguageLinks();
-window.addEventListener('scroll', scheduleLanguageLinks, { passive: true });
-window.addEventListener('resize', scheduleLanguageLinks);
-window.addEventListener('hashchange', scheduleLanguageLinks);
-window.addEventListener('pageshow', scheduleLanguageLinks);
+languageLinks.forEach(link => link.addEventListener('click', updateChapterNavigation));
+updateChapterNavigation();
+window.addEventListener('scroll', scheduleChapterNavigation, { passive: true });
+window.addEventListener('resize', scheduleChapterNavigation);
+window.addEventListener('hashchange', scheduleChapterNavigation);
+window.addEventListener('pageshow', scheduleChapterNavigation);
 
 const trigger = document.querySelector('[data-open-downloads]');
 const dialog = document.querySelector('#download-dialog');

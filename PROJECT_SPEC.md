@@ -21,9 +21,13 @@ selects the chapter actually in view rather than copying a stale URL hash;
 returning to the top clears the language links' anchors. Ordinary navigation
 works without JavaScript.
 
-Guides are organized by reader goals: Serve project folders, Work with data & email,
+Guides are organized by reader goals: Start here, Serve project folders, Work with data & email,
 Configure bundled tools, Fix a problem, Manage Fairway XMP, and Connection
 reference. Titles describe tasks rather than app pages or bundled services.
+The bilingual Getting started procedure uses `#getting-started`, appears first in
+the directory and common tasks, and covers only local-server startup, checking its
+address, and choosing the document-root or .test-site guide. Detailed task procedures
+remain in their own sections. The general introduction has no chapter anchor.
 Coverage includes the shared document root, .test site registration and HTTPS,
 MySQL connection/browsing/import/backup/restore, SQLite files, email testing,
 bundled PHP/Composer access, PHP versions/settings, optional Node.js, terminal folders, common
@@ -44,7 +48,11 @@ optional and limited to prerequisites or consequential constraints; generic
 use-case descriptions and conversational prompts are omitted. Supporting labels
 use Expected result, Troubleshooting, Screenshot and Related guides. Contextual
 troubleshooting uses expandable symptom or error headings; Linux usage,
-platform-specific restore commands and screenshots are also expandable.
+platform-specific restore commands and screenshots are also expandable. These
+disclosures share compact bordered summary rows, trailing chevrons, a visible open
+state and consistent spacing. Each expanded header and padded body share one
+bordered panel with a divider below the header; Burmese labels use additional
+line height.
 Consequences appear beside the relevant action. Related tasks link directly to
 other guides; deeper technical repository guides are explicitly labeled English.
 The connection reference lists default ports. Both languages use the same guide
@@ -52,7 +60,13 @@ IDs and structure, retaining existing topic anchors. Content and group metadata
 live in `website/guides.mjs`; site labels and common-task links live in
 `website/content.mjs`.
 
-The desktop task directory scrolls independently. Mobile shows common tasks first
+The task directory uses short paired `navTitle` labels when supplied while retaining
+full task titles in headings and link tooltips. Links use separate padded rows,
+group-heading bands distinct from plain link rows in both scripts, hover/focus
+states and an `aria-current="location"` highlight that follows the chapter in view
+using the shared navigation scroll handler. Navigation still works without
+JavaScript. The desktop task directory scrolls independently. Mobile shows common
+tasks first
 and provides a collapsed directory within the introduction. Task headings have
 permalinks. Screenshots show the actual desktop UI with simulated sample data and
 are labeled accordingly. The guides omit bundled-runtime version inventories.
@@ -134,7 +148,7 @@ Linux installation prefixes must be separate from the document root and applicat
 
 Modal text fields and dropdowns use an inset keyboard focus ring. Sites and database forms share a padded scrolling body with fixed headings and action footers; focused controls, scrollbars, and buttons stay inside the modal at the 820×650 minimum size. Small controls and buttons retain a visible outer focus ring with space around it.
 
-Page headings and sidebar navigation omit decorative eyebrow captions. The desktop sidebar groups Environment, Terminal and Logs at the top, Manage Sites / View Mail / Browse Data under a subtle divider, and Settings / Updates in a group anchored above Getting started and a centered version at the bottom. Fold, in the workspace breadcrumb, collapses that sidebar to icons and gives the width back to the page; Unfold restores the labels. Very narrow windows stay icon-only without the fold control. Group names are available to assistive technology without visible captions; the local-learning badge and repeated product name are omitted. The XMP brand label uses normal letter spacing.
+Page headings and sidebar navigation omit decorative eyebrow captions. The desktop sidebar groups Environment, Terminal and Logs at the top, Manage Sites / View Mail / Browse Data under a subtle divider, and Settings / Updates in a group anchored above Getting started and a centered version at the bottom. Fold, in the workspace breadcrumb, collapses that sidebar to icons and gives the width back to the page; Unfold restores the labels. Very narrow windows stay icon-only without the fold control. Group names are available to assistive technology without visible captions; the local-learning badge and repeated product name are omitted. The XMP brand label uses normal letter spacing. Getting started opens the GitHub Pages `#getting-started` guide in the system browser instead of a first-project modal. Terminal options includes a CLI guide menu item linking to `#cli`; Command-line tools settings places the same guide beside the PATH control using the existing secondary action styling. Native guide destinations are fixed and open without depending on a ready service controller; browser previews use ordinary external links.
 
 Operation results appear in a fixed, dismissible notification without scrolling the page or moving focus. This covers environment, settings, updates, and site actions, and the same treatment is used for mail inbox actions, terminal session and folder results, and log copy results. Successes use polite status announcements and errors use assertive alerts; long messages scroll within a bounded notification and remain until dismissed, replaced by another operation, or cleared by navigation. Page-specific results that arrive after navigation are suppressed. Identical backend error events are deduplicated until a different error or a new explicit operation. CLI enable/disable messages retain the new-terminal/restart-editor instruction. Persistent page state stays inline, including missing-runtime warnings, current service status, an unreadable saved site list, inbox load failures, and log-file read failures; long inline text scrolls inside its own block. Dialog validation stays in its dialog and scrolls inside a height-capped message. Logs auto-follow and terminal focus remain independent. Terminal session failures stay with that session across navigation.
 
@@ -152,7 +166,7 @@ Data browser navigation preserves its workspace state across sidebar visits. Dat
 
 Generated build output, local artifacts and disposable test profiles are separate from product sources and user data. [Repository cleanup](docs/maintenance.md#repository-cleanup) identifies removable output and the runtime/toolchain caches to retain. Historical runtime fixtures and lifecycle probes remain part of compatibility verification.
 
-The welcome page is a self-contained PHP landing page with the existing Fairway leaf/wordmark, the escaped document-root path, a first-page example using the actual server port, and links to Getting started, the PHP manual and project support. It shows only the executing PHP version, with no service dashboard, database credentials, project listing, scripts, remote fonts or automatic external requests. It is created only when `index.php` is absent; updating Fairway does not replace an existing or customized index. It is included in staged sources; existing welcome files stay untouched.
+The welcome page is a self-contained PHP landing page with the existing Fairway leaf/wordmark, the escaped document-root path, an existing-project address example using the actual server port, direct instructions for project folders, Laravel web roots and CLI/PATH use, and links to the GitHub Pages Getting started and CLI guides, the PHP manual and project support. It shows only the executing PHP version, with no service dashboard, database credentials, project listing, scripts, remote fonts or automatic external requests. It is created only when `index.php` is absent; updating Fairway does not replace an existing or customized index. It is included in staged sources; existing welcome files stay untouched.
 
 Mac distribution builds enable `native-macos-trust`. Development builds can still opt in explicitly. It uses native Keychain Services to insert only the public local CA in the login keychain and Security framework APIs to request SSL-server trust in the user domain. It retains existing verification/removal and writes the trusted marker only after successful verification. Cancellation and failed insertion stop setup, with duplicate insertion allowed for retry. Mac candidate builds use in-process Security framework calls for installation and removal; Windows/Linux retain their platform implementations. Actual authentication prompts depend on OS/account state; see [Testing](docs/testing.md#optional-platform-checks).
 
@@ -233,7 +247,7 @@ SQL results use plain summaries such as 1 row inserted, 2 rows updated, 0 rows d
 
 Persistent user-level integration provides PHP and Composer launchers. Composer explicitly runs under bundled PHP and uses an app-owned Composer home.
 
-Windows: add/remove only the app's exact entry in HKCU Environment Path and notify the shell. macOS: managed blocks in zsh/bash profiles with recorded locations, removed precisely while preserving unrelated edits. Desktop builds also install a `fairway` launcher (`fairway.cmd` on Windows) for `fairway db`; Settings names all three tool groups in a compact command list; question-mark help holds terminal checks, MySQL readiness and upgrade guidance, while Command details holds paths and inherited detection. The enable action is labeled Enable command-line tools. Installed status requires the integration marker and both PHP/Composer launchers. The snapshot reports the app-owned launcher paths separately from inherited PATH resolution. The UI labels configuration as Added to PATH, shows the installed commands, and explains checking them in a new terminal. Inherited command resolution is in expandable detection details; missing commands there do not imply the installed launchers are missing. Open terminal uses the system terminal’s normal environment; Fairway command availability follows the saved command-line integration setting.
+Windows: add/remove only the app's exact entry in HKCU Environment Path and notify the shell. macOS: managed blocks in zsh/bash profiles with recorded locations, removed precisely while preserving unrelated edits. Desktop builds also install a `fairway` launcher (`fairway.cmd` on Windows) for the full management CLI. Settings describes PHP, Composer and environment management on Windows/macOS, with a direct CLI guide link and a compact command list. Question-mark help holds terminal checks, CLI scope and MySQL readiness, while Command details holds paths and inherited detection. The enable action is labeled Enable command-line tools. Installed status requires the integration marker and both PHP/Composer launchers. The snapshot reports the app-owned launcher paths separately from inherited PATH resolution. The UI labels configuration as Added to PATH, shows the installed commands, and explains checking them in a new terminal. Inherited command resolution is in expandable detection details; missing commands there do not imply the installed launchers are missing. Open terminal uses the system terminal’s normal environment; Fairway command availability follows the saved command-line integration setting.
 
 ## Embedded desktop terminal
 

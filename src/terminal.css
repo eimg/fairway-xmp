@@ -23,8 +23,9 @@
 .terminal-popover { position: absolute; top: 60px; z-index: 5; width: 290px; max-width: calc(100% - 16px); max-height: min(460px, 65vh); overflow: auto; overscroll-behavior: contain; padding: 6px; border: 1px solid #dfe5e1; border-radius: 8px; background: #fff; color: #536b5d; box-shadow: 0 8px 28px #13291b26; }
 .terminal-folder-menu { left: 8px; }
 .terminal-tools .terminal-popover { top: 43px; right: 0; max-width: calc(100vw - 320px); }
-.terminal-popover > button { display: flex; justify-content: flex-start; width: 100%; min-height: 34px; padding: 8px 10px; border-radius: 5px; background: transparent; color: inherit; font-size: 11px; text-align: left; overflow-wrap: anywhere; }
-.terminal-popover > button:hover:not(:disabled) { background: #edf4f0; }
+.terminal-popover > :is(button, a) { display: flex; align-items: center; justify-content: flex-start; gap: 8px; width: 100%; min-height: 34px; padding: 8px 10px; border-radius: 5px; background: transparent; color: inherit; font-size: 11px; text-align: left; overflow-wrap: anywhere; }
+.terminal-popover > :is(button, a):hover:not(:disabled) { background: #edf4f0; }
+.terminal-guide > svg:last-child { margin-left: auto; }
 .terminal-menu-label { padding: 8px 10px 6px; color: #819589; font-size: 10px; }
 .terminal-menu-divider { border-top: 1px solid #e8eee9; margin-top: 5px; padding-top: 10px; }
 .terminal-shortcut { margin-left: auto; font-size: 9px; color: #819589; }

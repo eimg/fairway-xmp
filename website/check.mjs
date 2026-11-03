@@ -14,6 +14,7 @@ for (const guide of guides) {
   assert(groups.some(group => group.id === guide.group), `${guide.id}: known task group`);
   for (const i of [0, 1]) {
     assert(guide.title[i]?.length, `${guide.id}: translated title`);
+    if (guide.navTitle) assert(guide.navTitle[i]?.length, `${guide.id}: translated navigation label`);
     if (guide.intro) assert(guide.intro[i]?.length, `${guide.id}: translated prerequisite or constraint`);
     assert(guide.steps[i]?.length >= 2 && guide.steps[i].every(step => step.length), `${guide.id}: translated steps`);
     assert(guide.check[i]?.length, `${guide.id}: translated result check`);

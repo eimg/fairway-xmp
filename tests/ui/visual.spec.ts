@@ -275,10 +275,7 @@ for (const scenario of scenarios) {
       }
     }
     await capture(page, info, 'updates');
-    await page.getByRole('button', { name: 'Getting started' }).click();
-    await expect(page.getByRole('dialog', { name: 'Your first PHP project' })).toBeVisible();
-    await capture(page, info, 'help');
-    await page.keyboard.press('Escape');
+    await expect(page.getByRole('link', { name: 'Getting started' })).toHaveAttribute('href', 'https://eimg.github.io/fairway-xmp/#getting-started');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
@@ -325,7 +322,7 @@ for (const platform of ['Windows', 'macOS']) {
     await page.getByRole('button', { name: 'Settings', exact: true }).click();
     const tools = page.getByRole('region', { name: 'Command-line tools', exact: true });
     await expect(tools.getByText('Added to PATH', { exact: true })).toBeVisible();
-    await expect(tools.getByText('Fairway commands', { exact: true })).not.toBeVisible();
+    await expect(tools.getByText('Fairway XMP CLI', { exact: true })).not.toBeVisible();
     await expect(tools.locator('.cli-commands code').filter({ hasText: /^fairway$/ })).toHaveCount(1);
     await capture(page, info, 'cli-compact');
     await tools.getByRole('button', { name: 'Command-line tools help', exact: true }).click();
@@ -343,7 +340,7 @@ for (const platform of ['Windows', 'macOS']) {
       : '/Users/Student May/Library/Application Support/dev.fairway.environment/bin/';
     await expect(php).toHaveText(`${base}${platform === 'Windows' ? 'php.cmd' : 'php'}`);
     await expect(composer).toHaveText(`${base}${platform === 'Windows' ? 'composer.cmd' : 'composer'}`);
-    await expect(tools.getByText('Fairway commands', { exact: true })).toHaveCount(1);
+    await expect(tools.getByText('Fairway XMP CLI', { exact: true })).toHaveCount(1);
     await expect(tools.getByText('Not found', { exact: true })).toHaveCount(0);
     await capture(page, info, 'cli-installed');
     await expect(tools.getByText('Not detected in the app’s PATH', { exact: true })).toHaveCount(2);

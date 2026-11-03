@@ -73,6 +73,7 @@ export const copy = {
     "popular": "Common tasks",
     "stuck": "Troubleshooting",
     "quickTasks": [
+      "getting-started",
       "sites",
       "mysql",
       "php",
@@ -183,6 +184,7 @@ export const copy = {
     "popular": "လိုအပ်လေ့ရှိသော လမ်းညွှန်များ",
     "stuck": "ပြဿနာအဖြေရှာနည်း",
     "quickTasks": [
+      "getting-started",
       "sites",
       "mysql",
       "php",

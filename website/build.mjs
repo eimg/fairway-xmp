@@ -37,8 +37,8 @@ for (const locale of ['en', 'mm']) {
   const titleFor = id => id === 'default-ports' ? t.ports : guides.find(guide => guide.id === id).title[i];
   const taskLinks = ids => ids.map(id => `<li><a href="#${id}">${escape(titleFor(id))}</a></li>`).join('');
   const renderToc = (suffix = '') => groups.map(group => {
-    const items = group.id === 'reference' ? [{ id: 'default-ports', title: [copy.en.ports, copy.mm.ports] }] : guides.filter(guide => guide.group === group.id);
-    return `<div class="toc-group"><h2 id="toc-${group.id}${suffix}">${escape(group.name[i])}</h2><ul aria-labelledby="toc-${group.id}${suffix}">${items.map(item => `<li><a href="#${item.id}">${escape(item.title[i])}</a></li>`).join('')}</ul></div>`;
+    const items = group.id === 'reference' ? [{ id: 'default-ports', title: [copy.en.ports, copy.mm.ports], navTitle: ['Default ports', 'မူလ Port များ'] }] : guides.filter(guide => guide.group === group.id);
+    return `<div class="toc-group"><h2 id="toc-${group.id}${suffix}">${escape(group.name[i])}</h2><ul aria-labelledby="toc-${group.id}${suffix}">${items.map(item => `<li><a href="#${item.id}" title="${escape(item.title[i])}">${escape((item.navTitle ?? item.title)[i])}</a></li>`).join('')}</ul></div>`;
   }).join('');
   const renderGuide = guide => `<section id="${guide.id}" class="task-guide">
     <p class="eyebrow guide-category">${escape(groups.find(group => group.id === guide.group).name[i])}</p>
@@ -46,16 +46,16 @@ for (const locale of ['en', 'mm']) {
     ${guide.agent ? `<aside class="guide-agent" aria-labelledby="${guide.id}-for-agents"><h3 id="${guide.id}-for-agents">${escape(guide.agent.title[i])}</h3><p>${guide.agent.body[i]}</p>${code(guide.agent.command)}</aside>` : ''}
     ${guide.intro ? `<p>${guide.intro[i]}</p>` : ''}
     <ol class="guide-steps">${guide.steps[i].map(step => `<li>${step}</li>`).join('')}</ol>
-    ${guide.platformCommands?.map(platform => `<details class="guide-platform"><summary>${escape(platform.title[i])}</summary>${platform.body ? `<p>${platform.body[i]}</p>` : ''}${code(platform.command)}</details>`).join('') || ''}
+    ${guide.platformCommands?.map(platform => `<details class="guide-platform guide-disclosure"><summary><span>${escape(platform.title[i])}</span></summary><div class="guide-disclosure-body">${platform.body ? `<p>${platform.body[i]}</p>` : ''}${code(platform.command)}</div></details>`).join('') || ''}
     <div class="guide-result"><h3>${escape(t.check)}</h3><p>${guide.check[i]}</p></div>
-    ${guide.trouble?.length ? `<div class="guide-troubleshooting"><h3>${escape(t.troubleshooting)}</h3>${guide.trouble.map(([title, body]) => `<details><summary>${title[i]}</summary><p>${body[i]}</p></details>`).join('')}</div>` : ''}
-    ${guide.linux ? `<details class="guide-platform"><summary>${escape(t.linuxTitle)}</summary><div class="platform-body">${guide.linux[i]}</div></details>` : ''}
-    ${guide.image ? `<details class="guide-screenshot"><summary>${escape(t.screenshotLabel)}</summary>${image(guide.image, t.screenshot)}</details>` : ''}
+    ${guide.trouble?.length ? `<div class="guide-troubleshooting"><h3>${escape(t.troubleshooting)}</h3>${guide.trouble.map(([title, body]) => `<details class="guide-disclosure"><summary><span>${title[i]}</span></summary><div class="guide-disclosure-body"><p>${body[i]}</p></div></details>`).join('')}</div>` : ''}
+    ${guide.linux ? `<details class="guide-platform guide-disclosure"><summary><span>${escape(t.linuxTitle)}</span></summary><div class="platform-body guide-disclosure-body">${guide.linux[i]}</div></details>` : ''}
+    ${guide.image ? `<details class="guide-screenshot guide-disclosure"><summary><span>${escape(t.screenshotLabel)}</span></summary><div class="guide-disclosure-body">${image(guide.image, t.screenshot)}</div></details>` : ''}
     ${guide.related?.length ? `<nav class="guide-related" aria-label="${escape(t.related)}"><h3>${escape(t.related)}</h3><ul>${taskLinks(guide.related)}</ul></nav>` : ''}
     </section>`;
   const content = `
     <div class="docs-layout wrap"><aside class="docs-sidebar"><p class="eyebrow">${escape(t.contents)}</p><nav aria-label="${escape(t.contents)}">${renderToc()}</nav><a class="sidebar-source" href="${repo}/tree/main/docs">${escape(t.fullDocs)} ${arrow}</a></aside><article class="docs-content">
-    <section id="getting-started" class="guide-home"><h1>${escape(t.overview)}</h1><p>${escape(t.intro)}</p>
+    <section class="guide-home"><h1>${escape(t.overview)}</h1><p>${escape(t.intro)}</p>
     <nav class="common-tasks" aria-labelledby="popular-tasks"><h2 id="popular-tasks">${escape(t.popular)}</h2><ul>${taskLinks(t.quickTasks)}</ul></nav>
     <nav class="common-fixes" aria-labelledby="common-problems"><h2 id="common-problems">${escape(t.stuck)}</h2><ul>${taskLinks(t.quickFixes)}</ul></nav>
     <details class="mobile-contents"><summary>${escape(t.contents)}</summary><nav aria-label="${escape(t.contents)}">${renderToc('-mobile')}</nav></details><p class="scope-note">${escape(t.scopeNote)}</p></section>

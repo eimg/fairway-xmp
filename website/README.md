@@ -31,7 +31,7 @@ preview does not watch files. For another port: `SITE_PORT=4174 npm run site:dev
 
 ### Source files and checks
 
-- `guides.mjs`: paired English/Myanmar task guides and navigation groups; optional `agent` blocks render immediately below a guide heading.
+- `guides.mjs`: paired English/Myanmar task guides and navigation groups; optional `navTitle` pairs provide short directory labels, and `agent` blocks render immediately below a guide heading.
 - `content.mjs`: translated site labels, common-task links and connection reference.
 - `build.mjs`: shared page templates and static output in ignored `dist/`.
 - `styles.css`: responsive layout, including Myanmar typography.
@@ -54,11 +54,20 @@ Detailed links to repository guides are explicitly marked as English. Edit the p
 English/Myanmar entries in `guides.mjs` and the locale labels in `content.mjs`,
 then rebuild and review both languages locally before publishing.
 
-The home page starts with common tasks and problems. The directory groups guides
-by the reader's goal: Serve project folders, Work with data & email, Configure bundled tools,
-Fix a problem, Manage Fairway XMP, and Connection reference. Task titles
-are used for both navigation and headings. The desktop sidebar scrolls independently;
-on mobile the directory is a collapsed, keyboard-accessible disclosure in the home
+The home page starts with common tasks and problems, including Getting started.
+The short `#getting-started` procedure verifies the local server and directs readers
+to either the document-root or .test-site guide. Detailed project, database, terminal
+and lifecycle procedures stay in their own sections; the general introduction has
+no chapter anchor.
+The directory groups guides by the reader's goal: Start here, Serve project folders,
+Work with data & email, Configure bundled tools, Fix a problem, Manage Fairway XMP,
+and Connection reference. Full task titles remain in article headings and
+common-task links. The directory
+uses short translated `navTitle` labels when provided, with the full title in the
+link tooltip. Group headings use subtle background bands to separate them from
+plain link rows, including in Burmese. Links have distinct padded rows, hover/focus
+states and a current-section highlight that follows reading position. The desktop
+sidebar scrolls independently; on mobile the directory is a collapsed, keyboard-accessible disclosure in the home
 section, keeping the common tasks within reach. All guides remain in static HTML.
 Existing chapter IDs are retained so previously shared links still resolve. The management group includes `#cli`, with a brief translated For agents block above its procedure and source-release installation instructions for `skills/fairway-xmp`.
 
@@ -112,7 +121,7 @@ platform restriction or consequence that affects the action. Do not add generic
 “Use this for…” explanations, reasons to learn a tool or introductions that restate
 the title. Headings, results and supporting labels use neutral procedural language.
 
-Each entry in `guides.mjs` has:
+Each entry in `guides.mjs` has (optional `navTitle` labels must be paired in both languages):
 
 - A Fairway XMP task title, such as **Assign a .test address to a project**.
 - Numbered steps with exact UI labels; optional prerequisites or constraints.
@@ -130,8 +139,12 @@ through a clearly labeled English link, rather than being the default next step.
 
 Screenshots are collapsed under **Screenshot** so they do not interrupt the
 steps. Captions identify the simulated desktop UI. Linux instructions and full
-restore commands are also expandable. Native disclosures, anchor links and the
-mobile directory work without JavaScript.
+restore commands are also expandable. Troubleshooting, platform notes, command
+examples and screenshots share bordered
+summary rows with trailing chevrons and consistent collapsed spacing. Expanded
+headers and padded content share a single bordered panel, separated by an inner
+divider. Native disclosures, anchor links and the mobile directory work without
+JavaScript.
 
 Maintain matching task IDs, meaning and level of detail in English and Myanmar.
 Keep UI labels in English to match the application. `site:check` validates the

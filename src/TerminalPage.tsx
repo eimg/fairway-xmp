@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
-import { Check, ChevronDown, ChevronUp, Clipboard, Copy, Eraser, ExternalLink, Minus, MoreHorizontal, Plus, RefreshCw, Search, Terminal as TerminalIcon, X } from 'lucide-react';
+import { BookOpen, Check, ChevronDown, ChevronUp, Clipboard, Copy, Eraser, ExternalLink, Minus, MoreHorizontal, Plus, RefreshCw, Search, Terminal as TerminalIcon, X } from 'lucide-react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { SearchAddon } from '@xterm/addon-search';
 import { canControl, invoke, isUiTest } from './bridge';
+import GuideLink from './GuideLink';
 import Workspace, { MaximizeWorkspace } from './Workspace';
 import { useModalFocus } from './modal-focus';
 import { terminalShortcut } from './terminal-shortcuts';
@@ -153,7 +154,7 @@ export default function TerminalPage({ active, busy, macos, focusRequest = 0, la
   const connectionStatus = <span className={`status-label ${statuses[activeSlot] === 'running' ? 'ready' : ''}`} role="status"><span className={`status-dot ${statuses[activeSlot] === 'running' ? 'running' : ''}`} />{canControl ? { starting: 'Starting…', running: 'Connected', error: 'Disconnected' }[statuses[activeSlot] ?? 'starting'] : 'Desktop app required'}</span>;
   return <Workspace id="terminal" title="Terminal" className="terminal-workspace" actions={connectionStatus}>
     <FixedNotice notice={workspaceNotice} />
-    <div className="page-heading"><div><h1>Terminal</h1><p>Local shell with bundled PHP and Composer.</p></div>{connectionStatus}</div>
+    <div className="page-heading"><div><h1>Terminal</h1><p>Local shell with PHP, Composer and the Fairway XMP CLI.</p></div>{connectionStatus}</div>
     <div className="terminal-panel">
       {canControl && <div className="terminal-header">
         <div role="tablist" aria-label="Terminals" className="terminal-tabs">{tabs.map(tab => <div className={`terminal-tab${activeSlot === tab.slot ? ' selected' : ''}`} key={tab.key}>
@@ -509,6 +510,7 @@ function TerminalSession({ macos, active, focusInput, focusRequest, rememberHist
         </div>
         {historySupported && <label className="terminal-history terminal-menu-divider"><input type="checkbox" checked={rememberHistory} onChange={event => setRememberHistory(event.target.checked)} /><span>Remember commands<small>Applies to new terminals. A leading space skips saving.</small></span></label>}
         <button className="terminal-menu-divider" disabled={status === 'starting' || busy} onClick={() => { if (toolsMenu.current) toolsMenu.current.open = false; if (status === 'running') setConfirm('restart'); else void endTerminal(true); }}><RefreshCw size={14} />{status === 'running' ? 'Restart terminal' : 'Retry terminal'}</button>
+        <GuideLink section="cli" className="terminal-guide" onOpen={() => { if (toolsMenu.current) toolsMenu.current.open = false; }} onError={setError}><BookOpen size={14} aria-hidden="true" />CLI guide</GuideLink>
         <div className="terminal-details"><span>Started in</span><code>{info?.directory ?? tab.label ?? tab.folder ?? defaultDirectory}</code><small>Ctrl+C interrupts a command. Type exit to finish.<br />Terminals keep running until you quit Fairway XMP.</small></div>
       </div>
     </details>}

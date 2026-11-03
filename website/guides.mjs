@@ -2,6 +2,10 @@
 // Introductions are optional and reserved for prerequisites or consequential constraints.
 export const groups = [
   {
+    "id": "start",
+    "name": ["Start here", "စတင်ရန်"]
+  },
+  {
     "id": "projects",
     "name": [
       "Serve project folders",
@@ -47,7 +51,39 @@ export const groups = [
 
 export const guides = [
   {
+    "id": "getting-started",
+    "group": "start",
+    "title": ["Getting started", "စတင်အသုံးပြုရန်"],
+    "steps": [
+      [
+        "Open Fairway XMP. In <strong>Environment</strong>, start <strong>Nginx</strong> and wait for <strong>Running</strong>. PHP starts with it. MySQL and Mail can stay stopped until needed.",
+        "Open the local address on the Nginx card, normally <code>http://127.0.0.1:8800/</code>. Use the port shown in the app. A fresh document root displays the Fairway XMP welcome page; an existing <code>index.php</code> is kept.",
+        "Choose how to serve your project: use the <a href=\"#nginx\">document root</a> for a folder under <code>fairway/www</code>, or <a href=\"#sites\">add a .test site</a> for a folder elsewhere. For Laravel or a project with a separate public folder, follow the site guide."
+      ],
+      [
+        "Fairway XMP ကို ဖွင့်ပါ။ <strong>Environment</strong> တွင် <strong>Nginx</strong> ကို စတင်၍ <strong>Running</strong> ဖြစ်သည်အထိ စောင့်ပါ။ PHP ကိုလည်း တစ်ပါတည်း စတင်ပေးသည်။ MySQL နှင့် Mail ကို လိုအပ်မှသာ စတင်ပါ။",
+        "Nginx card ရှိ Local လိပ်စာကို ဖွင့်ပါ။ မူလလိပ်စာမှာ <code>http://127.0.0.1:8800/</code> ဖြစ်သည်။ App တွင် ပြထားသော Port ကို သုံးပါ။ Document Root အသစ်တွင် Fairway XMP ၏ Welcome page ကို ပြမည်။ ရှိပြီးသား <code>index.php</code> ကို အစားမထိုးပါ။",
+        "ပရောဂျက်ကို Serve လုပ်မည့် နည်းလမ်း ရွေးပါ။ <code>fairway/www</code> အောက်ရှိ Folder အတွက် <a href=\"#nginx\">Document Root လမ်းညွှန်</a> ကို သုံးပါ။ အခြားနေရာရှိ Folder အတွက် <a href=\"#sites\">.test Site ထည့်သွင်းနည်း</a> ကို ကြည့်ပါ။ Laravel သို့မဟုတ် သီးခြား Public folder ပါသော ပရောဂျက်အတွက် Site လမ်းညွှန်ကို လိုက်နာပါ။"
+      ]
+    ],
+    "check": [
+      "Nginx and PHP are running, and the local website opens.",
+      "Nginx နှင့် PHP လည်ပတ်နေပြီး Local website ကို ဖွင့်နိုင်မည်။"
+    ],
+    "linux": [
+      "For the Linux terminal edition, follow the <a href=\"#cli\">CLI guide</a> to start services and find project paths.",
+      "Linux terminal edition အတွက် Service စတင်ရန်နှင့် ပရောဂျက်လမ်းကြောင်းများ စစ်ရန် <a href=\"#cli\">CLI လမ်းညွှန်</a> ကို သုံးပါ။"
+    ],
+    "related": [
+      "nginx",
+      "sites",
+      "terminal",
+      "cli"
+    ]
+  },
+  {
     "id": "nginx",
+    "navTitle": ["Document root", "Document Root"],
     "group": "projects",
     "title": [
       "Open a project from the document root",
@@ -93,6 +129,7 @@ export const guides = [
   },
   {
     "id": "sites",
+    "navTitle": [".test addresses", ".test လိပ်စာများ"],
     "group": "projects",
     "title": [
       "Assign a .test address to a project",
@@ -154,6 +191,7 @@ export const guides = [
   },
   {
     "id": "https",
+    "navTitle": ["HTTPS", "HTTPS"],
     "group": "projects",
     "title": [
       "Use HTTPS for a local site",
@@ -208,6 +246,7 @@ export const guides = [
   },
   {
     "id": "mysql",
+    "navTitle": ["MySQL connection", "MySQL ချိတ်ဆက်ရန်"],
     "group": "data",
     "title": [
       "Connect an application to Fairway XMP’s MySQL",
@@ -262,6 +301,7 @@ export const guides = [
   },
   {
     "id": "phpmyadmin",
+    "navTitle": ["Browse MySQL data", "MySQL Data ကြည့်ရန်"],
     "group": "data",
     "title": [
       "Browse and edit database records",
@@ -318,6 +358,7 @@ export const guides = [
   },
   {
     "id": "sqlite",
+    "navTitle": ["SQLite files", "SQLite ဖိုင်များ"],
     "group": "data",
     "title": [
       "Open a project’s SQLite file",
@@ -361,6 +402,7 @@ export const guides = [
   },
   {
     "id": "import-sql",
+    "navTitle": ["Import SQL", "SQL Import"],
     "group": "data",
     "title": [
       "Import a MySQL SQL file",
@@ -409,6 +451,7 @@ export const guides = [
   },
   {
     "id": "backups",
+    "navTitle": ["Back up MySQL", "MySQL Backup"],
     "group": "data",
     "title": [
       "Back up databases",
@@ -457,6 +500,7 @@ export const guides = [
   },
   {
     "id": "restore",
+    "navTitle": ["Restore MySQL", "MySQL Restore"],
     "group": "data",
     "title": [
       "Restore MySQL databases from a backup",
@@ -515,6 +559,7 @@ export const guides = [
   },
   {
     "id": "mailpit",
+    "navTitle": ["Local email", "Local Email"],
     "group": "data",
     "title": [
       "Configure local email delivery",
@@ -563,6 +608,7 @@ export const guides = [
   },
   {
     "id": "composer",
+    "navTitle": ["PHP & Composer", "PHP နှင့် Composer"],
     "group": "tools",
     "title": [
       "Use bundled PHP and Composer",
@@ -608,6 +654,7 @@ export const guides = [
   },
   {
     "id": "php",
+    "navTitle": ["PHP version", "PHP Version"],
     "group": "tools",
     "title": [
       "Switch the active PHP version",
@@ -656,6 +703,7 @@ export const guides = [
   },
   {
     "id": "settings",
+    "navTitle": ["PHP settings", "PHP Settings"],
     "group": "tools",
     "title": [
       "Change PHP limits or timezone",
@@ -707,6 +755,7 @@ export const guides = [
   },
   {
     "id": "node",
+    "navTitle": ["Node.js", "Node.js"],
     "group": "tools",
     "title": [
       "Install or switch Node.js",
@@ -761,6 +810,7 @@ export const guides = [
   },
   {
     "id": "terminal",
+    "navTitle": ["Terminal", "Terminal"],
     "group": "tools",
     "title": [
       "Open terminals for project folders",
@@ -816,6 +866,7 @@ export const guides = [
   },
   {
     "id": "site-not-opening",
+    "navTitle": ["Site won’t open", "Site ဖွင့်မရခြင်း"],
     "group": "fix",
     "title": [
       "Fix a site that won’t open",
@@ -873,6 +924,7 @@ export const guides = [
   },
   {
     "id": "logs",
+    "navTitle": ["Logs", "Logs"],
     "group": "fix",
     "title": [
       "Read service and PHP error logs",
@@ -914,6 +966,7 @@ export const guides = [
   },
   {
     "id": "command-not-found",
+    "navTitle": ["Commands not found", "Command မတွေ့ခြင်း"],
     "group": "fix",
     "title": [
       "Fix unavailable PHP or Composer commands",
@@ -958,6 +1011,7 @@ export const guides = [
   },
   {
     "id": "ports",
+    "navTitle": ["Port conflicts", "Port ပြဿနာ"],
     "group": "fix",
     "title": [
       "Resolve a port conflict",
@@ -991,6 +1045,7 @@ export const guides = [
   },
   {
     "id": "cli",
+    "navTitle": ["CLI guide", "CLI လမ်းညွှန်"],
     "group": "management",
     "title": [
       "Manage Fairway XMP from the command line",
@@ -1125,6 +1180,7 @@ export const guides = [
   },
   {
     "id": "lifecycle",
+    "navTitle": ["Stop or quit", "ရပ်ရန်နှင့် ထွက်ရန်"],
     "group": "management",
     "title": [
       "Stop services or quit Fairway XMP",
@@ -1153,6 +1209,7 @@ export const guides = [
   },
   {
     "id": "updates",
+    "navTitle": ["Updates", "Update"],
     "group": "management",
     "title": [
       "Update Fairway XMP",
@@ -1211,6 +1268,7 @@ export const guides = [
   },
   {
     "id": "uninstall",
+    "navTitle": ["Uninstall", "App ဖယ်ရှားရန်"],
     "group": "management",
     "title": [
       "Uninstall Fairway XMP",
