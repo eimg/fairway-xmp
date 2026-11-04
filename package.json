@@ -9,7 +9,7 @@
     "preview": "vite preview --host 127.0.0.1",
     "site:build": "node website/build.mjs",
     "site:dev": "node website/build.mjs && node website/serve.mjs",
-    "site:check": "node website/build.mjs && node website/check.mjs && node --test website/device.test.mjs",
+    "site:check": "node website/build.mjs && node website/check.mjs && node --test website/device.test.mjs website/search.test.mjs",
     "site:test:navigation": "node website/build.mjs && node --test website/navigation.test.mjs",
     "tauri": "tauri",
     "runtime:prepare": "python3 scripts/prepare_runtime.py",

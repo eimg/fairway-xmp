@@ -15,7 +15,9 @@ No Docker/WSL requirement, distro-specific Linux packages, ARM Linux or musl sup
 `website/` contains an independent static documentation website published on GitHub Pages:
 [English](https://eimg.github.io/fairway-xmp/) and [Myanmar](https://eimg.github.io/fairway-xmp/mm/).
 The home page starts with common tasks and problem links under
-“How-to guides”, with a neutral description of the guide's scope. English uses the root route; Myanmar uses `mm/`,
+“How-to guides”, without a redundant introductory sentence or inline search block.
+Common tasks use compact linked rows and short navigation labels, with full task
+titles in tooltips. English uses the root route; Myanmar uses `mm/`,
 with HTML language `my`. The header switches between matching pages. JavaScript
 selects the chapter actually in view rather than copying a stale URL hash;
 returning to the top clears the language links' anchors. Ordinary navigation
@@ -26,8 +28,11 @@ Configure bundled tools, Fix a problem, Manage Fairway XMP, and Connection
 reference. Titles describe tasks rather than app pages or bundled services.
 The bilingual Getting started procedure uses `#getting-started`, appears first in
 the directory and common tasks, and covers only local-server startup, checking its
-address, and choosing the document-root or .test-site guide. Detailed task procedures
-remain in their own sections. The general introduction has no chapter anchor.
+address, choosing the document-root or .test-site guide, and a brief optional agent
+skill link. A dedicated `#agent-skill` guide under Start here explains the skill's
+scope, source-release installation, activation in the reader's agent application,
+and an initial environment-inspection request. The CLI guide links to it for setup.
+Detailed task procedures remain in their own sections. The general introduction has no chapter anchor.
 Coverage includes the shared document root, .test site registration and HTTPS,
 MySQL connection/browsing/import/backup/restore, SQLite files, email testing,
 bundled PHP/Composer access, PHP versions/settings, optional Node.js, terminal folders, common
@@ -60,18 +65,44 @@ IDs and structure, retaining existing topic anchors. Content and group metadata
 live in `website/guides.mjs`; site labels and common-task links live in
 `website/content.mjs`.
 
+Guide search opens in a native modal from a single visible magnifying-glass
+shortcut: in the desktop sidebar or compact mobile header. It focuses the search
+input, contains keyboard focus, and shows translated hints, result counts, clear
+and close controls, and no-match feedback. It searches the current language's
+complete guide text, including collapsed troubleshooting, command examples and
+the connection reference. All whitespace-separated terms must match; matching
+titles rank first. Results show linked titles and short excerpts. Arrow keys move
+between the input and result links; Enter opens the first result from the input,
+or the focused result link. Selection closes the modal and focuses the destination
+heading. Escape, close and backdrop dismissal preserve the reading position and
+return focus to the visible search trigger. The previous query survives dismissal.
+Search runs locally without requests, dependencies or analytics. Without JavaScript
+or native dialog support, search controls stay hidden and guide content remains usable.
+
 The task directory uses short paired `navTitle` labels when supplied while retaining
 full task titles in headings and link tooltips. Links use separate padded rows,
 group-heading bands distinct from plain link rows in both scripts, hover/focus
 states and an `aria-current="location"` highlight that follows the chapter in view
 using the shared navigation scroll handler. Navigation still works without
-JavaScript. The desktop task directory scrolls independently. Mobile shows common
-tasks first
-and provides a collapsed directory within the introduction. Task headings have
+JavaScript. The desktop task directory scrolls independently. At 760px and below,
+a single 64px sticky header shows the menu icon, 28px brand logo beside the compact Fairway XMP wordmark
+and search icon. Download, GitHub, language and theme controls move into the drawer
+footer; the same controls move back into the desktop header when resized. The menu
+opens a full-height native modal drawer that slides from the left, at most 320px
+wide and 85% of the viewport, with a dimmed backdrop. Its fixed header and footer
+frame the independently scrollable directory and current chapter highlight. Motion
+is disabled for reduced-motion preferences. It contains keyboard focus, locks background scrolling, and
+closes on chapter selection, Escape, its close button, backdrop click or resizing
+to desktop. Dismissal returns focus to the menu button; selection focuses the
+destination heading. Anchor offsets keep chapters below the header. A shared dialog helper traps
+Tab focus and retains the scroll lock until the final modal closes, including
+downloads opened from the drawer. Without
+JavaScript or native dialog support, a collapsed directory in the introduction
+remains available. Task headings have
 permalinks. Screenshots show the actual desktop UI with simulated sample data and
 are labeled accordingly. The guides omit bundled-runtime version inventories.
 
-The header has a light/dark toggle with sun and moon icons, translated accessible
+The header (drawer footer on mobile) has a light/dark toggle with sun and moon icons, translated accessible
 labels, a checked state for dark mode and an action tooltip. It follows live OS
 preference changes until an explicit light/dark choice is saved. Manual choices
 persist across reloads, tabs and languages. There is no System selection in the UI;
@@ -83,7 +114,7 @@ Theme tokens cover text, surfaces, code, tables, controls and the download dialo
 screenshots keep their original colors. `site:test:theme` verifies theme behavior,
 text/code contrast and responsive layout in Chromium and WebKit for both languages.
 
-The Get Fairway XMP header button opens a bilingual native download dialog. A
+The Get Fairway XMP button in the header or mobile drawer opens a bilingual native download dialog. A
 browser-detected Windows, macOS or Linux platform gets a prominent direct
 installer link and requirements, followed by smaller downloads for the other
 platforms. Mobile/unknown devices and known unsupported architectures get a

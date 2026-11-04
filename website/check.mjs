@@ -51,6 +51,12 @@ for (const route of routes) {
   for (const id of ['getting-started', 'lifecycle', 'nginx', 'php', 'mysql', 'phpmyadmin', 'mailpit', 'composer', 'terminal', 'logs', 'sites', 'settings', 'updates', 'ports', 'default-ports']) assert(ids.includes(id), `${route}: preserved section link ${id}`);
   for (const id of [...copy[locale].quickTasks, ...copy[locale].quickFixes]) assert(guides.some(guide => guide.id === id), `${route}: valid home task`);
   assert.match(html, /class="mobile-contents"/, `${route}: mobile task directory`);
+  assert(ids.includes('agent-skill'), `${route}: dedicated skill guide`);
+  assert(guides.find(guide => guide.id === 'getting-started').steps[i].some(step => step.includes('#agent-skill')), `${route}: getting started links to the skill`);
+  assert.match(html, /role="search"/, `${route}: guide search landmark`);
+  assert.match(html, /data-guide-search[^>]*data-empty=/, `${route}: translated search feedback`);
+  assert.match(html, /<dialog id="guide-search"[^>]*aria-labelledby="guide-search-title"/, `${route}: search is a labelled modal`);
+  assert(!html.slice(html.indexOf('<section class="guide-home">'), html.indexOf('</section>')).includes('guide-query'), `${route}: home has no inline search block`);
   assert.doesNotMatch(html, /Worth knowing|Core services|How a request becomes a page/, `${route}: task-first structure`);
   for (const group of groups.map(group => group.id)) assert(ids.includes(`toc-${group}`), `${route}: missing TOC group ${group}`);
   for (const match of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {

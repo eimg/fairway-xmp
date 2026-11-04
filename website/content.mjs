@@ -2,6 +2,7 @@
 export const copy = {
   "en": {
     "lang": "en",
+    "guideMenu": { "open": "Open guide menu", "close": "Close guide menu" },
     "label": "English",
     "skip": "Skip to content",
     "download": "Get Fairway XMP",
@@ -67,6 +68,15 @@ export const copy = {
     ],
     "description": "Fairway XMP guides for serving project folders, configuring bundled tools, managing databases and mail, and resolving service issues.",
     "contents": "Guides",
+    "search": {
+      "label": "Search guides",
+      "close": "Close search",
+      "hint": "Search by topic, command or error message.",
+      "placeholder": "Search skills, sites, commands…",
+      "clear": "Clear search",
+      "empty": "No matching guides. Try another word or command.",
+      "count": "Matching guides: {count}"
+    },
     "overview": "How-to guides",
     "intro": "Instructions for configuring and using Fairway XMP.",
     "scopeNote": "Desktop steps apply to Windows and macOS. The CLI guide covers all three platforms; other Linux commands are in expandable notes. Example addresses use default ports; saved values are shown in Fairway XMP.",
@@ -113,6 +123,16 @@ export const copy = {
   },
   "mm": {
     "lang": "my",
+    "guideMenu": { "open": "လမ်းညွှန် Menu ဖွင့်ရန်", "close": "လမ်းညွှန် Menu ပိတ်ရန်" },
+    "search": {
+      "label": "လမ်းညွှန် ရှာရန်",
+      "close": "ရှာဖွေမှု ပိတ်ရန်",
+      "hint": "အကြောင်းအရာ၊ Command သို့မဟုတ် Error ဖြင့် ရှာပါ။",
+      "placeholder": "Skill၊ Site၊ Command များ ရှာရန်…",
+      "clear": "ရှာထားသည်ကို ရှင်းရန်",
+      "empty": "လမ်းညွှန် မတွေ့ပါ။ အခြား စကားလုံး သို့မဟုတ် Command ဖြင့် ရှာပါ။",
+      "count": "လမ်းညွှန် {count} ခု တွေ့သည်"
+    },
     "label": "မြန်မာ",
     "skip": "လမ်းညွှန်ချက်သို့ သွားရန်",
     "download": "Fairway XMP ရယူရန်",

@@ -102,6 +102,10 @@ for (const [name, engine] of Object.entries({ chromium, webkit })) {
         for (const width of [1280, 390, 320]) {
           await page.setViewportSize({ width, height: 900 });
           for (const mode of ['light', 'dark']) {
+            if (width <= 760 && !(await page.locator('#guide-menu').evaluate(menu => menu.open))) {
+              const box = await page.locator('[data-guide-menu-trigger]').boundingBox();
+              await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+            }
             const toggle = page.getByRole('switch');
             if ((await toggle.getAttribute('aria-checked')) !== String(mode === 'dark')) await toggle.click();
             await expect.poll(() => background(page)).toBe(colors[mode]);

@@ -1,4 +1,8 @@
 import { detectPlatform } from './device.js';
+import { initGuideSearch } from './search.js';
+import { closeDialog, isBackdropClick, openDialog } from './dialog.js';
+
+initGuideSearch();
 
 // The URL hash can outlive a visit to a chapter after a manual scroll.
 // Link to the chapter actually in view, or the top when reading the introduction.
@@ -32,6 +36,69 @@ window.addEventListener('resize', scheduleChapterNavigation);
 window.addEventListener('hashchange', scheduleChapterNavigation);
 window.addEventListener('pageshow', scheduleChapterNavigation);
 
+const guideMenu = document.querySelector('#guide-menu');
+const menuTrigger = document.querySelector('[data-guide-menu-trigger]');
+if (guideMenu && menuTrigger && typeof guideMenu.showModal === 'function') {
+  const mobile = matchMedia('(max-width: 760px)');
+  const header = document.querySelector('.header');
+  const actions = header.querySelector('nav');
+  const preferences = header.querySelector('.header-preferences');
+  const actionHome = document.createComment('header actions');
+  const preferenceHome = document.createComment('header preferences');
+  actions.before(actionHome);
+  preferences.before(preferenceHome);
+  let destination = null;
+  function closeMenu() {
+    closeDialog(guideMenu);
+    menuTrigger.setAttribute('aria-expanded', 'false');
+  }
+  menuTrigger.addEventListener('click', () => {
+    destination = null;
+    updateChapterNavigation();
+    openDialog(guideMenu);
+    menuTrigger.setAttribute('aria-expanded', 'true');
+    const current = guideMenu.querySelector('[aria-current="location"]');
+    const nav = guideMenu.querySelector('.guide-menu-directory');
+    if (current) nav.scrollTop += current.getBoundingClientRect().top - nav.getBoundingClientRect().top - nav.clientHeight / 2;
+  });
+  guideMenu.querySelector('[data-guide-menu-close]').addEventListener('click', closeMenu);
+  guideMenu.addEventListener('cancel', event => { event.preventDefault(); closeMenu(); });
+  guideMenu.addEventListener('close', () => {
+    // A queued close event must not affect a menu that has already reopened.
+    if (guideMenu.open) return;
+    if (destination) {
+      const heading = destination;
+      requestAnimationFrame(() => {
+        heading.tabIndex = -1;
+        heading.focus({ preventScroll: true });
+      });
+    } else if (mobile.matches) menuTrigger.focus({ preventScroll: true });
+  });
+  guideMenu.addEventListener('click', event => {
+    const link = event.target.closest('a[href^="#"]');
+    if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) {
+      destination = document.querySelector(`${link.hash} h2`);
+      closeMenu();
+    }
+    if (isBackdropClick(guideMenu, event)) closeMenu();
+  });
+  function syncHeader() {
+    if (mobile.matches) {
+      guideMenu.querySelector('[data-menu-actions]').append(actions);
+      guideMenu.querySelector('[data-menu-preferences]').append(preferences);
+    } else {
+      if (guideMenu.open) closeMenu();
+      actionHome.after(actions);
+      preferenceHome.after(preferences);
+    }
+  }
+  mobile.addEventListener('change', syncHeader);
+  syncHeader();
+  menuTrigger.hidden = false;
+  document.documentElement.setAttribute('data-guide-menu-ready', '');
+  document.querySelector('.mobile-contents').hidden = true;
+}
+
 const trigger = document.querySelector('[data-open-downloads]');
 const dialog = document.querySelector('#download-dialog');
 if (trigger && dialog && typeof dialog.showModal === 'function') {
@@ -50,24 +117,16 @@ if (trigger && dialog && typeof dialog.showModal === 'function') {
     dialog.querySelector('[data-download-other-title]').textContent = dialog.dataset.otherPlatforms;
     dialog.querySelector('[data-download-intro]').textContent = dialog.dataset.detectedIntro;
   }
-  let previousOverflow = null;
-  trigger.addEventListener('click', () => {
-    dialog.showModal();
-    if (previousOverflow === null) previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-  });
+  trigger.addEventListener('click', () => openDialog(dialog));
   dialog.addEventListener('close', () => {
     // Native close events are queued; a quick reopen must keep the original value.
-    if (!dialog.open && previousOverflow !== null) {
-      document.body.style.overflow = previousOverflow;
-      previousOverflow = null;
+    if (!dialog.open) {
       // Safari does not focus a button on pointer click before opening a dialog.
       trigger.focus({ preventScroll: true });
     }
   });
   dialog.addEventListener('click', event => {
-    const bounds = dialog.getBoundingClientRect();
-    if (event.target === dialog && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) dialog.close();
+    if (isBackdropClick(dialog, event)) closeDialog(dialog);
   });
   trigger.hidden = false;
   document.querySelector('[data-download-fallback]').hidden = true;

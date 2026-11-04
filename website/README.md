@@ -16,7 +16,7 @@ npm run site:dev
 
 Open **http://127.0.0.1:4173/fairway-xmp/**. The preview uses the repository prefix
 so relative links behave as they will on GitHub Pages. English is the default;
-use **EN / MM** in the header to switch languages. Myanmar uses the standard
+use **EN / MM** in the header (guide drawer on mobile) to switch languages. Myanmar uses the standard
 HTML language code `my`, with `mm` in the URL and language control.
 
 ```text
@@ -38,10 +38,12 @@ preview does not watch files. For another port: `SITE_PORT=4174 npm run site:dev
 - `assets/`: checked-in screenshots from the app's simulated UI.
 - `downloads.json`: published installer version and direct GitHub asset URLs.
 - `device.js` and `site.js`: device selection, download dialog and language links.
+- `search.js`: local full-text search modal and title ranking, tested in `search.test.mjs`.
+- `dialog.js`: shared focus containment and scroll locking for stacked dialogs.
 - `theme.js`: saved light/dark preference with automatic system fallback before first paint.
 
 ```sh
-npm run site:check  # build, check links/assets/anchors and device-selection tests
+npm run site:check  # build, check links/assets/anchors, device and search tests
 npm run site:build # build only
 ```
 
@@ -54,29 +56,57 @@ Detailed links to repository guides are explicitly marked as English. Edit the p
 English/Myanmar entries in `guides.mjs` and the locale labels in `content.mjs`,
 then rebuild and review both languages locally before publishing.
 
-The home page starts with common tasks and problems, including Getting started.
+The home page starts directly with the title, compact common-task links and problem
+links, including Getting started. The redundant description and inline search block
+are omitted. Common tasks use short navigation labels with full titles in tooltips.
 The short `#getting-started` procedure verifies the local server and directs readers
-to either the document-root or .test-site guide. Detailed project, database, terminal
+to either the document-root or .test-site guide, with a brief optional agent skill link.
+The dedicated `#agent-skill` guide under Start here covers scope, installation from
+`skills/fairway-xmp` in the source release, activation and an initial inspection request.
+Detailed project, database, terminal
 and lifecycle procedures stay in their own sections; the general introduction has
 no chapter anchor.
 The directory groups guides by the reader's goal: Start here, Serve project folders,
 Work with data & email, Configure bundled tools, Fix a problem, Manage Fairway XMP,
-and Connection reference. Full task titles remain in article headings and
-common-task links. The directory
+and Connection reference. Full task titles remain in article headings. The directory
 uses short translated `navTitle` labels when provided, with the full title in the
 link tooltip. Group headings use subtle background bands to separate them from
 plain link rows, including in Burmese. Links have distinct padded rows, hover/focus
 states and a current-section highlight that follows reading position. The desktop
-sidebar scrolls independently; on mobile the directory is a collapsed, keyboard-accessible disclosure in the home
-section, keeping the common tasks within reach. All guides remain in static HTML.
-Existing chapter IDs are retained so previously shared links still resolve. The management group includes `#cli`, with a brief translated For agents block above its procedure and source-release installation instructions for `skills/fairway-xmp`.
+sidebar scrolls independently. At 760px and below, one 64px sticky header holds
+the menu icon, 28px logo beside a compact wordmark, and search icon. The menu opens the grouped directory
+in a full-height sidebar drawer. Download, GitHub, language and theme controls move
+into its footer and return to the desktop header when resized. The drawer slides from the left, is limited to 320px / 85vw, and
+keeps its header and footer fixed around the scrolling directory. A dimmed backdrop
+separates it from the page, and reduced-motion preferences disable the transition.
+The drawer contains keyboard focus, highlights the current chapter
+and locks background scrolling. Chapter selection closes it and focuses the
+destination heading. Escape, close and backdrop dismissal restore focus to the
+menu button; switching to desktop closes it and restores scrolling. Without
+JavaScript or dialog support, the collapsed directory in the introduction remains
+available. All guides remain in static HTML.
+Existing chapter IDs are retained so previously shared links still resolve. The management group includes `#cli`, with a brief translated For agents block above its procedure and a link to the dedicated skill installation guide.
+
+Search opens a native modal from the single visible icon in the desktop sidebar
+or mobile header. The modal focuses its input, traps Tab focus, and shows hints,
+result counts, excerpts and no-match feedback in the current language. It searches
+all guide text, including collapsed troubleshooting, commands and connection details.
+Every query term must match without case sensitivity, with title matches first.
+Arrow Down focuses results; arrow keys navigate them. Enter selects the first
+result from the input or the focused link. Selection closes the modal and focuses
+the destination heading. Escape, close and backdrop dismissal preserve reading
+position and restore focus to the visible trigger; the query is retained. Clear
+resets results and focuses the input. Search sends no requests to a server. Without
+JavaScript or dialog support, its controls stay hidden and the full guide stays usable.
+The shared dialog helper retains scroll locking through stacked drawer/download
+modals and contains keyboard focus in the top dialog.
 
 With `npm run site:dev` running, `npm run site:test:navigation` runs the language
-scroll regression checks in Chromium and WebKit (requires the repository's npm
+scroll, search and keyboard regression checks in Chromium and WebKit (requires the repository's npm
 dependencies and Playwright browsers). Set `SITE_BASE_URL` for another preview
 address.
 
-The header has a light/dark toggle with sun and moon icons. It follows the system
+The header (drawer footer on mobile) has a light/dark toggle with sun and moon icons. It follows the system
 preference until a reader toggles it, then saves the explicit light/dark choice
 across reloads, tabs and language changes. There is no System option in the UI.
 Absent, invalid or legacy System preferences use the automatic fallback. Storage
