@@ -52,13 +52,35 @@ def download(url, expected=None, algorithm='sha256', headers=None):
     if not target.exists():
         print(f'Downloading {url}', flush=True)
         partial = target.with_suffix('.partial')
+        source_url = url
         try:
             for attempt in range(3):
                 try:
-                    with request(url, headers) as response, partial.open('wb') as output:
+                    try:
+                        response = request(source_url, headers)
+                    except urllib.error.HTTPError as error:
+                        prefix = 'https://downloads.php.net/~windows/releases/'
+                        filename = url.removeprefix(prefix)
+                        # PHP moves superseded Windows ZIPs into its archive.
+                        # Retain the original cache key and checksum: relocation
+                        # must never select a different build or accept new bytes.
+                        if (error.code in (404, 410) and expected and source_url == url
+                                and url.startswith(prefix) and '/' not in filename
+                                and filename.startswith('php-') and filename.endswith('.zip')):
+                            source_url = prefix + 'archives/' + filename
+                            print(f'Trying official PHP archive: {source_url}', flush=True)
+                            response = request(source_url, headers)
+                        else:
+                            raise
+                    with response, partial.open('wb') as output:
                         shutil.copyfileobj(response, output)
                     partial.replace(target)
                     break
+                except urllib.error.HTTPError as error:
+                    if error.code not in (408, 429, 500, 502, 503, 504) or attempt == 2:
+                        raise
+                    print(f'Retrying interrupted download ({attempt + 1}/2)', flush=True)
+                    time.sleep(2)
                 except (OSError, urllib.error.URLError):
                     if attempt == 2: raise
                     print(f'Retrying interrupted download ({attempt + 1}/2)', flush=True)

@@ -19,6 +19,8 @@ Keep committed runtime/source locks, `tests/fixtures/runtime-alpha1-*.json` and 
 
 ## Runtime updates
 
+Windows PHP ZIPs can move from the active releases directory into PHP's official archive. The downloader follows this relocation only for checksum-pinned PHP ZIPs after HTTP 404/410, retaining the original cache key and verifying the same reviewed bytes. A relocation is not a runtime update and does not refresh the lock or substitute a rebuilt ZIP.
+
 1. Review upstream versions, checksums and security fixes. Update `runtime-manifest.json`, including the default PHP version and every affected `phpVersions` entry.
 2. Update the relevant desktop/Linux download lock entries and dependency closure. Preserve unrelated pins and both platforms' entries in the shared desktop lock.
 3. Restage runtimes. `--refresh-lock` can refresh unrelated components; it is not a PHP-only updater. `--resume-lock` retains existing bottle pins and does not automatically replace an outdated PHP entry.

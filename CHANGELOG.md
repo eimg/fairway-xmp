@@ -4,6 +4,7 @@ Past entries record released changes; they are not current development or releas
 
 ## 0.1.2 — Unreleased build candidate
 
+- Fetch superseded Windows PHP ZIPs from PHP's official archive after a missing-file response, retaining the exact pinned checksum and build.
 - Retry brief Windows sharing/access conflicts when publishing configuration during asynchronous Nginx reloads. Keep the previous file on persistent failure and report the affected file or command.
 - Add a shared supervisor-backed management CLI on macOS and Windows, alongside the Linux terminal edition, with bundled agent instructions and clearer CLI/help navigation.
 - Bound short service commands and database dumps, allow cancellation during protective backups, and cancel manual backups and active database-browser work on explicit Quit while preserving MySQL until normal shutdown.

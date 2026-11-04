@@ -15,6 +15,51 @@ SPEC.loader.exec_module(runtime)
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_archived_windows_php_keeps_the_reviewed_checksum_and_original_cache_key(self):
+        url = runtime.windows_php_url('8.5.12')
+        archived = url.replace('/releases/', '/releases/archives/')
+        payload = b'the exact reviewed Windows PHP ZIP'
+        expected = hashlib.sha256(payload).hexdigest()
+        with tempfile.TemporaryDirectory() as folder, \
+                patch.object(runtime, 'CACHE', Path(folder)), \
+                patch.object(runtime, 'request', side_effect=[
+                    runtime.urllib.error.HTTPError(url, 404, 'Not Found', {}, None), io.BytesIO(payload),
+                ]) as request:
+            path, digest = runtime.download(url, expected)
+            self.assertEqual(path.name, hashlib.sha256(url.encode()).hexdigest())
+            self.assertEqual(digest, expected)
+            self.assertEqual(path.read_bytes(), payload)
+            self.assertEqual([call.args[0] for call in request.call_args_list], [url, archived])
+            self.assertEqual(runtime.download(url, expected), (path, expected))
+            self.assertEqual(request.call_count, 2)
+
+    def test_archived_windows_php_rejects_changed_bytes_and_removes_partial_files(self):
+        url = runtime.windows_php_url('8.5.12')
+        with tempfile.TemporaryDirectory() as folder, \
+                patch.object(runtime, 'CACHE', Path(folder)), \
+                patch.object(runtime, 'request', side_effect=[
+                    runtime.urllib.error.HTTPError(url, 410, 'Gone', {}, None), io.BytesIO(b'different build'),
+                ]):
+            with self.assertRaisesRegex(RuntimeError, 'Checksum mismatch'):
+                runtime.download(url, hashlib.sha256(b'reviewed build').hexdigest())
+            self.assertEqual(list(Path(folder).iterdir()), [])
+
+    def test_php_archive_fallback_requires_a_pin_official_origin_and_missing_file(self):
+        official = runtime.windows_php_url('8.5.12')
+        for url, expected, code in [
+            (official, None, 404),
+            (official, 'a' * 64, 403),
+            ('https://example.invalid/php-8.5.12.zip', 'a' * 64, 404),
+            (official.replace('/releases/', '/releases/archives/'), 'a' * 64, 404),
+        ]:
+            with self.subTest(url=url, code=code), tempfile.TemporaryDirectory() as folder, \
+                    patch.object(runtime, 'CACHE', Path(folder)), \
+                    patch.object(runtime, 'request', side_effect=runtime.urllib.error.HTTPError(url, code, 'Unavailable', {}, None)) as request:
+                with self.assertRaises(runtime.urllib.error.HTTPError):
+                    runtime.download(url, expected)
+                self.assertEqual(request.call_count, 1)
+                self.assertEqual(list(Path(folder).iterdir()), [])
+
     def test_windows_php_toolsets_cover_extra_and_default_8_6_without_changing_old_urls(self):
         manifest = {**runtime.MANIFEST, 'phpVersions': {**runtime.MANIFEST['phpVersions'], '8.6': '8.6.0'}}
         sources = runtime.windows_php_sources(manifest)
