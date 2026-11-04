@@ -18,6 +18,6 @@ This build includes the existing PHP 8.6 packaging preparation and regression co
 
 - Windows 10 22H2 or Windows 11, x64; macOS 15 or later on Apple Silicon; Linux x86_64 with glibc 2.35 or newer.
 - The Mac app and installer are Developer ID signed and notarized by Apple. Windows installers do not have Authenticode signatures; desktop updater payloads use separate cryptographic signatures. Linux updates are manual.
-- Download and run the installer to update. Update-feed promotion is separate and is not part of this publication.
+- Existing macOS and Windows installations receive 0.1.2 through the stable and preview update feeds. Linux users download and rerun the installer.
 
 See [current limitations](https://github.com/eimg/fairway-xmp/blob/v0.1.2/docs/maintenance.md#current-limitations) and [build and release](https://github.com/eimg/fairway-xmp/blob/v0.1.2/docs/build-and-release.md).

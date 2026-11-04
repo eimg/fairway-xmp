@@ -22,7 +22,7 @@ Latest published release: **[v0.1.2](https://github.com/eimg/fairway-xmp/release
 
 See the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.2) for these downloads and [current limitations](docs/maintenance.md#current-limitations). Download the installer for your computer and follow its prompts. The Mac app and installer are Developer ID signed and notarized by Apple. Windows installers do not yet have Authenticode signatures and may show an unknown-publisher warning; in-app updates use a separate cryptographic signature.
 
-Version 0.1.2 adds the management CLI on macOS and Windows and improves service deadlines, backup cancellation and configuration recovery. It includes PHP 8.6 packaging preparation; bundled PHP branches remain 8.2–8.5. Download and run the installer to update; update-feed promotion is separate. See the [release notes](docs/release-notes.md).
+Version 0.1.2 adds the management CLI on macOS and Windows and improves service deadlines, backup cancellation and configuration recovery. It includes PHP 8.6 packaging preparation; bundled PHP branches remain 8.2–8.5. Desktop installations receive the update through their stable or preview feed; Linux users rerun the installer. See the [release notes](docs/release-notes.md).
 
 ## Linux terminal edition
 

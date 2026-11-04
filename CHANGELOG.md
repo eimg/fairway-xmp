@@ -15,7 +15,7 @@ Past entries record released changes; they are not current development or releas
 - Bundle a newer shared Visual C++ v14 x64 prerequisite. Upgrade older installations, preserve equal/newer ones, and install the pinned prerequisite before Windows runtime verification.
 - Update Composer to 2.11.1, including security and PHP 8.6 compatibility fixes, and Mailpit to 1.33.0, including image-cache memory and search fixes. Retain the existing MySQL, stable Nginx and phpMyAdmin pins pending release-time review and compatibility checks.
 
-Release artifacts come from [candidate run 41815500921](https://github.com/eimg/fairway-xmp/actions/runs/41815500921), commit `a4de4047613d7e722172c55a77145731b7baab90`, without rebuilding. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows. Update-feed promotion is separate and is not part of this publication.
+Published from [candidate run 41815500921](https://github.com/eimg/fairway-xmp/actions/runs/41815500921), commit `a4de4047613d7e722172c55a77145731b7baab90`, using the tested artifacts without rebuilding. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows. Installed macOS and Windows clients receive 0.1.2 through both stable and preview update feeds; Linux updates remain manual.
 
 ## 0.1.1 — 2026-10-29
 
