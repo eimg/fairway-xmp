@@ -298,6 +298,111 @@ fn start_all_rolls_back_new_unprovisioned_mysql_without_losing_student_data() {
 }
 
 #[test]
+#[cfg(feature = "cli")]
+fn desktop_backup_cancellation_bypasses_its_reserved_supervisor_connection() {
+    use crate::cli::client::Client;
+    let fixture = Fixture::new();
+    fixture
+        .manager
+        .layout
+        .save_ports(&fixture.manager.ports)
+        .unwrap();
+    let mut client = Client::new(fixture.manager.layout.clone()).unwrap();
+    client.begin().unwrap();
+    client.start("mysql").unwrap();
+    fixture.set("hang-dump");
+    let start = Instant::now();
+    let result = client.backup(|| fixture.flag("dump-started").exists());
+    client.end();
+    assert!(result.unwrap_err().contains("cancelled"));
+    assert!(start.elapsed() < Duration::from_secs(4));
+    assert!(client
+        .snapshot()
+        .unwrap()
+        .services
+        .iter()
+        .any(|s| s.id == "mysql" && s.ready));
+    fs::remove_file(fixture.flag("hang-dump")).unwrap();
+    client.begin().unwrap();
+    assert!(client.backup(|| false).is_ok());
+    client.end();
+    client.shutdown().unwrap();
+}
+
+#[test]
+fn cancelled_protective_exports_never_proceed_to_import_or_delete() {
+    use std::sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    };
+    let mut fixture = Fixture::new();
+    fixture
+        .manager
+        .layout
+        .save_ports(&fixture.manager.ports)
+        .unwrap();
+    fixture.start().unwrap();
+    let sql = fixture.root.join("import.sql");
+    fs::write(&sql, b"DROP TABLE lessons;").unwrap();
+    let previous = fixture.manager.layout.data.join("backups/previous.sql");
+    fs::write(&previous, b"previous backup").unwrap();
+    for request in [
+        serde_json::json!({"op":"drop_database", "database":"fairway", "confirmed":true}),
+        serde_json::json!({"op":"import", "database":"fairway", "confirmed":true,"sqlFile":sql}),
+        serde_json::json!({"op":"export", "database":"fairway"}),
+    ] {
+        fixture.set("hang-dump");
+        let cancel = Arc::new(AtomicBool::new(false));
+        let result = thread::scope(|scope| {
+            let flag = cancel.clone();
+            let started = fixture.flag("dump-started");
+            scope.spawn(move || {
+                let deadline = Instant::now() + Duration::from_secs(3);
+                while !started.exists() && Instant::now() < deadline {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                flag.store(true, Ordering::SeqCst);
+            });
+            crate::data_browser::execute(&fixture.manager.layout, request, cancel)
+        });
+        assert!(result.unwrap_err().to_lowercase().contains("cancel"));
+        assert_eq!(
+            fs::read_dir(previous.parent().unwrap()).unwrap().count(),
+            1,
+            "cancelling the dump must not publish a completed backup"
+        );
+        assert_eq!(fs::read(&previous).unwrap(), b"previous backup");
+        assert!(fixture.mysql().ready);
+        fs::remove_file(fixture.flag("hang-dump")).unwrap();
+        fs::remove_file(fixture.flag("dump-started")).unwrap();
+    }
+    fixture.manager.stop("mysql").unwrap();
+}
+
+#[test]
+fn cancelling_a_backup_preserves_mysql_and_prior_backups() {
+    let mut fixture = Fixture::new();
+    fixture.start().unwrap();
+    fixture.set("hang-dump");
+    let previous = fixture.manager.layout.data.join("backups/previous.sql");
+    fs::write(&previous, b"previous backup").unwrap();
+    let error = fixture
+        .manager
+        .backup_with_cancel(&|| fixture.flag("dump-started").exists())
+        .unwrap_err();
+    assert!(error.contains("cancelled"), "{error}");
+    assert_eq!(fs::read(&previous).unwrap(), b"previous backup");
+    assert_eq!(fs::read_dir(previous.parent().unwrap()).unwrap().count(), 1);
+    assert!(fixture.mysql().ready);
+    fs::remove_file(fixture.flag("hang-dump")).unwrap();
+    assert!(
+        fixture.manager.backup().is_ok(),
+        "backup should be retryable"
+    );
+    fixture.manager.stop("mysql").unwrap();
+}
+
+#[test]
 fn logical_backups_publish_success_and_remove_failed_partial_exports() {
     let mut fixture = Fixture::new();
     fixture.start().unwrap();

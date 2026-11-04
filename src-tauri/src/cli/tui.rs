@@ -168,7 +168,7 @@ pub(super) fn run(layout: &Layout) -> Result<()> {
             b"z" => Request::Stop {
                 service: "all".into(),
             },
-            b"b" => Request::Backup,
+            b"b" => Request::Backup { id: None },
             b"l" | b"f" => {
                 let id = if key == b"f" { "php" } else { &service };
                 log = Some(

@@ -10,7 +10,7 @@ Fairway's SQL backups contain student databases, tables, views, routines, events
 2. Wait for the completed-backup message and keep the resulting `.sql` file. A `.partial` file is unfinished and must not be used as a completed backup.
 3. Copy important backups to another drive or location. The default backups directory lives beside your database data, so it is not protection against losing that disk.
 
-Each export gets a unique name. A failed export is reported as an error and its partial file is removed; a previous backup is kept. Concurrent application operations are serialized.
+Each export gets a unique name. A failed export is reported as an error and its partial file is removed; a previous backup is kept. Concurrent application operations are serialized. Database dumps have a 15-minute deadline. Explicit Quit cancels a manual desktop backup before stopping services; cancellation stops the dump client, preserving MySQL and earlier backups. Completed backup contents and their published filenames are flushed before success is reported. SQLite backups likewise use an unfinished `.partial` file until publication succeeds.
 
 ## Restore a full backup
 

@@ -24,37 +24,21 @@ pub fn command(path: impl AsRef<std::ffi::OsStr>) -> Command {
     cmd
 }
 
-pub fn output(mut cmd: Command) -> Result<String> {
-    let result = cmd.output().map_err(|e| e.to_string())?;
-    if !result.status.success() {
-        return Err(format!(
-            "Command failed ({}): {}{}",
-            result.status,
-            String::from_utf8_lossy(&result.stdout),
-            String::from_utf8_lossy(&result.stderr)
-        ));
-    }
-    Ok(String::from_utf8_lossy(&result.stdout).trim().into())
+pub(crate) const BACKUP_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+
+pub fn output(cmd: Command) -> Result<String> {
+    crate::command_output::output(cmd, 30, &|| false)
 }
 
-pub fn sql(mut cmd: Command, input: &str) -> Result<()> {
-    let mut child = cmd
-        .stdin(Stdio::piped())
-        .stdout(Stdio::null())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    child
-        .stdin
-        .take()
-        .ok_or("Cannot open database command input.")?
-        .write_all(input.as_bytes())
-        .map_err(|e| e.to_string())?;
-    let result = child.wait_with_output().map_err(|e| e.to_string())?;
-    if !result.status.success() {
-        return Err(String::from_utf8_lossy(&result.stderr).into());
-    }
-    Ok(())
+pub fn sql(cmd: Command, input: &str) -> Result<()> {
+    crate::command_output::run(
+        cmd,
+        Duration::from_secs(30),
+        Some(input.as_bytes()),
+        None,
+        &|| false,
+    )
+    .map(|_| ())
 }
 
 pub fn available(port: u16) -> bool {

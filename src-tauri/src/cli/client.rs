@@ -171,8 +171,32 @@ impl Client {
         self.domains_approval_pending = pending;
         Ok(())
     }
-    pub fn backup(&self) -> Result<String> {
-        self.call(Request::Backup)
+    pub fn backup(&self, cancelled: impl Fn() -> bool + Sync) -> Result<String> {
+        let id = format!("{:032x}", rand::random::<u128>());
+        std::thread::scope(|scope| {
+            let (sent, received) = std::sync::mpsc::channel();
+            let request_id = id.clone();
+            scope.spawn(move || {
+                let _ = sent.send(self.call::<String>(Request::Backup {
+                    id: Some(request_id),
+                }));
+            });
+            loop {
+                match received.recv_timeout(std::time::Duration::from_millis(100)) {
+                    Ok(result) => return result,
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                        return Err("The backup connection failed.".into())
+                    }
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => (),
+                }
+                if cancelled() {
+                    // Separate IPC bypasses the busy operation connection. Retry
+                    // until completion, including cancellation before registration.
+                    let _ =
+                        supervisor::call(&self.layout, &Request::CancelBackup { id: id.clone() });
+                }
+            }
+        })
     }
     pub fn reserve_installation(&self) -> Result<std::fs::File> {
         let deadline = std::time::Instant::now() + std::time::Duration::from_millis(250);

@@ -2,7 +2,12 @@
 
 Past entries record released changes; they are not current development or release restrictions. See [Build and release](docs/build-and-release.md) for the current process.
 
-## Unreleased
+## 0.1.2 — Unreleased build candidate
+
+- Add a shared supervisor-backed management CLI on macOS and Windows, alongside the Linux terminal edition, with bundled agent instructions and clearer CLI/help navigation.
+- Bound short service commands and database dumps, allow cancellation during protective backups, and cancel manual backups and active database-browser work on explicit Quit while preserving MySQL until normal shutdown.
+- Flush settings and backup publication, stage SQLite backups as unfinished files, preserve existing export destinations, and restore generated configuration after failed CLI port saves.
+- Extend failure-path regressions and align the service smoke test with the current welcome page.
 
 - Prepare Windows PHP toolset selection for PHP 8.6, retain the existing PHP 8.2–8.5 branches and 8.5.12 default, and use a versioned Homebrew formula when recording new default-PHP inputs.
 - Bundle a newer shared Visual C++ v14 x64 prerequisite. Upgrade older installations, preserve equal/newer ones, and install the pinned prerequisite before Windows runtime verification.

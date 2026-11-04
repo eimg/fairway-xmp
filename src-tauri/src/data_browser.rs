@@ -51,6 +51,13 @@ impl Jobs {
             }
         }
     }
+    pub fn cancel_all(&self) {
+        if let Ok(jobs) = self.0.lock() {
+            for cancel in jobs.values() {
+                cancel.store(true, Ordering::SeqCst);
+            }
+        }
+    }
 }
 
 fn php(layout: &Layout, sqlite: bool) -> Result<Command> {
@@ -151,18 +158,21 @@ pub fn execute_with_progress(
             return Err("Confirm this destructive operation first.".into());
         }
         let database = name(&request["database"])?;
-        export(layout, database, None, None, "all")?;
+        export_with_cancel(layout, database, None, None, "all", &|| {
+            cancel.load(Ordering::SeqCst)
+        })?;
         if cancel.load(Ordering::SeqCst) {
             return Err("Canceled before changing the database. The backup was kept.".into());
         }
     }
     if op == "export" {
-        return export(
+        return export_with_cancel(
             layout,
             name(&request["database"])?,
             request["table"].as_str(),
             None,
             request["mode"].as_str().unwrap_or("all"),
+            &|| cancel.load(Ordering::SeqCst),
         )
         .map(|path| json!({"message":format!("SQL export saved: {}",path.display()),"path":path}));
     }
@@ -255,20 +265,26 @@ fn execute_sqlite(layout: &Layout, mut request: Value, cancel: Arc<AtomicBool>) 
             "sqlite-{stamp}-{:016x}.sqlite",
             rand::random::<u64>()
         ));
+        let partial = backup.with_extension("sqlite.partial");
         OpenOptions::new()
             .write(true)
             .create_new(true)
-            .open(&backup)
+            .open(&partial)
             .map_err(|e| e.to_string())?;
         let result = worker(
             layout,
-            json!({"request":{"op":"backup", "path":path}, "backupPath":backup}),
+            json!({"request":{"op":"backup", "path":path}, "backupPath":partial}),
             true,
             cancel.clone(),
-        );
-        if result.is_err() {
-            let _ = fs::remove_file(&backup);
-        }
+        )
+        .and_then(|_| {
+            let file = OpenOptions::new()
+                .write(true)
+                .open(&partial)
+                .map_err(|e| e.to_string())?;
+            crate::durability::publish_new_file(file, &partial, &backup)
+        });
+        let _ = fs::remove_file(&partial);
         result?;
         if op == "backup" {
             return Ok(
@@ -412,17 +428,10 @@ fn worker(
         if cancel.load(Ordering::SeqCst) || start.elapsed() > Duration::from_secs(30) {
             let id = connection_id.load(Ordering::SeqCst);
             if id > 0 {
-                let mut kill = process::command(crate::config::windows_ansi_path(
-                    &layout.exe("mysql", "mysql"),
-                ));
-                kill.arg(format!(
-                    "--defaults-file={}",
-                    crate::config::windows_ansi_path(&layout.data.join("config/admin.cnf"))
-                        .display()
-                ))
-                .args(["--connect-timeout=2", "--execute"])
-                .arg(format!("KILL QUERY {id}"));
-                let _ = kill.output();
+                let mut kill = mysql(layout, "mysql");
+                kill.args(["--connect-timeout=2", "--execute"])
+                    .arg(format!("KILL QUERY {id}"));
+                let _ = crate::command_output::output(kill, 3, &|| false);
             }
             let _ = child.kill();
             let _ = child.wait();
@@ -467,6 +476,7 @@ fn mysql(layout: &Layout, executable: &str) -> Command {
         "--defaults-file={}",
         crate::config::windows_ansi_path(&layout.data.join("config/admin.cnf")).display()
     ));
+    command.arg("--no-login-paths");
     if executable == "mysql" {
         command.arg("--connect-timeout=3");
     }
@@ -478,6 +488,17 @@ pub fn export(
     table: Option<&str>,
     destination: Option<&Path>,
     mode: &str,
+) -> Result<PathBuf> {
+    export_with_cancel(layout, database, table, destination, mode, &|| false)
+}
+
+fn export_with_cancel(
+    layout: &Layout,
+    database: &str,
+    table: Option<&str>,
+    destination: Option<&Path>,
+    mode: &str,
+    cancelled: &dyn Fn() -> bool,
 ) -> Result<PathBuf> {
     name(&json!(database))?;
     connection(layout)?;
@@ -551,22 +572,17 @@ pub fn export(
         command.arg(table);
     }
     let result = (|| {
-        let output = command
-            .stdout(Stdio::from(file.try_clone().map_err(|e| e.to_string())?))
-            .stderr(Stdio::piped())
-            .output()
-            .map_err(|e| e.to_string())?;
-        if !output.status.success() {
-            return Err(String::from_utf8_lossy(&output.stderr).into_owned());
-        }
-        file.sync_all().map_err(|e| e.to_string())?;
-        // A same-directory hard link publishes the completed dump atomically and
-        // cannot overwrite a file created after the initial destination check.
-        fs::hard_link(&partial, &path)
+        crate::command_output::run(
+            command,
+            process::BACKUP_TIMEOUT,
+            None,
+            Some(file.try_clone().map_err(|e| e.to_string())?),
+            cancelled,
+        )?;
+        crate::durability::publish_new_file(file, &partial, &path)
             .map_err(|e| format!("Cannot publish export (existing files are kept): {e}"))?;
         Ok(path)
     })();
-    drop(file);
     let _ = fs::remove_file(&partial);
     result
 }
@@ -605,9 +621,10 @@ fn import_sql(
         return Err("Choose a non-empty SQL file.".into());
     }
     progress("backup");
-    let backup = export(layout, database, None, None, "all").map_err(|e| {
-        format!("Could not create the pre-import backup. Nothing was imported. {e}")
-    })?;
+    let backup = export_with_cancel(layout, database, None, None, "all", &|| {
+        cancel.load(Ordering::SeqCst)
+    })
+    .map_err(|e| format!("Could not create the pre-import backup. Nothing was imported. {e}"))?;
     if cancel.load(Ordering::SeqCst) {
         return Err(format!(
             "Import canceled before changing the database. Backup saved: {}",
@@ -759,6 +776,15 @@ mod tests {
 #[cfg(test)]
 mod row_protocol_tests {
     use super::*;
+    #[test]
+    fn shutdown_cancels_registered_jobs_without_poisoning_retries() {
+        let jobs = Jobs::default();
+        let current = jobs.register("current").unwrap();
+        jobs.cancel_all();
+        assert!(current.load(Ordering::SeqCst));
+        jobs.finish("current");
+        assert!(!jobs.register("retry").unwrap().load(Ordering::SeqCst));
+    }
     fn fixture() -> Layout {
         let root = std::env::temp_dir().join(format!(
             "fairway-value-test-{:032x}",

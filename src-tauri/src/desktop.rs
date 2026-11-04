@@ -166,6 +166,7 @@ pub(crate) fn request_quit(app: &tauri::AppHandle) {
     if !lifecycle.request_quit() {
         return;
     }
+    app.state::<crate::data_browser::Jobs>().cancel_all();
     if let Some(tray) = app.try_state::<NativeTray>() {
         let _ = tray.set_busy(true);
     }
@@ -399,6 +400,9 @@ async fn data_browser(
     let _operation = begin_operation(&app, "Working with database…")?;
     let jobs = app.state::<crate::data_browser::Jobs>();
     let cancel = jobs.register(&id)?;
+    if app.state::<DesktopControl>().lifecycle.quitting() {
+        cancel.store(true, Ordering::SeqCst);
+    }
     let layout = access(state.inner().clone(), |m| Ok(m.layout.clone())).await;
     let progress_app = app.clone();
     let progress_id = id.clone();
@@ -890,7 +894,11 @@ async fn cli_integration(
 #[tauri::command]
 async fn backup_database(app: tauri::AppHandle, state: State<'_, Shared>) -> Result<String> {
     let _operation = begin_operation(&app, "Backing up databases…")?;
-    access(state.inner().clone(), |m| m.backup()).await
+    let lifecycle = app.state::<DesktopControl>().lifecycle.clone();
+    access(state.inner().clone(), move |m| {
+        m.backup(|| lifecycle.quitting())
+    })
+    .await
 }
 
 #[tauri::command]

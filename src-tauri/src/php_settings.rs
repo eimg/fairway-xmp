@@ -145,23 +145,18 @@ pub fn timezones(layout: &Layout, version: &str) -> Result<Vec<String>> {
         .php_root_for_version(version)?
         .join("bin")
         .join(if cfg!(windows) { "php.exe" } else { "php" });
-    let output = crate::process::command(executable)
+    let mut command = crate::process::command(executable);
+    command
         .args([
             "-n",
             "-r",
             "echo json_encode(DateTimeZone::listIdentifiers(DateTimeZone::ALL_WITH_BC));",
         ])
         .env("PHP_INI_SCAN_DIR", "")
-        .env("MIBS", "")
-        .output()
+        .env("MIBS", "");
+    let output = crate::process::output(command)
         .map_err(|e| format!("Could not read PHP {version} timezones: {e}"))?;
-    if !output.status.success() {
-        return Err(format!(
-            "Could not read PHP {version} timezones: {}",
-            String::from_utf8_lossy(&output.stderr)
-        ));
-    }
-    serde_json::from_slice(&output.stdout)
+    serde_json::from_str(&output)
         .map_err(|e| format!("Could not read PHP {version} timezones: {e}"))
 }
 

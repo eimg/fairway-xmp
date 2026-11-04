@@ -60,7 +60,13 @@ pub(crate) enum Request {
     PhpVersion {
         version: String,
     },
-    Backup,
+    Backup {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        id: Option<String>,
+    },
+    CancelBackup {
+        id: String,
+    },
     SaveProject {
         previous: Option<String>,
         project: ProjectConfig,
@@ -584,7 +590,7 @@ fn parse(args: &[String]) -> Result<Request> {
             ports.validate()?;
             Ok(Request::Ports { ports })
         }
-        "backup" if args.len() == 1 => Ok(Request::Backup),
+        "backup" if args.len() == 1 => Ok(Request::Backup { id: None }),
         "site" => project_request(&args[1..]),
         "php-settings" => {
             let version = args.get(1).cloned().unwrap_or_else(|| "active".into());

@@ -99,6 +99,11 @@ if not (control / 'ready').exists():
 if secure != (control / 'root-secure').exists():
     fail('fixture authentication failed')
 if name == 'mysqldump':
+    if (control / 'hang-dump').exists():
+        (control / 'dump-started').touch()
+        deadline = time.monotonic() + 5
+        while (control / 'hang-dump').exists() and time.monotonic() < deadline:
+            time.sleep(.01)
     print('-- Student backup\nCREATE DATABASE fairway;')
     if (control / 'fail-dump').exists():
         fail('fixture dump failed')

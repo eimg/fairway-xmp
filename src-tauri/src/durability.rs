@@ -58,9 +58,42 @@ pub fn publish_file(file: fs::File, from: &Path, to: &Path) -> Result<()> {
     publish(from, to)
 }
 
+/// Publish an export without replacing a destination created by another caller.
+pub fn publish_new_file(file: fs::File, from: &Path, to: &Path) -> Result<()> {
+    file.sync_all().map_err(|error| error.to_string())?;
+    drop(file);
+    #[cfg(unix)]
+    {
+        fs::hard_link(from, to).map_err(|error| error.to_string())?;
+        sync_directory(to.parent().ok_or("The backup directory is unavailable.")?)
+    }
+    #[cfg(windows)]
+    {
+        publish(from, to)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn completed_exports_never_replace_existing_destinations() {
+        let root =
+            std::env::temp_dir().join(format!("fairway-new-export-{}", rand::random::<u64>()));
+        fs::create_dir(&root).unwrap();
+        let partial = root.join("dump.partial");
+        let destination = root.join("dump.sql");
+        fs::write(&partial, b"new database").unwrap();
+        fs::write(&destination, b"previous backup").unwrap();
+        let open = || fs::OpenOptions::new().write(true).open(&partial).unwrap();
+        assert!(publish_new_file(open(), &partial, &destination).is_err());
+        assert_eq!(fs::read(&destination).unwrap(), b"previous backup");
+        assert_eq!(fs::read(&partial).unwrap(), b"new database");
+        fs::remove_file(&destination).unwrap();
+        publish_new_file(open(), &partial, &destination).unwrap();
+        assert_eq!(fs::read(destination).unwrap(), b"new database");
+        fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn failed_publication_keeps_the_unpublished_file() {
         let root = std::env::temp_dir().join(format!("fairway-publish-{}", rand::random::<u64>()));

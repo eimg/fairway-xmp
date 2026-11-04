@@ -647,10 +647,10 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     }
     let mut file = options.open(&tmp).map_err(|e| e.to_string())?;
     file.write_all(bytes).map_err(|e| e.to_string())?;
-    file.sync_all().map_err(|e| e.to_string())?;
     if let Ok(metadata) = fs::metadata(path) {
         fs::set_permissions(&tmp, metadata.permissions()).map_err(|e| e.to_string())?;
     }
+    file.sync_all().map_err(|e| e.to_string())?;
     drop(file);
     // Windows rename cannot replace a destination; use a platform replacement API.
     #[cfg(windows)]
@@ -667,7 +667,11 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
     }
     #[cfg(not(windows))]
     fs::rename(tmp, path).map_err(|e| e.to_string())?;
-    Ok(())
+    crate::durability::sync_directory(
+        path.parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or(Path::new(".")),
+    )
 }
 
 pub fn private_file(path: &Path) -> Result<()> {

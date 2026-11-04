@@ -7,7 +7,6 @@ use std::{
     collections::BTreeMap,
     fs,
     path::Path,
-    process::Stdio,
     thread,
     time::{Duration, Instant},
 };
@@ -63,17 +62,30 @@ struct SavedFile {
 }
 
 fn restore_files(files: &[SavedFile]) -> Result<()> {
+    let mut errors = Vec::new();
     for file in files {
-        if let Some((bytes, permissions)) = &file.contents {
-            atomic_write(&file.path, bytes)?;
-            fs::set_permissions(&file.path, permissions.clone()).map_err(|e| e.to_string())?;
-        } else if let Err(error) = fs::remove_file(&file.path) {
-            if error.kind() != std::io::ErrorKind::NotFound {
-                return Err(error.to_string());
+        let result: Result<()> = (|| {
+            if let Some((bytes, permissions)) = &file.contents {
+                if fs::read(&file.path).ok().as_ref() != Some(bytes) {
+                    atomic_write(&file.path, bytes)?;
+                }
+                fs::set_permissions(&file.path, permissions.clone()).map_err(|e| e.to_string())?;
+            } else if let Err(error) = fs::remove_file(&file.path) {
+                if error.kind() != std::io::ErrorKind::NotFound {
+                    return Err(error.to_string());
+                }
             }
+            Ok(())
+        })();
+        if let Err(error) = result {
+            errors.push(format!("{}: {error}", file.path.display()));
         }
     }
-    Ok(())
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(errors.join("; "))
+    }
 }
 
 pub struct Manager {
@@ -315,8 +327,59 @@ impl Manager {
             return Err("Stop all services before changing ports.".into());
         }
         ports.validate()?;
-        self.layout.write_configs(&ports)?;
-        self.layout.save_ports(&ports)?;
+        let mut paths = [
+            "php.ini",
+            "php-fpm.conf",
+            "nginx.conf",
+            "mysql.cnf",
+            "admin.cnf",
+            "config.inc.php",
+        ]
+        .map(|name| self.layout.data.join("config").join(name))
+        .to_vec();
+        paths.push(self.layout.data.join("settings.json"));
+        if self.layout.data.join("terminal-bin").is_dir() {
+            for name in ["php", "composer", "fairway"] {
+                paths.push(
+                    self.layout
+                        .data
+                        .join("terminal-bin")
+                        .join(if cfg!(windows) {
+                            format!("{name}.cmd")
+                        } else {
+                            name.into()
+                        }),
+                );
+            }
+        }
+        let previous = paths
+            .into_iter()
+            .map(|path| {
+                let contents = match fs::read(&path) {
+                    Ok(bytes) => Some((
+                        bytes,
+                        fs::metadata(&path)
+                            .map_err(|e| e.to_string())?
+                            .permissions(),
+                    )),
+                    Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+                    Err(e) => return Err(e.to_string()),
+                };
+                Ok(SavedFile { path, contents })
+            })
+            .collect::<Result<Vec<_>>>()?;
+        if let Err(error) = self
+            .layout
+            .write_configs(&ports)
+            .and_then(|()| self.layout.save_ports(&ports))
+        {
+            return match restore_files(&previous) {
+                Ok(()) => Err(error),
+                Err(restore) => Err(format!(
+                    "{error} Previous port settings could not be fully restored: {restore}"
+                )),
+            };
+        }
         self.ports = ports;
         self.errors.clear();
         Ok(())
@@ -992,7 +1055,8 @@ impl Manager {
                 crate::config::windows_ansi_path(&init_file).display()
             ))
             .current_dir(crate::config::windows_ansi_path(&self.layout.data));
-            process::output(cmd).map_err(|error| error.replace(&secret, "[redacted]"))?;
+            crate::command_output::output(cmd, 120, &|| false)
+                .map_err(|error| error.replace(&secret, "[redacted]"))?;
             atomic_write(
                 &self.layout.data.join("database-version"),
                 crate::database::runtime_family(&self.layout)?.as_bytes(),
@@ -1219,6 +1283,10 @@ impl Manager {
     }
 
     pub fn backup(&self) -> Result<String> {
+        self.backup_with_cancel(&|| false)
+    }
+
+    pub(crate) fn backup_with_cancel(&self, cancelled: &dyn Fn() -> bool) -> Result<String> {
         if !self.processes.contains_key("mysql") {
             return Err("Start MySQL before making a backup.".into());
         }
@@ -1231,8 +1299,9 @@ impl Manager {
             // Batch-mode escaping or trimming individual names can change them.
             list.args(["--batch", "--raw", "--skip-column-names", "--default-character-set=utf8mb4", "-e",
                 "SELECT COALESCE(JSON_ARRAYAGG(SCHEMA_NAME), JSON_ARRAY()) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME NOT IN ('mysql','sys','information_schema','performance_schema')"]);
-            let names: Option<Vec<String>> = serde_json::from_str(&process::output(list)?)
-                .map_err(|e| format!("Could not read database names for backup: {e}"))?;
+            let names: Option<Vec<String>> =
+                serde_json::from_str(&crate::command_output::output(list, 30, cancelled)?)
+                    .map_err(|e| format!("Could not read database names for backup: {e}"))?;
             let mut names = names.unwrap_or_default();
             names.sort();
             if names
@@ -1258,13 +1327,14 @@ impl Manager {
                 "--databases",
                 "--",
             ])
-            .args(names)
-            .stdout(Stdio::from(output.try_clone().map_err(|e| e.to_string())?))
-            .stderr(Stdio::piped());
-            let result = cmd.output().map_err(|e| e.to_string())?;
-            if !result.status.success() {
-                return Err(String::from_utf8_lossy(&result.stderr).into());
-            }
+            .args(names);
+            crate::command_output::run(
+                cmd,
+                process::BACKUP_TIMEOUT,
+                None,
+                Some(output.try_clone().map_err(|e| e.to_string())?),
+                cancelled,
+            )?;
             crate::durability::publish_file(output, &partial, &path)?;
             Ok(path.to_string_lossy().into())
         })();
@@ -1326,6 +1396,53 @@ mod mysql_tests;
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn failed_port_saves_restore_generated_files_and_saved_choices() {
+        for existing_settings in [false, true] {
+            for failed_file in ["settings", "config/nginx"] {
+                let root = std::env::temp_dir()
+                    .join(format!("fairway-port-rollback-{}", rand::random::<u64>()));
+                let layout = Layout::at(root.join("home"), root.join("data"), root.join("runtime"));
+                let mut manager = Manager::new(layout.clone()).unwrap();
+                if existing_settings {
+                    layout.save_ports(&manager.ports).unwrap();
+                }
+                let configs = [
+                    "php.ini",
+                    "php-fpm.conf",
+                    "nginx.conf",
+                    "mysql.cnf",
+                    "admin.cnf",
+                    "config.inc.php",
+                ]
+                .map(|name| {
+                    let path = layout.data.join("config").join(name);
+                    let bytes = fs::read(&path).unwrap();
+                    (path, bytes)
+                });
+                let previous_ports = manager.ports.clone();
+                let mut next = previous_ports.clone();
+                next.smtp += 1;
+                next.website += 10;
+                let failure = layout.data.join(format!("{failed_file}.fairway-tmp"));
+                fs::create_dir(&failure).unwrap();
+                assert!(manager.save_ports(next.clone()).is_err());
+                assert_eq!(manager.ports, previous_ports);
+                assert_eq!(layout.ports().unwrap(), previous_ports);
+                assert_eq!(
+                    layout.data.join("settings.json").exists(),
+                    existing_settings
+                );
+                for (path, bytes) in configs {
+                    assert_eq!(fs::read(path).unwrap(), bytes);
+                }
+                fs::remove_dir(failure).unwrap();
+                manager.save_ports(next.clone()).unwrap();
+                assert_eq!(layout.ports().unwrap(), next);
+                fs::remove_dir_all(root).unwrap();
+            }
+        }
+    }
 
     #[test]
     fn identical_failed_retries_have_distinct_message_occurrences() {

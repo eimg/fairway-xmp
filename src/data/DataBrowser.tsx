@@ -421,7 +421,7 @@ export default function DataBrowser({ ready, busy: appBusy, start, open }: { rea
         <p>Import <strong>{fileName(edit.path ?? '')}</strong> into <strong>{database}</strong>.</p>
         <p className="db-import-path">{edit.path}</p>
         <p>Existing data may be replaced. Fairway backs up <strong>{database}</strong> first. SQL can also change other databases; only this target is backed up automatically. Errors or cancellation can leave partial changes.</p>
-        {importPhase && <p role="status">{importPhase === 'working' ? 'Backing up, then importing SQL… Cancel waits for the backup to finish.' : importPhase === 'backup' ? 'Creating a backup… Cancel waits for the backup to finish.' : importPhase === 'import' ? 'Importing SQL…' : importPhase === 'canceling' ? 'Canceling import… Waiting for the current step to stop.' : 'Refreshing the database…'}</p>}
+        {importPhase && <p role="status">{importPhase === 'working' ? 'Backing up, then importing SQL…' : importPhase === 'backup' ? 'Creating a backup…' : importPhase === 'import' ? 'Importing SQL…' : importPhase === 'canceling' ? 'Canceling import… Waiting for the current step to stop.' : 'Refreshing the database…'}</p>}
         <label>Type {database} to confirm<input autoComplete="off" value={confirmation} onChange={event => setConfirmation(event.target.value)} required /></label>
       </>}
       {needsName && <label>{edit.kind.includes('database') ? 'Database name' : 'Table name'}<input required maxLength={64} value={name} onChange={e => setName(e.target.value)} /></label>}

@@ -117,7 +117,8 @@ fn ensure_process(layout: &Layout) -> Result<()> {
 
 pub(crate) fn response_timeout(request: &Request) -> Option<Duration> {
     match request {
-        Request::Backup
+        Request::CancelBackup { .. } => Some(Duration::from_secs(2)),
+        Request::Backup { .. }
         | Request::Shutdown
         | Request::PrepareUpdate
         | Request::PrepareDesktopUpdate => None,
@@ -275,6 +276,7 @@ pub(crate) fn serve(layout: &Layout) -> Result<()> {
     let quitting = Arc::new(AtomicBool::new(false));
     let finished = Arc::new(AtomicBool::new(false));
     let active = Arc::new(AtomicUsize::new(0));
+    let backups = Arc::new(crate::data_browser::Jobs::default());
     let mut listener = Listener::bind(layout)?;
     #[cfg(unix)]
     unsafe {
@@ -316,8 +318,9 @@ pub(crate) fn serve(layout: &Layout) -> Result<()> {
                 let quitting = quitting.clone();
                 let finished = finished.clone();
                 let layout = layout.clone();
+                let backups = backups.clone();
                 thread::spawn(move || {
-                    handle_connection(stream, &layout, &manager, &quitting, &finished);
+                    handle_connection(stream, &layout, &manager, &quitting, &finished, &backups);
                     active.fetch_sub(1, Ordering::AcqRel);
                 });
             }
@@ -385,6 +388,7 @@ fn handle_connection(
     manager: &Mutex<Manager>,
     quitting: &AtomicBool,
     finished: &AtomicBool,
+    backups: &crate::data_browser::Jobs,
 ) {
     let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
     let _ = stream.set_write_timeout(Some(Duration::from_secs(5)));
@@ -397,6 +401,10 @@ fn handle_connection(
         // Discovery/identity must stay available while an operation owns Manager.
         if matches!(request, Request::Hello) {
             return Ok(identity());
+        }
+        if let Request::CancelBackup { id } = &request {
+            backups.cancel(id);
+            return Ok(serde_json::json!("Cancellation requested"));
         }
         if shutdown_requested
             && quitting
@@ -447,7 +455,7 @@ fn handle_connection(
                     return Ok(serde_json::json!("Released"));
                 }
                 let shutdown = matches!(request, Request::Shutdown | Request::PrepareUpdate);
-                let response = dispatch(&mut guard, request, quitting);
+                let response = dispatch(&mut guard, request, quitting, backups);
                 let done = shutdown && response.is_ok();
                 if done {
                     finished.store(true, Ordering::Release);
@@ -459,7 +467,7 @@ fn handle_connection(
             }
         }
         let shutdown = matches!(request, Request::Shutdown | Request::PrepareUpdate);
-        let response = dispatch(&mut guard, request, quitting);
+        let response = dispatch(&mut guard, request, quitting, backups);
         if shutdown && response.is_ok() {
             finished.store(true, Ordering::Release);
             send_response(&mut stream, layout, response)?;
@@ -489,6 +497,7 @@ fn dispatch(
     manager: &mut Manager,
     request: Request,
     quitting: &AtomicBool,
+    backups: &crate::data_browser::Jobs,
 ) -> Result<serde_json::Value> {
     if matches!(request, Request::Shutdown | Request::PrepareUpdate) {
         quitting.store(true, Ordering::Release);
@@ -504,17 +513,23 @@ fn dispatch(
         }
         return result;
     }
-    execute(manager, request)
+    execute(manager, request, backups)
 }
 
 fn identity() -> serde_json::Value {
     serde_json::json!({"protocolVersion":1,"version":env!("CARGO_PKG_VERSION")})
 }
 
-fn execute(manager: &mut Manager, request: Request) -> Result<serde_json::Value> {
+fn execute(
+    manager: &mut Manager,
+    request: Request,
+    backups: &crate::data_browser::Jobs,
+) -> Result<serde_json::Value> {
     match request {
         Request::Hello => return Ok(identity()),
-        Request::Acquire | Request::Release => return Err("Invalid operation reservation.".into()),
+        Request::Acquire | Request::Release | Request::CancelBackup { .. } => {
+            return Err("Invalid operation reservation.".into())
+        }
         Request::Settings { ports, version } => manager.save_settings(ports, version)?,
         Request::PhpSettings { version } => {
             return serde_json::to_value(manager.php_settings(&version)?).map_err(|e| e.to_string())
@@ -551,7 +566,17 @@ fn execute(manager: &mut Manager, request: Request) -> Result<serde_json::Value>
             manager.save_php_version(version)?;
             return Ok(serde_json::json!(manager.layout.php_version()?));
         }
-        Request::Backup => return manager.backup().map(serde_json::Value::String),
+        Request::Backup { id } => {
+            let result = if let Some(id) = &id {
+                let cancel = backups.register(id)?;
+                let result = manager.backup_with_cancel(&|| cancel.load(Ordering::SeqCst));
+                backups.finish(id);
+                result
+            } else {
+                manager.backup()
+            };
+            return result.map(serde_json::Value::String);
+        }
         Request::SaveProject { previous, project } => {
             manager.save_project(previous.as_deref(), project)?
         }
@@ -642,6 +667,7 @@ mod tests {
                 &manager_clone,
                 &AtomicBool::new(false),
                 &AtomicBool::new(false),
+                &crate::data_browser::Jobs::default(),
             )
         });
         let bytes = serde_json::to_vec(
