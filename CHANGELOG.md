@@ -2,7 +2,7 @@
 
 Past entries record released changes; they are not current development or release restrictions. See [Build and release](docs/build-and-release.md) for the current process.
 
-## 0.1.2 — Unreleased build candidate
+## 0.1.2 — 2026-11-04
 
 - Fetch superseded Windows PHP ZIPs from PHP's official archive after a missing-file response, retaining the exact pinned checksum and build.
 - Retry brief Windows sharing/access conflicts when publishing configuration during asynchronous Nginx reloads. Keep the previous file on persistent failure and report the affected file or command.
@@ -14,6 +14,8 @@ Past entries record released changes; they are not current development or releas
 - Prepare Windows PHP toolset selection for PHP 8.6, retain the existing PHP 8.2–8.5 branches and 8.5.12 default, and use a versioned Homebrew formula when recording new default-PHP inputs.
 - Bundle a newer shared Visual C++ v14 x64 prerequisite. Upgrade older installations, preserve equal/newer ones, and install the pinned prerequisite before Windows runtime verification.
 - Update Composer to 2.11.1, including security and PHP 8.6 compatibility fixes, and Mailpit to 1.33.0, including image-cache memory and search fixes. Retain the existing MySQL, stable Nginx and phpMyAdmin pins pending release-time review and compatibility checks.
+
+Release artifacts come from [candidate run 41815500921](https://github.com/eimg/fairway-xmp/actions/runs/41815500921), commit `a4de4047613d7e722172c55a77145731b7baab90`, without rebuilding. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows. Update-feed promotion is separate and is not part of this publication.
 
 ## 0.1.1 — 2026-10-29
 

@@ -195,7 +195,7 @@ The dialog supports Escape, a close button and clicking the backdrop, contains
 keyboard focus, and returns focus to the header button when closed. Without
 JavaScript or native dialog support, the header links to GitHub Releases.
 
-The current installer URLs were verified against the published v0.1.1 release.
+The installer URLs in `downloads.json` track release v0.1.2.
 Update `downloads.json` and translated requirements in `content.mjs` when
 publishing a new supported release; local builds never need a GitHub API call.
 
