@@ -330,7 +330,7 @@ Installer upgrades must also preserve data and coursework. Release testing must 
 
 Short service-control and account-setup commands have 30-second deadlines; initial MySQL bootstrap has 120 seconds. Database dumps have a 15-minute deadline and stream SQL directly to disk with bounded diagnostics. Cancellation stops the dump client and its children, preserving MySQL and earlier backups. Explicit Quit cancels a manual desktop backup through an independent, request-scoped supervisor message before waiting for the operation to release. Update preparation still requires a completed backup before replacement.
 
-Generated configuration and saved port settings roll back together when a port save fails, including the CLI path. Rollback attempts all captured files and reports incomplete recovery. Atomic settings writes flush the containing directory on Unix after replacement. SQL and SQLite exports flush contents and publish without replacing existing files; protective operations proceed only after successful publication. Windows publication uses write-through moves.
+Generated configuration and saved port settings roll back together when a port save fails, including the CLI path. Rollback attempts all captured files and reports incomplete recovery. Atomic settings writes flush the containing directory on Unix after replacement. Windows configuration replacement retries transient access/sharing conflicts for up to one second, allowing asynchronous Nginx readers to close; persistent failures retain the old file and identify the affected path. SQL and SQLite exports flush contents and publish without replacing existing files; protective operations proceed only after successful publication. Windows publication uses write-through moves.
 
 ## Verification
 

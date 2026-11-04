@@ -61,6 +61,7 @@ pub(crate) fn run(
     }
     #[cfg(windows)]
     use windows::drain;
+    let program = cmd.get_program().to_string_lossy().into_owned();
     let capture_stdout = destination.is_none();
     let mut child = cmd
         .stdin(if input.is_some() {
@@ -71,7 +72,7 @@ pub(crate) fn run(
         .stdout(destination.map(Stdio::from).unwrap_or_else(Stdio::piped))
         .stderr(Stdio::piped())
         .spawn()
-        .map_err(|error| error.to_string())?;
+        .map_err(|error| format!("Could not start {program}: {error}"))?;
     #[cfg(windows)]
     let _job = match windows::Job::new(&child) {
         Ok(job) => Some(job),
@@ -81,7 +82,7 @@ pub(crate) fn run(
         Err(error) => {
             let _ = child.kill();
             let _ = child.wait();
-            return Err(error);
+            return Err(format!("Could not track command {program}: {error}"));
         }
     };
     let writer = input.map(|bytes| {

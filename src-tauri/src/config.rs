@@ -645,12 +645,16 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
-    let mut file = options.open(&tmp).map_err(|e| e.to_string())?;
-    file.write_all(bytes).map_err(|e| e.to_string())?;
+    let mut file = options
+        .open(&tmp)
+        .map_err(|e| format!("Could not stage {}: {e}", path.display()))?;
+    file.write_all(bytes)
+        .map_err(|e| format!("Could not write {}: {e}", path.display()))?;
     if let Ok(metadata) = fs::metadata(path) {
         fs::set_permissions(&tmp, metadata.permissions()).map_err(|e| e.to_string())?;
     }
-    file.sync_all().map_err(|e| e.to_string())?;
+    file.sync_all()
+        .map_err(|e| format!("Could not flush {}: {e}", path.display()))?;
     drop(file);
     // Windows rename cannot replace a destination; use a platform replacement API.
     #[cfg(windows)]
@@ -661,8 +665,21 @@ pub fn atomic_write(path: &Path, bytes: &[u8]) -> Result<()> {
         }
         let a: Vec<u16> = tmp.as_os_str().encode_wide().chain(Some(0)).collect();
         let b: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
-        if unsafe { MoveFileExW(a.as_ptr(), b.as_ptr(), 0x1 | 0x8) } == 0 {
-            return Err(io::Error::last_os_error().to_string());
+        // Nginx reloads asynchronously and briefly opens its configuration and
+        // certificate files without delete sharing. Keep the old destination
+        // intact while waiting for those handles (or a scanner) to close.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(1);
+        loop {
+            if unsafe { MoveFileExW(a.as_ptr(), b.as_ptr(), 0x1 | 0x8) } != 0 {
+                break;
+            }
+            let error = io::Error::last_os_error();
+            if !matches!(error.raw_os_error(), Some(5 | 32 | 33))
+                || std::time::Instant::now() >= deadline
+            {
+                return Err(format!("Could not replace {}: {error}", path.display()));
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
         }
     }
     #[cfg(not(windows))]
@@ -763,6 +780,53 @@ fn windows_php_extensions(php_root: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(windows)]
+    #[test]
+    fn atomic_replacement_waits_for_readers_and_keeps_original_on_timeout() {
+        use std::{os::windows::fs::OpenOptionsExt, sync::mpsc, thread, time::Duration};
+        let root = std::env::temp_dir().join(format!("fairway-replace-{}", rand::random::<u64>()));
+        fs::create_dir(&root).unwrap();
+        let path = root.join("nginx.conf");
+        fs::write(&path, b"previous configuration").unwrap();
+        // This is the sharing mode used by native readers that permit reads
+        // and writes but prevent a pathname from being replaced while open.
+        let hold = || {
+            fs::OpenOptions::new()
+                .read(true)
+                .share_mode(0x1 | 0x2)
+                .open(&path)
+                .unwrap()
+        };
+        let reader = hold();
+        let (sent, received) = mpsc::channel();
+        let next = path.clone();
+        let writer = thread::spawn(move || {
+            sent.send(()).unwrap();
+            atomic_write(&next, b"new configuration")
+        });
+        received.recv().unwrap();
+        thread::sleep(Duration::from_millis(100));
+        assert_eq!(fs::read(&path).unwrap(), b"previous configuration");
+        assert!(
+            !writer.is_finished(),
+            "replacement bypassed an active reader"
+        );
+        drop(reader);
+        writer.join().unwrap().unwrap();
+        assert_eq!(fs::read(&path).unwrap(), b"new configuration");
+        let reader = hold();
+        let start = std::time::Instant::now();
+        let error = atomic_write(&path, b"must not replace").unwrap_err();
+        assert!(
+            error.contains("Could not replace") && error.contains("nginx.conf"),
+            "{error}"
+        );
+        assert!(start.elapsed() < Duration::from_secs(5));
+        assert_eq!(fs::read(&path).unwrap(), b"new configuration");
+        drop(reader);
+        atomic_write(&path, b"retry succeeded").unwrap();
+        fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn ports_reject_duplicates_and_privileged_ports() {
         assert!(Ports::default().validate().is_ok());

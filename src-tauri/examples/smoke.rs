@@ -512,8 +512,12 @@ fn main() -> Result<(), String> {
                     "HTTPS reload did not serve both projects: {last_responses:?}"
                 ));
             }
-            manager.set_project_https("new-project", false)?;
-            manager.set_project_https("plain-project", false)?;
+            manager
+                .set_project_https("new-project", false)
+                .map_err(|e| format!("Disabling the first HTTPS site: {e}"))?;
+            manager
+                .set_project_https("plain-project", false)
+                .map_err(|e| format!("Disabling the last HTTPS site: {e}"))?;
             manager.remove_project("new-project")?;
             let mut removed = false;
             for _ in 0..20 {

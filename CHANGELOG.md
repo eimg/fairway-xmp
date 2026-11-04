@@ -4,6 +4,7 @@ Past entries record released changes; they are not current development or releas
 
 ## 0.1.2 — Unreleased build candidate
 
+- Retry brief Windows sharing/access conflicts when publishing configuration during asynchronous Nginx reloads. Keep the previous file on persistent failure and report the affected file or command.
 - Add a shared supervisor-backed management CLI on macOS and Windows, alongside the Linux terminal edition, with bundled agent instructions and clearer CLI/help navigation.
 - Bound short service commands and database dumps, allow cancellation during protective backups, and cancel manual backups and active database-browser work on explicit Quit while preserving MySQL until normal shutdown.
 - Flush settings and backup publication, stage SQLite backups as unfinished files, preserve existing export destinations, and restore generated configuration after failed CLI port saves.
