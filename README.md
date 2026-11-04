@@ -117,7 +117,15 @@ fairway logs php --json
 fairway shutdown --json
 ```
 
-The CLI and desktop share one background supervisor. Enable **Settings → Command-line tools**, or invoke the bundled executable by absolute path. Agents can discover commands with `fairway capabilities --json` and use `--non-interactive` for site changes that must return an approval handoff instead of opening OS prompts. See the [CLI reference](docs/cli.md) and [Fairway XMP agent skill](skills/fairway-xmp/SKILL.md). GitHub source releases include the portable `skills/fairway-xmp` folder; copy it into your agent’s supported skills directory.
+The CLI and desktop share one background supervisor. Enable **Settings → Command-line tools**, or invoke the bundled executable by absolute path. Agents can discover commands with `fairway capabilities --json` and use `--non-interactive` for site changes that must return an approval handoff instead of opening OS prompts. See the [CLI reference](docs/cli.md).
+
+## Agent skill
+
+The bundled [Fairway XMP agent skill](skills/fairway-xmp/SKILL.md) helps coding agents manage services, sites, PHP settings, logs, backups and MySQL through the installed CLI.
+
+Install Fairway XMP, then copy the whole `skills/fairway-xmp` folder from this repository or a release’s **Source code** archive into your agent application’s supported skills directory. Enable or reload the skill as that application requires. See the [skill setup guide](https://eimg.github.io/fairway-xmp/#agent-skill).
+
+Try: “Use the fairway-xmp skill to check my environment and report running services, PHP version, ports and sites.”
 
 ## PHP and Composer in your terminal
 
