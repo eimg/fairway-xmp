@@ -96,3 +96,15 @@ Before moving/deleting a standalone Mac helper test app, quit it and run its own
 Build debug entry points with `cargo build --manifest-path src-tauri/Cargo.toml --bin fairway --bin fairway-cli --locked`. With the native runtime staged, run `python3 tests/shared_cli_smoke.py --cli src-tauri/target/debug/fairway-cli --peer src-tauri/target/debug/fairway --runtime src-tauri/resources/runtime` (append `.exe` to both binaries on Windows). The smoke rejects release binaries using build identity before changing anything; it uses isolated debug home/data paths and temporary ports. It never edits system hosts, certificate trust or PATH integration. Native macOS/Windows build workflows run it after runtime staging. Rust CLI tests exercise controller reservations, disconnect recovery, shutdown ordering and installation exclusion.
 
 Add `--output .runtime-work/shared-cli-smoke` to retain per-command arguments, UTF-8 output and service logs. Each command reports its start, completion and elapsed time; timeouts use bounded process cleanup. Windows test descendants stay in a test-owned job until cleanup, and its CI smoke step has a separate 10-minute limit with failure diagnostics uploaded as an artifact.
+
+## Desktop startup preferences (macOS and Windows)
+
+Rust tests cover default-off and preserved per-service selections, invalid-file
+preservation, supervisor serialization, shutdown/reconnection persistence and the
+absence of automatic starts from CLI status. For interactive device testing,
+launch the built app, enable one service's Run on start switch, quit and reopen;
+only that service should start (Nginx includes PHP/phpMyAdmin). Manual Stop must
+not change the switch. Test Launch Fairway XMP at login independently, approval
+or disabling in OS settings, login background launch, and uninstall cleanup.
+Windows compilation and interactive device checks may be performed separately;
+Linux has no startup preference controls.

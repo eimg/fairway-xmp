@@ -221,3 +221,23 @@ select:not([multiple]){appearance:none;-webkit-appearance:none;min-height:36px;l
 .help-button{display:flex;align-items:center;gap:8px}
 a.secondary{display:inline-flex;align-items:center;justify-content:center;gap:8px}
 a.secondary:hover{background:#f7f9f8}
+
+/* Startup preferences are separate from current service controls. */
+.startup-toggle{display:inline-flex;align-items:center;gap:8px;position:relative;cursor:pointer;font-size:11px;color:#526759;line-height:1.6}
+.startup-toggle input{position:absolute;opacity:0;width:1px;height:1px;padding:0;margin:0}
+.startup-track{display:block;flex-shrink:0;width:28px;height:17px;border:1px solid #a8b8ad;border-radius:20px;background:#cbd5ce}
+.startup-track:before{content:"";display:block;width:13px;height:13px;margin:1px;border-radius:50%;background:#fff;box-shadow:0 1px 2px #0002}
+.startup-toggle input:checked+.startup-track{background:var(--green);border-color:var(--green)}
+.startup-toggle input:checked+.startup-track:before{transform:translateX(11px)}
+.startup-toggle input:focus-visible+.startup-track{outline:2px solid var(--green);outline-offset:2px}
+.startup-toggle:has(input:disabled){opacity:.55;cursor:not-allowed}
+.service-top{gap:12px}
+.service-top>.service-icon,.mail-service-summary>.service-icon{flex-shrink:0}
+:is(.service-actions,.mail-service-heading) .startup-toggle{font-size:10px;white-space:nowrap}
+.service-actions>.service-toggle{margin-left:auto;color:#617568}
+.login-setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer}
+.login-setting-row strong{font-size:14px;font-weight:600}
+.login-setting-description{display:block;margin-top:6px;font-size:11px;line-height:1.6;color:#66796d}
+.login-approval{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px 16px;border-top:1px solid var(--border);margin-top:16px;padding-top:14px}
+.login-settings .login-approval p{margin:0}
+.startup-setting-error{color:#a23d32;overflow-wrap:anywhere}

@@ -56,6 +56,92 @@ impl Drop for Fixture {
     }
 }
 
+#[cfg(any(target_os = "macos", windows))]
+#[test]
+fn desktop_startup_preferences_are_explicit_and_survive_shutdown() {
+    use crate::startup_preferences::Services;
+    let fixture = Fixture::new();
+    let mut client = Client::new(fixture.layout.clone()).unwrap();
+    let defaults: Services = client.call(Request::StartupServices).unwrap();
+    assert_eq!(defaults, Services::default());
+    let saved: Services = client
+        .call(Request::SaveStartupService {
+            service: "mysql".into(),
+            enabled: true,
+        })
+        .unwrap();
+    assert_eq!(saved.selected(), ["mysql"]);
+    client
+        .call::<serde_json::Value>(Request::Stop {
+            service: "all".into(),
+        })
+        .unwrap();
+    assert_eq!(
+        client.call::<Services>(Request::StartupServices).unwrap(),
+        saved
+    );
+    // Starting/reconnecting a CLI supervisor and checking status must not apply
+    // desktop preferences, even when a service has Run on start enabled.
+    assert!(client
+        .snapshot()
+        .unwrap()
+        .services
+        .iter()
+        .all(|service| !service.running && service.message.is_none()));
+    client.shutdown().unwrap();
+    let mut reopened = Client::new(fixture.layout.clone()).unwrap();
+    assert_eq!(
+        reopened.call::<Services>(Request::StartupServices).unwrap(),
+        saved
+    );
+    assert!(reopened
+        .snapshot()
+        .unwrap()
+        .services
+        .iter()
+        .all(|service| !service.running && service.message.is_none()));
+    reopened.begin().unwrap();
+    // This fixture deliberately has no runtime: only the selected service is
+    // attempted, its failure is returned, and the user's preference is retained.
+    let failures: Vec<String> = reopened.call(Request::StartConfiguredServices).unwrap();
+    assert_eq!(failures.len(), 1);
+    assert!(failures[0].starts_with("mysql:"));
+    assert_eq!(
+        reopened.call::<Services>(Request::StartupServices).unwrap(),
+        saved
+    );
+    reopened
+        .call::<Services>(Request::SaveStartupService {
+            service: "mail".into(),
+            enabled: true,
+        })
+        .unwrap();
+    let failures: Vec<String> = reopened.call(Request::StartConfiguredServices).unwrap();
+    assert_eq!(
+        failures.len(),
+        2,
+        "A failing MySQL start must not prevent Mail from being attempted"
+    );
+    assert!(failures[1].starts_with("mail:"));
+    reopened
+        .call::<Services>(Request::SaveStartupService {
+            service: "mail".into(),
+            enabled: false,
+        })
+        .unwrap();
+    reopened
+        .call::<Services>(Request::SaveStartupService {
+            service: "mysql".into(),
+            enabled: false,
+        })
+        .unwrap();
+    assert!(reopened
+        .call::<Vec<String>>(Request::StartConfiguredServices)
+        .unwrap()
+        .is_empty());
+    reopened.end();
+}
+
 #[test]
 fn desktop_and_cli_share_settings_and_exclude_overlapping_operations() {
     let fixture = Fixture::new();

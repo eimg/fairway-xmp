@@ -5,10 +5,11 @@ import {
   RefreshCw, ScrollText, Settings2, Square, Terminal, X,
 } from 'lucide-react';
 import { canControl, invoke, isDesktop, isUiTest, listen, preview } from './bridge';
-import type { NodeStatus, PhpSettingsView, Ports, Project, ProjectConfig, ServiceId, ServiceStatus, Snapshot, StartupStatus, UpdateInfo, UpdateProgress } from './types';
+import type { NodeStatus, PhpSettingsView, Ports, Project, ProjectConfig, ServiceId, ServiceStatus, Snapshot, StartupServiceId, StartupServices, StartupStatus, UpdateInfo, UpdateProgress } from './types';
 import HelpTip from './HelpTip';
 import GuideLink from './GuideLink';
 import PhpSettingsCard from './PhpSettings';
+import LoginSettings from './LoginSettings';
 import NodeTools from './NodeTools';
 import DataBrowser from './data/DataBrowser';
 import SitesPage from './SitesPage';
@@ -73,6 +74,7 @@ function AppContent() {
   const maximized = useMaximizedWorkspace();
   const restoreWorkspace = useRestoreWorkspace();
   const [data, setData] = useState<Snapshot>(preview);
+  const [initialLoading, setInitialLoading] = useState(canControl);
   const [view, setCurrentView] = useState<View>('environment');
   const navigation = useRef({ view: 'environment' as View, id: 0 });
   const pageId = navigation.current.id;
@@ -121,6 +123,7 @@ function AppContent() {
   const [updateProgress, setUpdateProgress] = useState<UpdateProgress | null>(null);
   const [updatePending, setUpdatePending] = useState(false);
   const [startup, setStartup] = useState<StartupStatus | null>(null);
+  const [startupServices, setStartupServices] = useState<StartupServices | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [projectForm, setProjectForm] = useState<ProjectForm | null>(null);
   const [removing, setRemoving] = useState<Project | null>(null);
@@ -152,7 +155,8 @@ function AppContent() {
   const refresh = useCallback(async () => {
     if (!canControl || operation.current) return;
     const current = await invoke<Snapshot>('snapshot');
-    setData(current);
+    setData(current); setInitialLoading(false);
+    if (current.os === 'macos' || current.os === 'windows') setStartupServices(await invoke<StartupServices>('startup_services'));
   }, []);
 
   useEffect(() => {
@@ -164,11 +168,18 @@ function AppContent() {
       try {
         const status = await invoke<StartupStatus>('startup_status').catch(() => null);
         if (!disposed) setStartup(status);
-        if (status?.blocking) return;
+        if (status?.blocking) {
+          if (!disposed) setInitialLoading(false);
+          return;
+        }
         const current = await invoke<Snapshot>('snapshot');
-        if (!disposed) setData(current);
+        if (!disposed) { setData(current); setInitialLoading(false); }
+        if (current.os === 'macos' || current.os === 'windows') {
+          const preferences = await invoke<StartupServices>('startup_services');
+          if (!disposed) setStartupServices(preferences);
+        }
       } catch (error) {
-        if (!disposed) reportBackendError(error);
+        if (!disposed) { setInitialLoading(false); reportBackendError(error); }
       } finally { fetching = false; }
     };
     void poll();
@@ -178,11 +189,13 @@ function AppContent() {
         const current = payload as Snapshot;
         setPorts(current.ports); setPhpVersion(current.phpVersion);
         setNodeTools(null); setNodePreviewRevision(value => value + 1);
+        setStartupServices(null);
+        void invoke<StartupServices>('startup_services').then(setStartupServices).catch(reportBackendError);
         setNoticeState(null); lastBackendError.current = null;
         setUpdate(null); setUpdateProgress(null); setUpdatePending(false); setStartup(null); setReport(null); setCopied(null);
       })] : []),
       listen('fairway-status', payload => {
-        const current = payload as Snapshot; setData(current);
+        const current = payload as Snapshot; setData(current); setInitialLoading(false);
         if (!current.domainsApprovalPending) setNoticeState(notice => notice?.topic === 'address-approval' ? null : notice);
       }),
       listen('fairway-operation-started', payload => {
@@ -240,6 +253,12 @@ function AppContent() {
   function serviceAction(action: string, service?: ServiceId) {
     void run(action.startsWith('stop') ? 'Stopping services…' : action === 'restart' ? 'Restarting service…' : 'Starting services…', async () => {
       setData(await invoke<Snapshot>('service_action', { action, service: service ?? null }));
+    });
+  }
+
+  function changeStartupService(service: StartupServiceId, enabled: boolean) {
+    void run('Saving startup service…', async () => {
+      setStartupServices(await invoke<StartupServices>('save_startup_service', { service, enabled }));
     });
   }
 
@@ -344,6 +363,7 @@ function AppContent() {
       <div className="main-content">
         {UiTestToolbar && <Suspense fallback={null}><UiTestToolbar busy={!!busy} /></Suspense>}
         {!isDesktop && !isUiTest && <div className="preview-banner"><Code2 size={16} />Interface preview — open the desktop app to manage services.</div>}
+        {initialLoading && <p className="settings-hint" role="status">Loading Fairway XMP and starting selected services…</p>}
         {!!startup?.errors.length && <section className="settings-card startup-recovery" aria-label="Startup recovery">
           <h2>Startup needs attention</h2>
           <div className="startup-errors" role="alert">{startup.errors.map((error, index) => <p key={index}>{error}</p>)}</div>
@@ -365,9 +385,9 @@ function AppContent() {
           <div className="section-heading"><h2>Services <span>5</span></h2><span className="stack-status"><span className={`status-dot ${allReady ? 'running' : ''}`} />{allReady ? 'All services ready' : anyRunning ? 'Environment partially running' : 'All services stopped'}</span></div>
           <div className="services-grid">{(['nginx', 'php', 'mysql', 'phpmyadmin', 'mail'] as ServiceId[]).map(id => {
             const service = data.services.find(s => s.id === id)!;
-            return <ServiceCard key={id} service={service} unavailable={id === 'mail' && !data.mailAvailable && !service.running} version={id === 'php' ? selectedPhp : versions?.[meta[id].version]} disabled={!usable || (id === 'mail' && !data.mailAvailable && !service.running)} busy={!!busy} onAction={serviceAction} onOpen={open} onLog={showLog} />;
+            return <ServiceCard key={id} service={service} unavailable={id === 'mail' && !data.mailAvailable && !service.running} version={id === 'php' ? selectedPhp : versions?.[meta[id].version]} disabled={!usable || (id === 'mail' && !data.mailAvailable && !service.running)} busy={!!busy} startupServices={startupServices} startupSupported={data.os === 'macos' || data.os === 'windows'} onStartupChange={changeStartupService} onAction={serviceAction} onOpen={open} onLog={showLog} />;
           })}</div>
-          {canControl && !data.runtimeReady && <div className="notice error" role="alert">Fairway XMP’s PHP or database files are missing. Reinstall Fairway XMP to restore them. Your projects and database data will be kept.</div>}
+          {canControl && !initialLoading && !data.runtimeReady && <div className="notice error" role="alert">Fairway XMP’s PHP or database files are missing. Reinstall Fairway XMP to restore them. Your projects and database data will be kept.</div>}
 
           <div className="section-heading workspace-heading"><h2>Workspace details</h2></div>
           <div className="workspace-reference">
@@ -404,6 +424,7 @@ function AppContent() {
 
         {view === 'settings' && <>
           <div className="page-heading"><div><h1>Settings</h1><p>Service ports, PHP version, and command-line tools.</p></div></div>
+          {(data.os === 'macos' || data.os === 'windows') && <LoginSettings busy={!!busy} />}
           <section className="settings-card"><h2>Service Settings</h2><p>Stop all services before changing ports or PHP. Saved settings stay the same across restarts.</p>
             <form onSubmit={event => { event.preventDefault(); void run('Saving settings…', async () => {
               const mysqlPortChanged = ports.mysql !== data.ports.mysql;
@@ -496,8 +517,10 @@ function AppContent() {
   </div>;
 }
 
-function ServiceCard({ service, version, unavailable, disabled, busy, onAction, onOpen, onLog }: {
+function ServiceCard({ service, version, unavailable, disabled, busy, startupServices, startupSupported, onStartupChange, onAction, onOpen, onLog }: {
   service: ServiceStatus; version?: string; unavailable: boolean; disabled: boolean; busy: boolean;
+  startupServices: StartupServices | null; startupSupported: boolean;
+  onStartupChange: (service: StartupServiceId, enabled: boolean) => void;
   onAction: (action: string, service?: ServiceId) => void;
   onOpen: (target: string) => void; onLog: (service: ServiceId) => void;
 }) {
@@ -508,13 +531,34 @@ function ServiceCard({ service, version, unavailable, disabled, busy, onAction, 
   const status = <span className={`status-label ${service.ready ? 'ready' : service.running ? 'pending' : ''}`}><span className={`status-dot ${service.ready ? 'running' : service.running ? 'pending' : ''}`} />{service.ready ? 'Running' : service.running ? 'Waiting' : 'Stopped'}</span>;
   const address = <div className="service-address"><span>{service.id === 'php' ? 'Internal port' : web ? 'localhost' : '127.0.0.1'}<span className="address-port">:{service.port}</span></span>{web && <button className="icon-button" title={`Open ${item.name}`} aria-label={`Open ${item.name}`} disabled={!service.ready || busy} onClick={() => onOpen(service.id === 'nginx' ? 'website' : service.id)}><ExternalLink size={14} /></button>}</div>;
   const error = (service.message || unavailable) && <div className="service-error" role="status">{service.message || 'Mail catcher files are missing. Reinstall Fairway XMP to restore mail.'}</div>;
-  const actions = <div className="service-actions">{browser ? <button className="service-start" disabled={!service.ready || busy} onClick={() => onOpen('phpmyadmin')}>Open phpMyAdmin<ArrowUpRight size={14} /></button> : service.id === 'php' ? <span className="service-managed">Managed with Nginx</span> : <><button className="service-start" disabled={disabled} onClick={() => onAction(service.running ? 'stop' : 'start', service.id)}>{service.running ? <Square size={12} /> : <Play size={12} />}{service.running ? 'Stop service' : 'Start service'}</button><button className="icon-button" title={`Restart ${item.name}`} aria-label={`Restart ${item.name}`} disabled={disabled || !service.running} onClick={() => onAction('restart', service.id)}><RefreshCw size={14} /></button></>}<button className="icon-button" title={`View ${item.name} logs`} aria-label={`View ${item.name} logs`} disabled={!canControl} onClick={() => onLog(service.id)}><ScrollText size={15} /></button></div>;
+  const startupService = service.id;
+  const startupToggle = startupSupported && (startupService === 'nginx' || startupService === 'mysql' || startupService === 'mail') &&
+    <label className="startup-toggle" title="Start this service whenever Fairway XMP opens">
+      <input type="checkbox" role="switch" aria-label={`${item.name} Run on start`} checked={startupServices?.[startupService] ?? false}
+        disabled={!canControl || !startupServices || busy || (unavailable && !startupServices[startupService])}
+        onChange={event => onStartupChange(startupService, event.target.checked)} />
+      <span className="startup-track" aria-hidden="true" /><span>Run on start</span>
+    </label>;
+  const toggleAction = service.running ? 'Stop' : 'Start';
+  const actions = <div className="service-actions">
+    {service.id !== 'mail' && startupToggle}
+    {browser ? <button className="service-start" disabled={!service.ready || busy} onClick={() => onOpen('phpmyadmin')}>Open phpMyAdmin<ArrowUpRight size={14} /></button>
+      : service.id === 'php' ? <span className="service-managed">Managed with Nginx</span>
+      : <>
+        <button className="icon-button service-toggle" title={`${toggleAction} ${item.name}`} aria-label={`${toggleAction} service`}
+          disabled={disabled} onClick={() => onAction(service.running ? 'stop' : 'start', service.id)}>
+          {service.running ? <Square size={12} /> : <Play size={12} />}
+        </button>
+        <button className="icon-button" title={`Restart ${item.name}`} aria-label={`Restart ${item.name}`} disabled={disabled || !service.running} onClick={() => onAction('restart', service.id)}><RefreshCw size={14} /></button>
+      </>}
+    <button className="icon-button" title={`View ${item.name} logs`} aria-label={`View ${item.name} logs`} disabled={!canControl} onClick={() => onLog(service.id)}><ScrollText size={15} /></button>
+  </div>;
 
   if (service.id === 'mail') return <section className="service-card service-card-mail">
     <div className="mail-service-summary">
       <span className={`service-icon ${item.color}`}><Icon size={23} strokeWidth={1.8} /></span>
       <div className="mail-service-details">
-        <div className="mail-service-heading"><div className="service-name"><h3>{item.name}</h3>{version && <span>{version}</span>}</div>{status}</div>
+        <div className="mail-service-heading"><div className="service-name"><h3>{item.name}</h3>{version && <span>{version}</span>}</div>{status}{startupToggle}</div>
         <p>{item.description}</p>
       </div>
     </div>
@@ -522,7 +566,10 @@ function ServiceCard({ service, version, unavailable, disabled, busy, onAction, 
   </section>;
 
   return <section className="service-card">
-    <div className="service-top"><span className={`service-icon ${item.color}`}><Icon size={23} strokeWidth={1.8} /></span>{status}</div>
+    <div className="service-top">
+      <span className={`service-icon ${item.color}`}><Icon size={23} strokeWidth={1.8} /></span>
+      {status}
+    </div>
     <div className="service-name"><h3>{item.name}</h3>{version && <span>{version}</span>}</div><p>{item.description}</p>
     {address}{error}{actions}
   </section>;

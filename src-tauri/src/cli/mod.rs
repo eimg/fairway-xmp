@@ -20,6 +20,15 @@ use std::{env, path::PathBuf, process::Command};
 #[serde(tag = "command", rename_all = "kebab-case", deny_unknown_fields)]
 pub(crate) enum Request {
     Status,
+    #[cfg(any(target_os = "macos", windows))]
+    StartupServices,
+    #[cfg(any(target_os = "macos", windows))]
+    SaveStartupService {
+        service: String,
+        enabled: bool,
+    },
+    #[cfg(any(target_os = "macos", windows))]
+    StartConfiguredServices,
     Hello,
     Acquire,
     Release,

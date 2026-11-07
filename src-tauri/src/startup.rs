@@ -21,6 +21,8 @@ pub(crate) struct Startup {
     pub manager: Option<Client>,
     errors: Vec<String>,
     persistent_errors: Vec<String>,
+    launch_errors: Vec<String>,
+    launch_pending: bool,
 }
 
 impl Startup {
@@ -31,6 +33,8 @@ impl Startup {
             manager: None,
             errors: Vec::new(),
             persistent_errors: Vec::new(),
+            launch_errors: Vec::new(),
+            launch_pending: true,
         };
         startup.retry();
         startup
@@ -90,6 +94,7 @@ impl Startup {
                 .errors
                 .iter()
                 .chain(&self.persistent_errors)
+                .chain(&self.launch_errors)
                 .cloned()
                 .collect(),
             data_dir: self
@@ -97,6 +102,29 @@ impl Startup {
                 .as_ref()
                 .map(|layout| layout.data.to_string_lossy().into_owned()),
         }
+    }
+
+    /// The desktop invokes this once under its operation reservation. CLI probes
+    /// and reconnects never apply desktop launch preferences.
+    pub fn start_configured(&mut self) {
+        if !self.launch_pending {
+            return;
+        }
+        self.launch_errors.clear();
+        #[cfg(any(target_os = "macos", windows))]
+        if let Some(manager) = &self.manager {
+            match manager.call::<Vec<String>>(crate::cli::Request::StartConfiguredServices) {
+                Ok(errors) => {
+                    self.launch_pending = !errors.is_empty();
+                    self.launch_errors = errors;
+                }
+                Err(error) => self.launch_errors.push(error),
+            }
+        }
+    }
+
+    pub fn set_launch_error(&mut self, error: String) {
+        self.launch_errors = vec![error];
     }
 
     pub fn add_error(&mut self, error: String) {
@@ -138,6 +166,8 @@ mod tests {
                 manager: None,
                 errors: vec![],
                 persistent_errors: vec![],
+                launch_errors: vec![],
+                launch_pending: true,
             },
             root,
         )

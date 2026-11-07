@@ -1,6 +1,6 @@
 [package]
 name = "fairway"
-version = "0.1.2"
+version = "0.1.3"
 description = "A consistent PHP development environment for the classroom"
 edition = "2021"
 default-run = "fairway"
@@ -66,7 +66,7 @@ security-framework-sys = { version = "=2.17.0", optional = true }
 muda = { version = "0.20", optional = true, default-features = false }
 objc2 = { version = "0.6", optional = true }
 objc2-app-kit = { version = "0.3", optional = true, default-features = false, features = ["NSApplication", "NSMenu", "NSMenuItem", "NSImage"] }
-objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["NSString", "NSAttributedString", "NSValue", "NSError"] }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["NSString", "NSAttributedString", "NSValue", "NSError", "NSAppleEventManager", "NSAppleEventDescriptor"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

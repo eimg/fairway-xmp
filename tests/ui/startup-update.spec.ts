@@ -19,6 +19,7 @@ test('startup errors stay visible and retry uses the repaired saved configuratio
         if (command === 'startup_status') return status() as T;
         if (command === 'retry_startup') { retryCount++; return status() as T; }
         if (command === 'snapshot') { if (!repaired) throw new Error('startup blocked'); return structuredClone(snapshot) as T; }
+        if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
         if (command === 'open_target' && args.target === 'data') return undefined as T;
         if (command === 'test-retry-count') return retryCount as T;
         throw new Error(`Unexpected command: ${command}`);
@@ -29,6 +30,7 @@ test('startup errors stay visible and retry uses the repaired saved configuratio
   const recovery = page.getByRole('region', { name: 'Startup recovery' });
   await expect(recovery).toBeVisible();
   await expect(recovery.getByRole('alert')).toContainText('has been preserved');
+  await expect(page.getByText('Loading Fairway XMP and starting selected services…')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Start all', exact: true })).toHaveCount(0);
   await recovery.getByRole('button', { name: 'Open data folder' }).click();
   await recovery.getByRole('button', { name: 'Retry startup' }).click();
@@ -59,6 +61,8 @@ test('removed PHP selection can be replaced in Settings while service startup st
         if (command.startsWith('plugin:event|')) return 1 as T;
         if (command === 'startup_status' || command === 'retry_startup') return status() as T;
         if (command === 'snapshot') return structuredClone(snapshot) as T;
+        if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
+        if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
         if (command === 'get_php_settings') return { version: String(args.version), settings: { memoryLimitMb: 256, maxExecutionTime: 120, uploadMaxFilesizeMb: 64, timezone: 'UTC', displayErrors: true, sessionUploadProgress: true }, customized: false, timezones: ['UTC'] } as T;
         if (command === 'save_settings') {
           if (!snapshot.phpVersions[String(args.version)]) throw new Error('Unavailable PHP');
@@ -85,6 +89,27 @@ test('removed PHP selection can be replaced in Settings while service startup st
   await expect(page.getByRole('status').filter({ hasText: 'Settings saved.' })).toBeVisible();
   await expect(version).toHaveValue('8.4');
   await page.getByRole('button', { name: 'Environment', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Start all', exact: true })).toBeEnabled();
+});
+
+test('service startup switches are independent of the login item and live services', async ({ page }) => {
+  await page.goto('/');
+  const nginx = page.getByRole('switch', { name: 'Nginx Run on start' });
+  await expect(page.getByRole('switch', { name: /Run on start$/ })).toHaveCount(3);
+  await expect(nginx).not.toBeChecked();
+  await nginx.check();
+  await expect(nginx).toBeChecked();
+  await expect(page.getByRole('button', { name: 'Start all', exact: true })).toBeEnabled();
+
+  await page.getByRole('button', { name: 'Settings', exact: true }).click();
+  const login = page.getByRole('switch', { name: 'Launch Fairway XMP at login' });
+  await expect(login).not.toBeChecked();
+  await login.check();
+  await expect(login).toBeChecked();
+
+  await page.getByRole('button', { name: 'Environment', exact: true }).click();
+  await expect(nginx).toBeChecked();
+  await expect(page.getByRole('switch', { name: 'MySQL Run on start' })).not.toBeChecked();
   await expect(page.getByRole('button', { name: 'Start all', exact: true })).toBeEnabled();
 });
 

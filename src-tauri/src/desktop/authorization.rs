@@ -2,7 +2,6 @@
 use crate::config::Result;
 use objc2::MainThreadMarker;
 use objc2_app_kit::NSApplication;
-#[cfg(feature = "native-macos-hosts")]
 use objc2_foundation::NSString;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -76,7 +75,6 @@ pub(crate) fn begin() -> Result<Authorization<'static>> {
 
 /// Settings is a known application: use cooperative activation before the
 /// ServiceManagement API opens its Login Items page. No extra launch or prompt.
-#[cfg(feature = "native-macos-hosts")]
 pub(crate) fn open_login_items() -> Result<()> {
     on_main(|mtm| {
         NSApplication::sharedApplication(mtm).yieldActivationToApplicationWithBundleIdentifier(

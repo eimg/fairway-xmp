@@ -155,6 +155,35 @@ Every bundled PHP version also requires `sockets`, `soap` and `ldap` on all thre
 
 The website includes a bilingual CLI guide at `#cli` in Manage Fairway XMP. A brief For agents block appears immediately below its heading, before the human procedure. It links the portable `skills/fairway-xmp` skill, explains capability discovery/JSON/noninteractive approvals. The skill folder contains SKILL.md and agent UI metadata; GitHub source releases and existing git-archive-based source bundles include it as tracked source. Users install the skill by copying the folder into their agent application’s supported skills directory. User and agent documentation describes the behavior of the release it accompanies; development status and release chronology belong in release notes.
 
+## Desktop startup preferences
+
+On macOS and Windows, **Run on start** appears in the Nginx and MySQL footers
+and in the compact Mail header. Each of these cards groups its start or stop,
+restart and log buttons in that order. PHP and phpMyAdmin follow Nginx.
+All service preferences default off and are saved in
+`startup-services.json` under application data through the shared supervisor.
+They take effect on the next desktop launch, whether manual or at login;
+changing a switch does not start or stop a service immediately. Manual Start,
+Stop, Restart, Stop all, Quit, update preparation and CLI operations preserve
+these preferences. The desktop starts only selected services using existing
+readiness checks; Nginx starts PHP and makes phpMyAdmin available. Individual
+failures do not prevent other selected services from starting and remain visible
+in startup recovery and service status. Retry startup retries configured automatic
+starts; successful automatic startup runs once per desktop process. CLI status
+and supervisor reconnection never apply desktop startup preferences.
+
+Settings has an independent **Launch Fairway XMP at login** switch, off by
+default. It registers the macOS main application through SMAppService or a
+current-user Windows Run entry named Fairway XMP. Registration occurs only on
+explicit user action, never from service preferences or normal startup. When
+macOS requires approval, a separate row below the switch offers **Open System
+Settings**. Windows registration respects the user's Startup settings and
+Task Manager override, and Fairway XMP never modifies StartupApproved.
+Login status refreshes when Settings opens or regains focus. Login launches stay
+in the tray/menu bar; ordinary launches open the window. Uninstall removes the
+owned login entry independently of preserved user data. Linux has neither
+startup control nor automatic service restoration.
+
 ## Cross-platform management CLI and shared supervisor
 
 macOS and Windows expose the environment-management CLI alongside Linux. `desktop` includes the shared `cli` feature. The desktop stores a supervisor client, never a second service manager; one detached process owns services for each user-data directory. Unix uses private sockets (a verified short private `/tmp` directory for long paths) and lifetime file locks. Windows uses a current-user-only named pipe, rejects remote clients and holds an exclusive lifetime file handle. Protocol messages are bounded and verify the runtime installation before mutation. Multi-step actions reserve ownership on one IPC connection through OS approval or database work; disconnect releases the reservation. Competing mutations fail promptly; read-only requests briefly wait and then report busy. Shutdown queues behind accepted work. Failed shutdown keeps the controller available.

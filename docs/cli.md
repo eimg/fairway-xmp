@@ -60,6 +60,12 @@ exits the supervisor. An open desktop can reconnect to an idle supervisor; servi
 stay stopped. Desktop Quit also stops the supervisor and closes embedded terminals.
 Hiding the desktop or exiting a CLI client leaves the supervisor/services running.
 
+On macOS and Windows, the **Run on start** preference for Nginx, MySQL and Mail
+applies when the Fairway XMP desktop opens. Start/stop/shutdown commands preserve
+those preferences; CLI status and supervisor startup never automatically start
+selected desktop services. The separate **Launch Fairway XMP at login** setting
+defaults off and controls only the app's OS login registration.
+
 ## Sites and PHP settings
 
 ```sh

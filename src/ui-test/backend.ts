@@ -15,6 +15,8 @@ let scenario: Scenario = 'Stopped';
 export const defaultPlatform: Platform = navigator.platform.startsWith('Mac') ? 'macOS' : 'Windows';
 let platform: Platform = defaultPlatform;
 let data: Snapshot;
+let startupServices = { nginx: false, mysql: false, mail: false };
+let loginRegistered = false;
 let nodeFixture: NodeStatus;
 let nodeInstallation: { id: string; version: string; phase: 'installing' | 'activating'; cancelled: boolean; wake?: () => void } | null = null;
 const phpDefaults: PhpSettings = { memoryLimitMb: 256, maxExecutionTime: 120, uploadMaxFilesizeMb: 64, timezone: 'UTC', displayErrors: true, sessionUploadProgress: true };
@@ -106,6 +108,8 @@ function running(id: ServiceId, value: boolean) {
 
 export function select(next: Scenario, os: Platform) {
   resetData();
+  startupServices = { nginx: false, mysql: false, mail: false };
+  loginRegistered = false;
   phpOverrides = {};
   seedMail();
   scenario = next; platform = os;
@@ -180,6 +184,17 @@ function syncNode() {
 export async function invoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   window.dispatchEvent(new CustomEvent('fairway-ui-command', { detail: command }));
   if (command.startsWith('terminal_')) return terminalRequest(command, args, data.documentRoot, data.phpVersions[data.phpVersion], data.runtimeReady, data.projects) as T;
+  if (command === 'startup_services') return structuredClone(startupServices) as T;
+  if (command === 'save_startup_service') {
+    if (!['nginx', 'mysql', 'mail'].includes(String(args.service))) throw new Error('Choose Nginx, MySQL or Mail.');
+    startupServices = { ...startupServices, [String(args.service)]: Boolean(args.enabled) };
+    return structuredClone(startupServices) as T;
+  }
+  if (command === 'login_item_status' || command === 'set_login_item') {
+    if (command === 'set_login_item') loginRegistered = Boolean(args.enabled);
+    return { registered: loginRegistered, state: loginRegistered ? platform === 'Windows' ? 'registered' : 'enabled' : 'notRegistered' } as T;
+  }
+  if (command === 'open_login_settings') return undefined as T;
   if (command === 'get_php_settings') return phpSettings(String(args.version)) as T;
   if (command === 'node_status') return structuredClone({ ...nodeFixture, installation: nodeInstallation ? { id: nodeInstallation.id, version: nodeInstallation.version, phase: nodeInstallation.phase } : null }) as T;
   if (command === 'node_versions') return ['v25.0.0', 'v24.14.1', 'v23.11.0', 'v22.1.0', 'v21.7.3', 'v20.19.0'] as T;

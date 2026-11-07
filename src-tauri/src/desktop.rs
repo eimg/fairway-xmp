@@ -21,6 +21,8 @@ use tauri_plugin_updater::UpdaterExt;
 #[cfg(target_os = "macos")]
 pub(crate) mod authorization;
 
+mod login_item;
+
 #[cfg(any(target_os = "macos", windows))]
 use crate::node_tools as node_tools_view;
 #[cfg(not(any(target_os = "macos", windows)))]
@@ -286,11 +288,16 @@ async fn snapshot(state: State<'_, Shared>) -> Result<Snapshot> {
 }
 
 #[tauri::command]
-fn startup_status(state: State<'_, Shared>) -> Result<crate::startup::Status> {
-    Ok(state
-        .lock()
-        .map_err(|_| "Startup status is unavailable.")?
-        .status())
+async fn startup_status(state: State<'_, Shared>) -> Result<crate::startup::Status> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        Ok(state
+            .lock()
+            .map_err(|_| "Startup status is unavailable.")?
+            .status())
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 #[tauri::command]
@@ -301,13 +308,67 @@ async fn retry_startup(
     let _operation = begin_operation(&app, "Retrying startup…")?;
     let state = state.inner().clone();
     tauri::async_runtime::spawn_blocking(move || {
-        Ok(state
-            .lock()
-            .map_err(|_| "Startup status is unavailable.")?
-            .retry())
+        let mut startup = state.lock().map_err(|_| "Startup status is unavailable.")?;
+        startup.retry();
+        startup.start_configured();
+        Ok(startup.status())
     })
     .await
     .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+async fn startup_services(state: State<'_, Shared>) -> Result<serde_json::Value> {
+    access(state.inner().clone(), |manager| {
+        #[cfg(any(target_os = "macos", windows))]
+        {
+            manager.call(crate::cli::Request::StartupServices)
+        }
+        #[cfg(not(any(target_os = "macos", windows)))]
+        {
+            let _ = manager;
+            Err("Startup services are supported on macOS and Windows.".into())
+        }
+    })
+    .await
+}
+
+#[tauri::command]
+async fn save_startup_service(
+    app: tauri::AppHandle,
+    state: State<'_, Shared>,
+    service: String,
+    enabled: bool,
+) -> Result<serde_json::Value> {
+    let _operation = begin_operation(&app, "Saving startup service…")?;
+    access(state.inner().clone(), move |manager| {
+        #[cfg(any(target_os = "macos", windows))]
+        {
+            manager.call(crate::cli::Request::SaveStartupService { service, enabled })
+        }
+        #[cfg(not(any(target_os = "macos", windows)))]
+        {
+            let _ = (manager, service, enabled);
+            Err("Startup services are supported on macOS and Windows.".into())
+        }
+    })
+    .await
+}
+
+// Synchronous commands execute on the main thread, as required by AppKit.
+#[tauri::command]
+fn login_item_status() -> Result<login_item::Status> {
+    login_item::status()
+}
+
+#[tauri::command]
+fn set_login_item(enabled: bool) -> Result<login_item::Status> {
+    login_item::set(enabled)
+}
+
+#[tauri::command]
+fn open_login_settings() -> Result<()> {
+    login_item::open_settings()
 }
 
 #[tauri::command]
@@ -1172,6 +1233,13 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
         )?;
         return Ok(true);
     }
+    if action == "--startup" {
+        return Ok(false);
+    }
+    if action == "--remove-login-item" {
+        login_item::set(false)?;
+        return Ok(true);
+    }
     if action == "__serve"
         || (!action.starts_with("--") && action != "__sync-hosts")
         || matches!(action.as_str(), "--help" | "-h" | "--version" | "-V")
@@ -1299,8 +1367,8 @@ pub fn run() {
         _ => (),
     }
     let app = tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _, _| {
-            show_window(app);
+        .plugin(tauri_plugin_single_instance::init(|app, args, _| {
+            if !args.iter().any(|arg| arg == "--startup") { show_window(app); }
         }))
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -1327,6 +1395,24 @@ pub fn run() {
             app.manage(crate::terminal::Terminals::default());
             if let Err(error) = NativeTray::install(app.handle()) {
                 app.state::<Shared>().lock().unwrap().add_error(format!("The tray could not be created. Closing the window will quit Fairway XMP. {error}"));
+            }
+            // Reserve before publishing the desktop to avoid a race with manual
+            // actions. Services start on a worker, keeping the window responsive.
+            let handle = app.handle().clone();
+            match begin_operation(&handle, "Starting configured services…") {
+                Ok(operation) => {
+                    let state = handle.state::<Shared>().inner().clone();
+                    tauri::async_runtime::spawn(async move {
+                        let _operation = operation;
+                        let result = tauri::async_runtime::spawn_blocking(move || {
+                            let mut startup = state.lock().map_err(|_| "Startup status is unavailable.")?;
+                            startup.start_configured();
+                            Ok::<_, String>(())
+                        }).await.map_err(|error| error.to_string()).and_then(|result| result);
+                        if let Err(error) = result { report_error(&handle, error); }
+                    });
+                }
+                Err(error) => { handle.state::<Shared>().lock().unwrap().set_launch_error(error); }
             }
             let handle = app.handle().clone();
             let state = handle.state::<Shared>().inner().clone();
@@ -1355,6 +1441,11 @@ pub fn run() {
             snapshot,
             startup_status,
             retry_startup,
+            startup_services,
+            save_startup_service,
+            login_item_status,
+            set_login_item,
+            open_login_settings,
             terminal_start,
             terminal_context,
             terminal_external,
@@ -1412,6 +1503,14 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("Fairway XMP could not initialize");
     app.run(|app, event| match event {
+        tauri::RunEvent::Ready => {
+            if login_item::login_launch() && app.try_state::<NativeTray>().is_some() {
+                #[cfg(target_os = "macos")]
+                let _ = app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            } else {
+                show_window(app);
+            }
+        }
         tauri::RunEvent::ExitRequested { api, .. } => {
             if !app.state::<DesktopControl>().lifecycle.exit_allowed() {
                 api.prevent_exit();

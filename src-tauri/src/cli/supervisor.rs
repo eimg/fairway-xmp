@@ -421,6 +421,8 @@ fn handle_connection(
                 | Request::Log { .. }
                 | Request::PhpSettings { .. }
         );
+        #[cfg(any(target_os = "macos", windows))]
+        let read_only = read_only || matches!(request, Request::StartupServices);
         let deadline = Instant::now() + Duration::from_millis(if read_only { 250 } else { 0 });
         let mut guard = if shutdown_requested {
             manager.lock().map_err(|_| "Service manager failed.")?
@@ -526,6 +528,27 @@ fn execute(
     backups: &crate::data_browser::Jobs,
 ) -> Result<serde_json::Value> {
     match request {
+        #[cfg(any(target_os = "macos", windows))]
+        Request::StartupServices => {
+            return serde_json::to_value(crate::startup_preferences::Services::load(
+                &manager.layout,
+            )?)
+            .map_err(|error| error.to_string())
+        }
+        #[cfg(any(target_os = "macos", windows))]
+        Request::SaveStartupService { service, enabled } => {
+            return serde_json::to_value(crate::startup_preferences::Services::set(
+                &manager.layout,
+                &service,
+                enabled,
+            )?)
+            .map_err(|error| error.to_string())
+        }
+        #[cfg(any(target_os = "macos", windows))]
+        Request::StartConfiguredServices => {
+            return serde_json::to_value(crate::startup_preferences::start(manager)?)
+                .map_err(|error| error.to_string())
+        }
         Request::Hello => return Ok(identity()),
         Request::Acquire | Request::Release | Request::CancelBackup { .. } => {
             return Err("Invalid operation reservation.".into())

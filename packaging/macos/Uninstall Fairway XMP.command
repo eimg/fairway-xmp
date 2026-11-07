@@ -21,6 +21,7 @@ fi
 if [ "$KEEP_ALL" = yes ]; then
   "$EXE" --remove-domains
   "$EXE" --remove-https-trust
+  "$EXE" --remove-login-item
   "$EXE" --remove-cli
   mkdir -p "$HOME/.Trash"
   TRASH_ROOT=$(mktemp -d "$HOME/.Trash/Fairway-XMP-removed.XXXXXX")
@@ -37,6 +38,7 @@ CONFIRM=$(/usr/bin/osascript -e 'activate' -e 'button returned of (display dialo
 [ "$CONFIRM" = Uninstall ] || exit 0
 "$EXE" --remove-domains
 "$EXE" --remove-https-trust
+"$EXE" --remove-login-item
 "$EXE" --remove-cli
 DATA=$(/usr/bin/osascript -e 'activate' -e 'button returned of (display dialog "Delete Fairway XMP databases, backups, settings, and caches?" buttons {"Keep data", "Delete data"} default button "Keep data")')
 if [ "$DATA" = 'Delete data' ]; then "$EXE" --remove-data; fi

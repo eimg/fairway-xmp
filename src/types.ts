@@ -1,4 +1,7 @@
 export type ServiceId = 'nginx' | 'php' | 'mysql' | 'phpmyadmin' | 'mail';
+export type StartupServiceId = 'nginx' | 'mysql' | 'mail';
+export type StartupServices = Record<StartupServiceId, boolean>;
+export type LoginItemStatus = { registered: boolean; state: 'notRegistered' | 'enabled' | 'requiresApproval' | 'notFound' | 'registered' | 'otherInstallation' };
 export type Ports = { website: number; phpmyadmin: number; mysql: number; php: number; mail: number; smtp: number };
 export type ServiceStatus = {
   id: ServiceId; running: boolean; ready: boolean; port: number;

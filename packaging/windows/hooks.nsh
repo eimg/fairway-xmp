@@ -115,6 +115,11 @@ FunctionEnd
     MessageBox MB_ICONSTOP "Fairway XMP could not remove its local HTTPS trust. Retry uninstalling after closing Fairway XMP."
     Abort
   ${EndIf}
+  ExecWait '"$INSTDIR\fairway.exe" --remove-login-item' $0
+  ${If} $0 != 0
+    MessageBox MB_ICONSTOP "Fairway XMP could not remove its login entry. Retry uninstalling."
+    Abort
+  ${EndIf}
   ExecWait '"$INSTDIR\fairway.exe" --remove-cli' $0
   ${If} $0 != 0
     MessageBox MB_ICONSTOP "Fairway XMP could not remove its PATH integration. Open Fairway XMP Settings and remove command-line integration, then retry uninstalling."
