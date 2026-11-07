@@ -2,6 +2,14 @@
 
 Past entries record released changes; they are not current development or release restrictions. See [Build and release](docs/build-and-release.md) for the current process.
 
+## 0.1.3 — 2026-11-07
+
+- Add per-service **Run on start** switches for Nginx, MySQL and Mail on macOS and Windows. Start, Stop and Quit preserve the saved choices.
+- Add **Launch Fairway XMP at login**, off by default, with a link to macOS System Settings when approval is needed.
+- Group the start or stop, restart and log icons on the Environment cards. Clear the loading message when startup recovery needs attention.
+
+Published from [candidate run 42340364750](https://github.com/eimg/fairway-xmp/actions/runs/42340364750), commit `d95418492eb998f4ae0c7bac090b9421b16cb825`, using the tested installers and updater payloads. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows.
+
 ## 0.1.2 — 2026-11-04
 
 - Fetch superseded Windows PHP ZIPs from PHP's official archive after a missing-file response, retaining the exact pinned checksum and build.

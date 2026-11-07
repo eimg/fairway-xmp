@@ -1228,17 +1228,19 @@ export const guides = [
       [
         "Choose <strong>Stop all</strong> to stop services while keeping Fairway XMP open. Individual Nginx, MySQL and Mail controls stop only that service; stopping Nginx also stops its PHP worker.",
         "Choose <strong>Quit</strong> from the macOS menu bar or Windows system tray menu to stop services, close embedded terminals and exit Fairway XMP.",
-        "Closing or minimizing the window keeps Fairway XMP and its services running. Use the menu bar or tray icon to reopen the panel."
+        "Closing or minimizing the window keeps Fairway XMP and its services running. Use the menu bar or tray icon to reopen the panel.",
+        "Use <strong>Run on start</strong> on the Nginx, MySQL or Mail card to start that service the next time Fairway XMP opens. To open the app after sign-in, turn on <strong>Settings → Launch Fairway XMP at login</strong>. On macOS, follow the prompt in System Settings if approval is needed."
       ],
       [
         "Fairway XMP ကို ဖွင့်ထားပြီး Service များ ရပ်ရန် <strong>Stop all</strong> ကို ရွေးပါ။ Nginx၊ MySQL နှင့် Mail တစ်ခုစီကိုလည်း သီးခြား ရပ်နိုင်သည်။ Nginx ကို ရပ်လျှင် PHP worker ပါ ရပ်သည်။",
         "Service နှင့် App အတွင်းရှိ Terminal များကို ရပ်၍ Fairway XMP မှ ထွက်ရန် macOS Menu bar သို့မဟုတ် Windows System tray menu မှ <strong>Quit</strong> ကို ရွေးပါ။",
-        "Window ကို ပိတ်ခြင်း သို့မဟုတ် Minimize လုပ်ခြင်းတွင် Fairway XMP နှင့် Service များ ဆက်လက်အလုပ်လုပ်နေသည်။ Panel ကို Menu bar သို့မဟုတ် System tray icon မှ ပြန်ဖွင့်နိုင်သည်။"
+        "Window ကို ပိတ်ခြင်း သို့မဟုတ် Minimize လုပ်ခြင်းတွင် Fairway XMP နှင့် Service များ ဆက်လက်အလုပ်လုပ်နေသည်။ Panel ကို Menu bar သို့မဟုတ် System tray icon မှ ပြန်ဖွင့်နိုင်သည်။",
+        "Fairway XMP ကို နောက်တစ်ကြိမ် ဖွင့်သည့်အခါ Service အလိုအလျောက် စတင်ရန် Nginx၊ MySQL သို့မဟုတ် Mail card ရှိ <strong>Run on start</strong> ကို ဖွင့်ပါ။ Sign in ဝင်ပြီးနောက် App ကို အလိုအလျောက် ဖွင့်ရန် <strong>Settings → Launch Fairway XMP at login</strong> ကို ဖွင့်ပါ။ macOS တွင် ခွင့်ပြုချက် လိုအပ်ပါက System Settings တွင် ခွင့်ပြုပါ။"
       ]
     ],
     "check": [
-      "Stop all leaves services stopped in the panel. Quit also exits Fairway XMP. Project files and saved database data remain on disk.",
-      "Stop all လုပ်လျှင် Panel တွင် Service များ ရပ်ထားမည်။ Quit လုပ်လျှင် Fairway XMP မှပါ ထွက်မည်။ ပရောဂျက်ဖိုင်နှင့် သိမ်းထားသော Database data များ ဆက်ရှိနေမည်။"
+      "Stop all leaves services stopped in the panel. Quit also exits Fairway XMP. Both actions keep your Run on start choices, project files and saved databases.",
+      "Stop all လုပ်လျှင် Panel တွင် Service များ ရပ်ထားမည်။ Quit လုပ်လျှင် Fairway XMP မှပါ ထွက်မည်။ Run on start ရွေးချယ်မှု၊ ပရောဂျက်ဖိုင်နှင့် သိမ်းထားသော Database များ ဆက်ရှိနေမည်။"
     ],
     "linux": [
       "In the dashboard, lowercase <code>q</code> closes the dashboard and leaves services running. Uppercase <code>Q</code> or <code>fairway shutdown</code> stops services and the supervisor. Use <code>fairway stop all</code> to stop services without shutting down the supervisor.",
