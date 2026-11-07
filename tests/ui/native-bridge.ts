@@ -52,6 +52,10 @@ export async function nativeBridge(page: Page, info: TestInfo) {
       invoke: (command: string, args: Record<string, unknown> = {}) => {
         if (command === 'plugin:event|listen') { const id = ++next; listeners.set(id, { event: String(args.event), handler: Number(args.handler) }); return Promise.resolve(id); }
         if (command === 'plugin:event|unlisten') { listeners.delete(Number(args.eventId)); return Promise.resolve(); }
+        // These desktop preferences are outside the isolated native worker.
+        if (command === 'startup_status') return Promise.resolve({ blocking: false, errors: [], dataDir: null });
+        if (command === 'startup_services') return Promise.resolve({ nginx: false, mysql: false, mail: false });
+        if (command === 'login_item_status') return Promise.resolve({ registered: false, state: 'notRegistered' });
         return bridge.nativeTerminalInvoke(command, args);
       },
       transformCallback: (callback: (event: { payload: unknown }) => void) => { const id = ++next; callbacks.set(id, callback); return id; },

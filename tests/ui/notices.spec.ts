@@ -36,6 +36,9 @@ test.beforeEach(async ({ page }) => {
       async invoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
         if (command === 'plugin:event|listen') { listeners.set(String(args.event), Number(args.handler)); return next as T; }
         if (command === 'plugin:event|unlisten') return undefined as T;
+        if (command === 'startup_status') return { blocking: false, errors: [], dataDir: data.dataDir } as T;
+        if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
+        if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
         if (command === 'get_php_settings') return { version: String(args.version), settings: { memoryLimitMb: 256, maxExecutionTime: 120, uploadMaxFilesizeMb: 64, timezone: 'UTC', displayErrors: true, sessionUploadProgress: true }, customized: false, timezones: ['UTC'] } as T;
         if (command === 'node_status') return { externalFnm: null, readOnlyReason: null, fnmPath: '', fnmVersion: null, directory: '', detected: null, detectionError: null, managed: null, installed: [], defaultVersion: null, enabled: false, installations: [] } as T;
         if (command === 'snapshot') return structuredClone(data) as T;

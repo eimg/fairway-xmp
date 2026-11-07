@@ -34,6 +34,8 @@ test.beforeEach(async ({ page }) => {
         if (command === 'plugin:event|listen') { listeners.set(String(args.event), Number(args.handler)); return next as T; }
         if (command === 'plugin:event|unlisten') return undefined as T;
         if (command === 'startup_status') return { blocking: false, errors: [], dataDir: data.dataDir } as T;
+        if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
+        if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
         if (command === 'snapshot') return structuredClone(data) as T;
         if (command === 'read_logs') return { entries: [{ id: 'old-file:1', source: 'php', file: 'php.log', severity: 'error', time: null, text: 'Old file failure' }], unavailable: [], limited: false } as T;
         if (command === 'terminal_context') return { defaultDirectory: '/Users/Student/www', folders: [], sites: [], historySupported: false } as T;

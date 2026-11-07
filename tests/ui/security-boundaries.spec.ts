@@ -36,6 +36,8 @@ test.beforeEach(async ({ page }) => {
         if (command === 'plugin:event|unlisten') return undefined as T;
         if (command === 'snapshot') return structuredClone(data) as T;
         if (command === 'startup_status') return { blocking: false, errors: [], dataDir: data.dataDir } as T;
+        if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
+        if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
         if (command === 'set_project_https') {
           document.documentElement.dataset.httpsRequest = JSON.stringify(args);
           if (cancelled) throw new Error('Certificate approval was cancelled. Existing HTTPS sites were kept.');

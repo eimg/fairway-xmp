@@ -20,6 +20,7 @@ test('startup errors stay visible and retry uses the repaired saved configuratio
         if (command === 'retry_startup') { retryCount++; return status() as T; }
         if (command === 'snapshot') { if (!repaired) throw new Error('startup blocked'); return structuredClone(snapshot) as T; }
         if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
+        if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
         if (command === 'open_target' && args.target === 'data') return undefined as T;
         if (command === 'test-retry-count') return retryCount as T;
         throw new Error(`Unexpected command: ${command}`);

@@ -36,6 +36,8 @@ test.beforeEach(async ({ page }) => {
         if (command === 'plugin:event|listen') { listeners.set(++next, { event: args.event as string, handler: args.handler as number }); return next as T; }
         if (command === 'plugin:event|unlisten') { listeners.delete(args.eventId as number); return undefined as T; }
         if (command === 'startup_status') return { blocking: false, errors: [], dataDir: data.dataDir } as T;
+        if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
+        if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
         if (command === 'snapshot') return structuredClone(data) as T;
         if (command === 'pick_folder') return '/Users/fixture/Code/shop/public' as T;
         if (command === 'save_project') {

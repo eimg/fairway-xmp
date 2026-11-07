@@ -27,6 +27,8 @@ test.beforeEach(async ({ page }) => {
         if (command === 'plugin:event|listen') return ++next as T;
         if (command === 'plugin:event|unlisten') return undefined as T;
         if (command === 'startup_status') return { blocking: false, errors: [], dataDir: snapshot.dataDir } as T;
+        if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
+        if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
         if (command === 'snapshot') return structuredClone(snapshot) as T;
         if (command === 'cancel_data_browser') { document.documentElement.dataset.cancelled = 'yes'; held.get(String(args.id))?.(new Error('Canceled')); return undefined as T; }
         if (command !== 'data_browser') throw new Error(`Unexpected command ${command}`);
