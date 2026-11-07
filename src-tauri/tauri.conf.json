@@ -10,7 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
-    "windows": [{ "title": "Fairway XMP", "visible": false, "width": 1080, "height": 760, "minWidth": 820, "minHeight": 650 }],
+    "windows": [{ "title": "Fairway XMP", "visible": false, "width": 1080, "height": 760, "minWidth": 820, "minHeight": 650, "scrollBarStyle": "fluentOverlay" }],
     "security": {
       "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'sha256-Y4q6/xoql2VmzUaEE9z7JuerBa8NW7IWzsw57HShfTs='; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'self'"
     }
