@@ -1,23 +1,18 @@
-# Fairway XMP 0.1.2
+# Fairway XMP 0.1.3
 
-This release uses the exact tested artifacts from [candidate run 41815500921](https://github.com/eimg/fairway-xmp/actions/runs/41815500921), commit `a4de4047613d7e722172c55a77145731b7baab90`, without rebuilding. Automated installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows.
+This release uses the exact artifacts from [candidate run 42340364750](https://github.com/eimg/fairway-xmp/actions/runs/42340364750) at commit `d95418492eb998f4ae0c7bac090b9421b16cb825`. Automated installer lifecycle checks passed on all three platforms, and the signed updater checks passed on macOS and Windows.
 
 ## Changes
 
-- Add the management CLI on macOS and Windows, sharing service ownership with the desktop through one supervisor. Include the portable Fairway XMP agent skill in source archives and improve desktop help and guide navigation.
-- Add deadlines to service commands and database dumps. Cancel protective backups promptly; explicit Quit cancels manual backups and active database-browser work before stopping services. Completed SQL statements are not undone.
-- Strengthen settings and SQL/SQLite backup publication, preserve existing exports, and restore generated configuration after a failed port save.
-- Retry brief Windows configuration-file sharing conflicts while preserving the previous file on persistent failure. Fetch superseded Windows PHP packages from PHP's official archive with the original pinned checksums.
-- Update bundled Composer to 2.11.1 and Mailpit to 1.33.0. Upgrade older Windows Visual C++ prerequisites while preserving equal/newer installations.
+- On macOS and Windows, turn on **Run on start** for Nginx, MySQL or Mail to start that service when Fairway XMP opens. Nginx also starts its PHP worker. Start, Stop and Quit preserve those choices.
+- Use **Settings → Launch Fairway XMP at login** to open the app in the background after sign-in. The setting defaults to off and is independent of the service switches. On macOS, Fairway XMP links to System Settings when approval is needed.
+- Start, stop, restart and view logs from the Environment cards. The service actions use compact icons with tooltips and accessible labels.
+- Startup recovery clears the loading message when a blocking error needs attention.
 
-## PHP 8.6 preparation
+## Install or update
 
-This build includes the existing PHP 8.6 packaging preparation and regression coverage, including the Windows toolset mapping and versioned Homebrew formula selection. PHP 8.6 is not bundled or offered in the application. Bundled branches remain PHP 8.2–8.5, with PHP 8.5.12 as the default. Adding final PHP 8.6 requires pinned upstream packages and the compatibility checks in [Maintenance](https://github.com/eimg/fairway-xmp/blob/v0.1.2/docs/maintenance.md#php-86-preparation-and-release-checks).
+- Windows 10 22H2 or Windows 11, x64. The installer can show an unknown-publisher warning. Desktop updates use signed payloads.
+- macOS 15 or later on Apple Silicon. The app and installer are Developer ID signed and notarized.
+- Linux x86_64 with glibc 2.35 or newer. Download and rerun the installer to update the terminal edition.
 
-## Requirements and limitations
-
-- Windows 10 22H2 or Windows 11, x64; macOS 15 or later on Apple Silicon; Linux x86_64 with glibc 2.35 or newer.
-- The Mac app and installer are Developer ID signed and notarized by Apple. Windows installers do not have Authenticode signatures; desktop updater payloads use separate cryptographic signatures. Linux updates are manual.
-- Existing macOS and Windows installations receive 0.1.2 through the stable and preview update feeds. Linux users download and rerun the installer.
-
-See [current limitations](https://github.com/eimg/fairway-xmp/blob/v0.1.2/docs/maintenance.md#current-limitations) and [build and release](https://github.com/eimg/fairway-xmp/blob/v0.1.2/docs/build-and-release.md).
+On macOS and Windows, open **Updates → Check for updates**. See the [how-to guides](https://eimg.github.io/fairway-xmp/) and [current limitations](https://github.com/eimg/fairway-xmp/blob/v0.1.3/docs/maintenance.md#current-limitations).
