@@ -20,6 +20,7 @@ import type { TerminalLaunch } from './TerminalPage';
 import { WorkspaceProvider, WorkspaceFeedback, useMaximizedWorkspace, useRestoreWorkspace } from './Workspace';
 import { useModalFocus } from './modal-focus';
 import RecoveryBoundary from './RecoveryBoundary';
+import AppearanceSwitch from './AppearanceSwitch';
 
 const UiTestToolbar = isUiTest ? lazy(() => import('./ui-test/Toolbar')) : null;
 const TerminalPage = lazy(() => import('./TerminalPage'));
@@ -423,7 +424,7 @@ function AppContent() {
           open={() => { void run('Opening…', () => invoke<void>('open_target', { target: 'mail' })); }} /></RecoveryBoundary>}
 
         {view === 'settings' && <>
-          <div className="page-heading"><div><h1>Settings</h1><p>Service ports, PHP version, and command-line tools.</p></div></div>
+          <div className="page-heading"><div><h1>Settings</h1><p>Service ports, PHP version, and command-line tools.</p></div><AppearanceSwitch /></div>
           {(data.os === 'macos' || data.os === 'windows') && <LoginSettings busy={!!busy} />}
           <section className="settings-card"><h2>Service Settings</h2><p>Stop all services before changing ports or PHP. Saved settings stay the same across restarts.</p>
             <form onSubmit={event => { event.preventDefault(); void run('Saving settings…', async () => {

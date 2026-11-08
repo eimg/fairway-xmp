@@ -17,6 +17,18 @@ type Status = 'starting' | 'running' | 'error';
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 const DEFAULT_FONT_SIZE = 13;
 const FONT_SIZE_KEY = 'fairway-terminal-font-size';
+
+function terminalTheme(host: HTMLElement) {
+  const style = getComputedStyle(host);
+  const color = (name: string) => style.getPropertyValue(`--terminal-${name}`).trim();
+  const foreground = color('foreground');
+  return {
+    background: color('background'), foreground, cursor: '#a3d9bc', selectionBackground: color('selection'),
+    black: color('black'), red: '#ec9993', green: '#a0d5af', yellow: '#e6ce92', blue: '#9dbfe6', magenta: '#c4a9d9', cyan: '#92d0cc', white: foreground,
+    brightBlack: color('bright-black'), brightRed: '#f5b1aa', brightGreen: '#b8e8c5', brightYellow: '#f4dfa9', brightBlue: '#b9d6f5', brightMagenta: '#dac0ef', brightCyan: '#b3e5e0', brightWhite: '#ffffff',
+  };
+}
+
 function savedFontSize() {
   try {
     const value = Number(localStorage.getItem(FONT_SIZE_KEY));
@@ -247,7 +259,8 @@ function TerminalSession({ macos, active, focusInput, focusRequest, rememberHist
   useEffect(() => { historyPreference.current = rememberHistory; }, [rememberHistory]);
 
   useEffect(() => {
-    if (!host.current || !canControl) return;
+    const mount = host.current;
+    if (!mount || !canControl) return;
     let disposed = false;
     let timer: number | undefined;
     let frame = 0;
@@ -263,14 +276,15 @@ function TerminalSession({ macos, active, focusInput, focusRequest, rememberHist
     const term = new Terminal({
       cursorBlink: true, fontSize: fontSizeRef.current, lineHeight: 1.25, scrollback: 3000,
       fontFamily: 'Menlo, Consolas, "Liberation Mono", monospace', screenReaderMode: true,
-      theme: { background: '#17251f', foreground: '#e0ebe4', cursor: '#a3d9bc', selectionBackground: '#52796280',
-        black: '#263b30', red: '#ec9993', green: '#a0d5af', yellow: '#e6ce92', blue: '#9dbfe6', magenta: '#c4a9d9', cyan: '#92d0cc', white: '#e0ebe4',
-        brightBlack: '#8b9e91', brightRed: '#f5b1aa', brightGreen: '#b8e8c5', brightYellow: '#f4dfa9', brightBlue: '#b9d6f5', brightMagenta: '#dac0ef', brightCyan: '#b3e5e0', brightWhite: '#ffffff' },
+      theme: terminalTheme(mount),
     });
     const addon = new FitAddon();
     const searchAddon = new SearchAddon();
-    term.loadAddon(addon); term.loadAddon(searchAddon); term.open(host.current);
+    term.loadAddon(addon); term.loadAddon(searchAddon); term.open(mount);
     term.textarea?.setAttribute('aria-label', 'Terminal input');
+    // Repaint the existing xterm instance when Settings changes appearance.
+    const appearanceObserver = new MutationObserver(() => { term.options.theme = terminalTheme(mount); });
+    appearanceObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     // The mount is unpadded: FitAddon measures its full computed size. Keep
     // visual spacing on the outer host so the last row and cursor fit inside it.
     // Fit both the display and native PTY to the same supported dimensions.
@@ -324,7 +338,7 @@ function TerminalSession({ macos, active, focusInput, focusRequest, rememberHist
         fitToHost();
       });
     });
-    observer.observe(host.current);
+    observer.observe(mount);
     const resize = term.onResize(queueSize);
     const selection = term.onSelectionChange(() => { if (!disposed) setHasSelection(term.hasSelection()); });
     const input = term.onData(data => {
@@ -386,6 +400,7 @@ function TerminalSession({ macos, active, focusInput, focusRequest, rememberHist
     });
     return () => {
       disposed = true; clearTimeout(timer); cancelAnimationFrame(frame); observer.disconnect();
+      appearanceObserver.disconnect();
       resize.dispose(); selection.dispose(); input.dispose(); term.dispose();
       terminal.current = null; fit.current = null; search.current = null; retryResize.current = null;
       if (session.current === id) session.current = null;

@@ -25,8 +25,17 @@ test('React input reaches the real native PTY and packaged PHP/Composer', async 
     await expect(rows).toContainText(process.platform === 'win32' ? "Student May's home" : join('Student May\'s home 日本', 'fairway', 'www'));
     await enter('php -r "echo file_get_contents(\'.fairway-terminal-location\');"');
     await expect(rows).toContainText('COURSEWORK_FOLDER_VERIFIED');
-    await page.getByRole('button', { name: 'Environment', exact: true }).click();
+    const viewport = page.locator('.terminal-tab-panel:not([hidden]) .xterm-viewport');
+    await expect(viewport).toHaveCSS('background-color', 'rgb(23, 37, 31)');
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Dark', exact: true }).click();
     await page.getByRole('button', { name: 'Terminal', exact: true }).click();
+    await expect(viewport).toHaveCSS('background-color', 'rgb(26, 27, 30)');
+    await expect(rows).toContainText('Composer version');
+    await page.getByRole('button', { name: 'Settings', exact: true }).click();
+    await page.getByRole('button', { name: 'Light', exact: true }).click();
+    await page.getByRole('button', { name: 'Terminal', exact: true }).click();
+    await expect(viewport).toHaveCSS('background-color', 'rgb(23, 37, 31)');
     await expect(rows).toContainText('Composer version');
     // Use a native executable on Windows so this checks PTY interruption
     // independently of Command Prompt's batch-file termination confirmation.
