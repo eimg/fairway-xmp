@@ -26,6 +26,7 @@ const idColumn = (): Definition => ({ ...newColumn('id'), type: 'BIGINT', nullab
 const cell = (value: string | null) => value === null ? <span className="db-null">NULL</span> : value === '' ? <span className="db-null">empty</span> : value;
 type Source = { driver: 'mysql' } | { driver: 'sqlite'; path: string | null };
 const recentKey = 'fairway.sqlite.recent.v1';
+const missingSqliteFile = 'This SQLite file is missing or is not a file.';
 const fileName = (path: string) => path.split(/[/\\]/).pop() || path;
 function recentFiles(): string[] {
   try {
@@ -171,7 +172,19 @@ export default function DataBrowser({ ready, busy: appBusy, start, open }: { rea
   }
   function selectSqlite() {
     if (sqlite) return;
-    void run('Loading database…', () => switchSource({ driver: 'sqlite', path: restoreRecent.current ? recent[0] ?? null : null }));
+    void run('Loading database…', () => openRecentSqlite(restoreRecent.current ? recent[0] ?? null : null));
+  }
+  async function openRecentSqlite(path: string | null) {
+    try {
+      await switchSource({ driver: 'sqlite', path });
+    } catch (error) {
+      if (path && errorText(error).startsWith(missingSqliteFile)) {
+        restoreRecent.current = false;
+        remember(recent.filter(saved => saved !== path));
+        await switchSource({ driver: 'sqlite', path: null });
+      }
+      throw error;
+    }
   }
   async function openSqlite() {
     await run('Opening SQLite file…', async () => {
@@ -182,7 +195,7 @@ export default function DataBrowser({ ready, busy: appBusy, start, open }: { rea
   function reopenSqlite() {
     const path = recent[0];
     if (!path) return;
-    void run('Opening SQLite file…', () => switchSource({ driver: 'sqlite', path }));
+    void run('Opening SQLite file…', () => openRecentSqlite(path));
   }
   function backupSqlite() {
     void run('Backing up SQLite file…', async () => {

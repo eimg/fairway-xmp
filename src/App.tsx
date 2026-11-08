@@ -359,7 +359,7 @@ function AppContent() {
     </aside>
 
     <main>
-      <header className="topbar"><span><button className="icon-button sidebar-fold" aria-expanded={!sidebarFolded} aria-label={sidebarFolded ? 'Unfold sidebar' : 'Fold sidebar'} title={sidebarFolded ? 'Unfold sidebar' : 'Fold sidebar'} onClick={() => setSidebarFolded(folded => !folded)}>{sidebarFolded ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>Workspace <ChevronRight size={13} />{viewTitle[view]}</span><span className="local-pill"><span />Local environment</span></header>
+      <header className="topbar"><span><button className="icon-button sidebar-fold" aria-expanded={!sidebarFolded} aria-label={sidebarFolded ? 'Unfold sidebar' : 'Fold sidebar'} title={sidebarFolded ? 'Unfold sidebar' : 'Fold sidebar'} onClick={() => setSidebarFolded(folded => !folded)}>{sidebarFolded ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}</button>Workspace <ChevronRight size={13} />{viewTitle[view]}</span></header>
       <div className="main-content">
         {UiTestToolbar && <Suspense fallback={null}><UiTestToolbar busy={!!busy} /></Suspense>}
         {!isDesktop && !isUiTest && <div className="preview-banner"><Code2 size={16} />Interface preview — open the desktop app to manage services.</div>}
@@ -399,7 +399,7 @@ function AppContent() {
             </section>
             <section className="reference-card connection-card"><div className="card-title"><h2><Database size={17} />Database connection</h2><button className="icon-button" title="Copy database environment settings" aria-label="Copy database environment settings" onClick={() => { void copy(connection, 'database'); }}>{copied === 'database' ? <Check size={16} /> : <Clipboard size={16} />}</button></div><dl><div><dt>Host</dt><dd>127.0.0.1<span className="port-inline">:{data.ports.mysql}</span></dd></div><div><dt>Database</dt><dd>fairway</dd></div><div><dt>Username / password</dt><dd>fairway / fairway</dd></div></dl><div className="reference-actions"><button className="text-link" disabled={!data.services.find(s => s.id === 'mysql')?.ready || !!busy} onClick={() => { void run('Backing up databases…', async () => { const path = await invoke<string>('backup_database'); setNotice({ kind: 'success', text: `Database backup saved: ${path}` }); }); }}><Download size={14} />Back up databases</button></div></section>
           </div>
-          <footer className="content-footer"><span><span className="status-dot running" />127.0.0.1 · Local access only</span><button onClick={() => setView('settings')}>Configure environment<Settings2 size={13} /></button></footer>
+          <footer className="content-footer"><button onClick={() => setView('settings')}>Configure environment<Settings2 size={13} /></button></footer>
         </>}
 
         {view === 'projects' && <RecoveryBoundary name="Sites"><SitesPage data={data} busy={!!busy} copied={copied}

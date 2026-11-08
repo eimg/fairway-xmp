@@ -82,6 +82,18 @@ test('SQLite edits the original project file through the native worker with MySQ
     await page.getByRole('button', { name: 'Refresh rows', exact: true }).click();
     await expect(page.getByRole('alert')).toContainText('missing');
     await expect(page.getByLabel('SQLite file path', { exact: true })).toHaveText(selectedFile);
+    await page.getByRole('tab', { name: 'MySQL', exact: true }).click();
+    const sqliteTab = page.getByRole('tab', { name: 'SQLite', exact: true });
+    await sqliteTab.click();
+    await expect(page.getByRole('alert')).toContainText('Open it again from its current location.');
+    await expect(sqliteTab).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('button', { name: 'Open SQLite file', exact: true })).toBeEnabled();
+    await expect(page.getByRole('button', { name: 'Reopen database.sqlite', exact: true })).toHaveCount(0);
+    await page.reload();
+    await page.getByRole('button', { name: 'Browse Data', exact: true }).click();
+    await sqliteTab.click();
+    await expect(page.getByRole('heading', { name: 'Open a SQLite file to browse your data' })).toBeVisible();
+    await expect(page.getByRole('alert')).toHaveCount(0);
     expect(bridge.errors()).toBe('');
   } finally { await bridge.close(); }
 });
