@@ -118,6 +118,16 @@ def reusable_php(prefix, version):
         return False
 
 
+def reusable_nginx(prefix, version):
+    """A staging directory alone does not identify the compiled Nginx version."""
+    try:
+        output = subprocess.check_output([str(prefix / 'bin/nginx'), '-v'],
+                                         stderr=subprocess.STDOUT, text=True, timeout=15)
+        return output.strip() == f'nginx version: nginx/{version}'
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
 def linux(target, lock, refresh):
     arch = linux_arch()
     version = os.confstr('CS_GNU_LIBC_VERSION')
@@ -173,7 +183,7 @@ def linux(target, lock, refresh):
             for notice in ('LICENSE', 'NEWS'): copy(source / notice, target / 'licenses' / name / notice)
         else:
             prefix = target / 'nginx'
-            if not (prefix / 'bin/nginx').is_file():
+            if not reusable_nginx(prefix, version):
                 run(['./configure', '--prefix=/', '--sbin-path=bin/nginx', '--conf-path=conf/nginx.conf', '--pid-path=nginx.pid', '--error-log-path=logs/nginx.log', '--http-log-path=logs/access.log', '--with-http_ssl_module', '--with-http_gzip_static_module', '--with-http_realip_module', '--with-http_stub_status_module'], cwd=source)
                 run(['make', '-j' + jobs], cwd=source)
                 run(['make', 'install', f'DESTDIR={prefix}'], cwd=source)

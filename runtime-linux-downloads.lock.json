@@ -8,12 +8,12 @@
     "url": "https://files.pythonhosted.org/packages/a3/c2/24167ea9858356b47a87a50d39908bfdb72ceeefe0041586e704e5376b3a/certifi-2026.7.22.tar.gz"
   },
   "composer": {
-    "sha256": "6f1b891e1d4927d62740276c540fb490e47689e19e102c49e8da849794882f8c",
-    "url": "https://getcomposer.org/download/2.11.1/composer.phar"
+    "sha256": "dd158c0afd41d15fac89e1b4e47b5d42911fe316c3687cd5edac98319b25d028",
+    "url": "https://getcomposer.org/download/2.11.2/composer.phar"
   },
   "composer-linux-source": {
-    "sha256": "6116a9b9129774c1ae23c2c58ce77e053a21e78f52ca97dd4f674e5b020a77cd",
-    "url": "https://codeload.github.com/composer/composer/tar.gz/refs/tags/2.11.1"
+    "sha256": "378b8059f3ec29d04cf16a9ed279799fad02552dd9d4edc63643192572c9587d",
+    "url": "https://codeload.github.com/composer/composer/tar.gz/refs/tags/2.11.2"
   },
   "fnm-linux": {
     "sha256": "7807664f39d39fc518da1c35ba0181e4b3267603c4b1dedeb4b5fc6ae440a224",
@@ -24,16 +24,16 @@
     "url": "https://codeload.github.com/Schniz/fnm/tar.gz/refs/tags/v1.39.0"
   },
   "mailpit-linux": {
-    "sha256": "d0ec50080cbf3e7c1fa2cda2ee68125d7894175811084b1f8f47c6cfc6f487c8",
-    "url": "https://github.com/axllent/mailpit/releases/download/v1.33.0/mailpit-linux-amd64.tar.gz"
+    "sha256": "af236b42f171b1c74f0ac5ff444f44d36f2f2ecc0134f5a2f1d4e307e56a0d2c",
+    "url": "https://github.com/axllent/mailpit/releases/download/v1.34.0/mailpit-linux-amd64.tar.gz"
   },
   "mailpit-linux-arm64": {
-    "sha256": "1d27c819e1a5dd2761ed9fd07022443e35a47793b2e92de5b49cf3656a649ef9",
-    "url": "https://github.com/axllent/mailpit/releases/download/v1.33.0/mailpit-linux-arm64.tar.gz"
+    "sha256": "179f3fe9642edb3a123edc613003e45641869c5b2728c2076c7bef1c3e09dd01",
+    "url": "https://github.com/axllent/mailpit/releases/download/v1.34.0/mailpit-linux-arm64.tar.gz"
   },
   "mailpit-linux-source": {
-    "sha256": "4c43bef67f3aabd8eb1e571829ddafad42da33061a911ae9cea19ad209ba3c64",
-    "url": "https://codeload.github.com/axllent/mailpit/tar.gz/refs/tags/v1.33.0"
+    "sha256": "82e31ccc0069685f8794ea0d781cbf147f717633d3bd0f442883ab36ee6308c3",
+    "url": "https://codeload.github.com/axllent/mailpit/tar.gz/refs/tags/v1.34.0"
   },
   "mysql-linux-aarch64": {
     "sha256": "bd1035e35a1b2c39a9f5dd0447b2ad62a6acf809ac1a6fcaf854297b99b8ebfc",
@@ -48,24 +48,28 @@
     "url": "https://cdn.mysql.com/Downloads/MySQL-9.7/mysql-9.7.4-linux-glibc2.28-x86_64-minimal.tar.xz"
   },
   "nginx-linux-source": {
-    "sha256": "3cf46f5ed7504d460125866b7bea99fb357f31d887e2e63b35503310e9b8b6c8",
-    "url": "https://nginx.org/download/nginx-1.30.6.tar.gz"
+    "sha256": "2565b5c837050e958f70fb0f73c48e2bca4542ad349fd356f46fb0c72610bc6e",
+    "url": "https://nginx.org/download/nginx-1.30.7.tar.gz"
   },
   "php-8.2-linux-source": {
-    "sha256": "5737b98601fe5ab1b8c5db0c82ed3158acb9283ed3081ffe2faffb9ac81455e6",
-    "url": "https://www.php.net/distributions/php-8.2.35.tar.xz"
+    "sha256": "df50a00d2b453096608bf2bd98a9fab9a3df8678a77b93011b65c3cfe9a018fa",
+    "url": "https://www.php.net/distributions/php-8.2.36.tar.xz"
   },
   "php-8.3-linux-source": {
-    "sha256": "dd54693aa334c5c4d72e9aee96b082c2473750a18a6c1d105789c93a3b1692fd",
-    "url": "https://www.php.net/distributions/php-8.3.36.tar.xz"
+    "sha256": "0237af84478b7a7649d3964153f1b8653d622550b846f56d63062de683fb86bb",
+    "url": "https://www.php.net/distributions/php-8.3.37.tar.xz"
   },
   "php-8.4-linux-source": {
-    "sha256": "dcf93923b0e38e0d5252b25b796520b5a47761a08b3488b6d0b5d1115764d3f0",
-    "url": "https://www.php.net/distributions/php-8.4.27.tar.xz"
+    "sha256": "0c8ec360e5dd8154f270b2fd50cd44ecc824e6ee39c85f911312b80d4daecd72",
+    "url": "https://www.php.net/distributions/php-8.4.28.tar.xz"
+  },
+  "php-8.6-linux-source": {
+    "sha256": "5f84beaa3d763aee1e4feed99bf54ec692c383b322e25626807b589238c3a087",
+    "url": "https://www.php.net/distributions/php-8.6.0.tar.xz"
   },
   "php-linux-source": {
-    "sha256": "08bc2eba2a588654ade1357174aa646b761556c862dda0678345ee29ed481209",
-    "url": "https://www.php.net/distributions/php-8.5.12.tar.xz"
+    "sha256": "607602acaf0c3061818e9916ec44a058e8b3d43959a83862b9cd3ec7bf5b785f",
+    "url": "https://www.php.net/distributions/php-8.5.13.tar.xz"
   },
   "phpmyadmin": {
     "sha256": "2d2e13c735366d318425c78e4ee2cc8fc648d77faba3ddea2cd516e43885733f",

@@ -1,4 +1,5 @@
 import type { Project } from '../types';
+import manifest from '../../runtime-manifest.json';
 // Deterministic terminal fixture. This module never executes host commands.
 type Session = { id: string; directory: string; output: string; line: string; exited: boolean; code: number | null };
 const sessions = new Map<string, Session>();
@@ -44,7 +45,7 @@ export function terminalRequest(command: string, args: Record<string, unknown>, 
         else {
           if (line === 'pwd' || line === 'cd') session.output += session.directory;
           else if (line === 'php --version') session.output += `PHP ${version} (cli) (simulated)`;
-          else if (line === 'composer --version') session.output += 'Composer version 2.11.1 (simulated)';
+          else if (line === 'composer --version') session.output += `Composer version ${manifest.composer} (simulated)`;
           else if (line === 'seq 1 120') session.output += Array.from({ length: 120 }, (_, index) => String(index + 1)).join('\r\n');
           else if (line.startsWith('echo ')) session.output += line.slice(5);
           else if (line) session.output += 'UI test only: this command was not executed.';

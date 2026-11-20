@@ -1,6 +1,6 @@
 # PHP clients and worker support
 
-Source builds include `sockets`, `soap` and `ldap` in every bundled PHP version (8.2–8.5) on Windows, macOS and Linux. CLI/Composer projects and websites use the same selected PHP version and generated configuration. macOS and Linux also include `pcntl` and `posix` for CLI workers. PHP does not provide these two extensions on Windows; Unix process/signal-dependent workers need a Unix environment.
+Source builds include `sockets`, `soap` and `ldap` in every bundled PHP version (8.2–8.6) on Windows, macOS and Linux. CLI/Composer projects and websites use the same selected PHP version and generated configuration. macOS and Linux also include `pcntl` and `posix` for CLI workers. PHP does not provide these two extensions on Windows; Unix process/signal-dependent workers need a Unix environment.
 
 These are client capabilities. Supply the external services your project needs and configure their connection details in the project. Fairway adds no RabbitMQ, LDAP or Redis server, service controls, Data browser integration or external-service backups.
 

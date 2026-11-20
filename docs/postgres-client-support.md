@@ -1,6 +1,6 @@
 # PostgreSQL client support
 
-Current source builds include PHP's `pdo_pgsql` and `pgsql` extensions, with their client libraries, in every bundled PHP version (8.2–8.5) on Windows, macOS and Linux. Both PHP CLI/Composer and web requests through Nginx/PHP can use them. Verify driver availability when using a downloaded build.
+Current source builds include PHP's `pdo_pgsql` and `pgsql` extensions, with their client libraries, in every bundled PHP version (8.2–8.6) on Windows, macOS and Linux. Both PHP CLI/Composer and web requests through Nginx/PHP can use them. Verify driver availability when using a downloaded build.
 
 Supply your own running PostgreSQL server, locally, in a container, or on another host. Configure your project with that server's host, port, database, username, password and any required TLS settings. Its network access and database permissions determine which operations your application can perform. PostgreSQL does not require Fairway's MySQL service to be running.
 

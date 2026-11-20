@@ -2,6 +2,17 @@
 
 Past entries record released changes; they are not current development or release restrictions. See [Build and release](docs/build-and-release.md) for the current process.
 
+## 0.2.0 — candidate
+
+- Add PHP 8.6.0 as an optional branch and update PHP 8.2/8.3/8.4/8.5 to 8.2.36/8.3.37/8.4.28/8.5.13. PHP 8.5 remains the default for websites, CLI and Composer.
+- Update stable Nginx to 1.30.7, Composer to 2.11.2 and Mailpit to 1.34.0, with reviewed platform download and corresponding-source inputs. Keep MySQL 9.7.4 and the official phpMyAdmin 5.2.3 distribution.
+- Refresh the macOS PHP library closure, retain required ICU generations side by side, and build Nginx against the supported OpenSSL 3.5 line. Scheduled December OpenSSL patches remain outside 0.2.0.
+- Resolve Homebrew's latest-PHP alias without substituting another branch, and reject stale Linux Nginx binaries during runtime reuse.
+- Update Vite and compatible Rust updater, archive, TLS verification and I/O dependencies with available fixes. December OpenSSL patches are planned separately for 0.2.1.
+- Include Light, Dark and System appearance modes, Windows Fluent overlay scrollbars, simpler local access controls, and recovery when a selected SQLite file is missing.
+
+Candidate checks and publication are pending. No interactive device testing is claimed.
+
 ## 0.1.3 — 2026-11-07
 
 - Add per-service **Run on start** switches for Nginx, MySQL and Mail on macOS and Windows. Start, Stop and Quit preserve the saved choices.

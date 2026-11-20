@@ -17,6 +17,17 @@ SPEC.loader.exec_module(runtime)
 
 
 class LinuxCompatibilityTests(unittest.TestCase):
+    def test_reused_nginx_must_match_the_requested_version(self):
+        prefix = Path('/isolated/runtime/nginx')
+        for actual, expected in [('1.30.6', False), ('1.30.7', True), ('1.30.70', False)]:
+            with self.subTest(actual=actual), patch.object(runtime.subprocess, 'check_output',
+                    return_value=f'nginx version: nginx/{actual}\n'):
+                self.assertEqual(runtime.reusable_nginx(prefix, '1.30.7'), expected)
+        for error in [FileNotFoundError(), subprocess.TimeoutExpired('nginx', 15),
+                      subprocess.CalledProcessError(1, 'nginx')]:
+            with patch.object(runtime.subprocess, 'check_output', side_effect=error):
+                self.assertFalse(runtime.reusable_nginx(prefix, '1.30.7'))
+
     def test_reused_php_must_have_current_version_and_all_required_extensions(self):
         with tempfile.TemporaryDirectory() as folder:
             prefix = Path(folder)

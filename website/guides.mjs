@@ -735,8 +735,8 @@ export const guides = [
       "command-not-found"
     ],
     "intro": [
-      "One selection applies to all Fairway XMP sites, terminal PHP and Composer. Available versions are PHP 8.2–8.5.",
-      "ရွေးထားသော PHP version တစ်ခုတည်းကို Fairway XMP Site အားလုံး၊ Terminal PHP နှင့် Composer တို့တွင် အသုံးပြုသည်။ PHP 8.2–8.5 ကို ရွေးနိုင်သည်။"
+      "One selection applies to all Fairway XMP sites, terminal PHP and Composer. Available versions are PHP 8.2–8.6.",
+      "ရွေးထားသော PHP version တစ်ခုတည်းကို Fairway XMP Site အားလုံး၊ Terminal PHP နှင့် Composer တို့တွင် အသုံးပြုသည်။ PHP 8.2–8.6 ကို ရွေးနိုင်သည်။"
     ]
   },
   {

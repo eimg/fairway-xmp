@@ -62,18 +62,20 @@ node --version
 
 ## What’s included
 
-- **PHP 8.5.12** with common extensions for PHP projects and Laravel.
-- **Composer 2.11.1** for installing PHP packages.
-- **Nginx 1.30.6** for serving your projects.
+Current 0.2.0 candidate builds include the following tools; published downloads above remain at 0.1.3 until release.
+
+- **PHP 8.5.13 (default), with PHP 8.6.0 available** with common extensions for PHP projects and Laravel.
+- **Composer 2.11.2** for installing PHP packages.
+- **Nginx 1.30.7** for serving your projects.
 - **MySQL 9.7.4 LTS** for local databases.
 - **phpMyAdmin 5.2.3** for managing tables and data in your browser.
-- **Mailpit 1.33.0** for catching the emails your apps send.
+- **Mailpit 1.34.0** for catching the emails your apps send.
 
 The control panel provides service controls, port settings, logs, database backups, and persistent PHP settings for each bundled version.
 
 ## PostgreSQL client support
 
-Fairway includes `pdo_pgsql` and `pgsql` in every bundled PHP version (8.2–8.5) on Windows, macOS and Linux. Your PHP applications and Composer projects can connect to a PostgreSQL server you provide, without installing extra PHP drivers. This is additional client support: Fairway does not ship or manage a PostgreSQL server, and the desktop Data browser supports MySQL and SQLite only. Fairway’s environment backup/updater does not back up or upgrade external PostgreSQL databases.
+Fairway includes `pdo_pgsql` and `pgsql` in every bundled PHP version (8.2–8.6) on Windows, macOS and Linux. Your PHP applications and Composer projects can connect to a PostgreSQL server you provide, without installing extra PHP drivers. This is additional client support: Fairway does not ship or manage a PostgreSQL server, and the desktop Data browser supports MySQL and SQLite only. Fairway’s environment backup/updater does not back up or upgrade external PostgreSQL databases.
 
 See [PostgreSQL connection examples and requirements](docs/postgres-client-support.md).
 
@@ -146,7 +148,7 @@ Choose **Browse Data → Open SQLite file…** to browse and edit a project's SQ
 
 The **Structure** tab supports ordinary/unique index management and foreign-key inspection for MySQL and SQLite, including composite indexes and incoming relationships. Filtering and advanced schema changes remain available through SQL.
 
-Fairway includes PHP 8.2 through 8.5. Switch under **Settings → Service Settings → Advanced settings** after stopping all services. Select the version and click **Save**. The selection controls websites, terminal PHP, and Composer, and is saved for the next launch. On Linux, use `fairway php-version 8.2` through `fairway php-version 8.5` after `fairway stop all`. See the [step by step test guide](docs/testing.md#isolated-development-profiles). PHP 8.5 is the default. A saved PHP 8.0 or 8.1 selection is left in place and blocks startup until you choose PHP 8.2 or later.
+Fairway includes PHP 8.2 through 8.6. Switch under **Settings → Service Settings → Advanced settings** after stopping all services. Select the version and click **Save**. The selection controls websites, terminal PHP, and Composer, and is saved for the next launch. On Linux, use `fairway php-version 8.2` through `fairway php-version 8.6` after `fairway stop all`. See the [step by step test guide](docs/testing.md#isolated-development-profiles). PHP 8.5 is the default. A saved PHP 8.0 or 8.1 selection is left in place and blocks startup until you choose PHP 8.2 or later.
 
 Under **Settings → PHP settings**, adjust memory, execution time, upload size, timezone, displayed errors and session upload progress. The active PHP version is shown first; other versions are available under **Choose another PHP version**. Changes survive app updates. Stop Nginx/PHP before saving active settings; **Reset to defaults** restores that version only. See [PHP settings](docs/php-settings.md).
 

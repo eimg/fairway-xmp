@@ -8,6 +8,7 @@ import tarfile
 import unittest
 import zipfile
 from unittest.mock import patch
+from urllib.error import HTTPError
 
 SPEC = importlib.util.spec_from_file_location('runtime', Path(__file__).resolve().parents[1] / 'scripts/prepare_runtime.py')
 runtime = importlib.util.module_from_spec(SPEC)
@@ -15,6 +16,20 @@ SPEC.loader.exec_module(runtime)
 
 
 class ArchiveTests(unittest.TestCase):
+    def test_macos_latest_php_alias_uses_canonical_metadata_only_for_that_branch(self):
+        missing = HTTPError('https://formulae.brew.sh/api/formula/php%408.6.json', 404, 'Missing', {}, None)
+        metadata = {'aliases': ['php@8.6'], 'versions': {'stable': '8.6.0'}}
+        with patch.object(runtime, 'read_json', side_effect=[missing, metadata]) as read:
+            self.assertEqual(runtime.Bottles.formula_metadata('php@8.6'), metadata)
+            self.assertEqual(read.call_args_list[-1].args, ('https://formulae.brew.sh/api/formula/php.json',))
+        with patch.object(runtime, 'read_json', side_effect=[missing, metadata]):
+            with self.assertRaises(HTTPError): runtime.Bottles.formula_metadata('php@8.5')
+        for name, code in [('php@8.6', 403), ('mysql@9.7', 404)]:
+            error = HTTPError('https://example.test/formula', code, 'Unavailable', {}, None)
+            with patch.object(runtime, 'read_json', side_effect=error) as read:
+                with self.assertRaises(HTTPError): runtime.Bottles.formula_metadata(name)
+                read.assert_called_once()
+
     def test_archived_windows_php_keeps_the_reviewed_checksum_and_original_cache_key(self):
         url = runtime.windows_php_url('8.5.12')
         archived = url.replace('/releases/', '/releases/archives/')
@@ -255,7 +270,8 @@ class ArchiveTests(unittest.TestCase):
         sources = json.loads((root / 'runtime-sources.lock.json').read_text())
         for name in (*downloads, *linux, *(item['name'] for item in sources)):
             self.assertNotRegex(name, r'(?:^|[-@])php[-@]8\.[01](?:\D|$)')
-        self.assertIn('brew-icu4c@78-arm64-sequoia', downloads)
+        self.assertTrue(any(name.startswith('brew-icu4c@') and name.endswith('-arm64-sequoia')
+                            for name in downloads), 'Bundled PHP intl needs a pinned ICU bottle')
         for item in sources:
             versions = set(item.get('phpVersions') or [])
             self.assertFalse(versions & {'8.0', '8.1'})

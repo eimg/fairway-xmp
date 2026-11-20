@@ -313,7 +313,7 @@ class Bottles:
         if stored and (not self.refresh or RESUME_LOCK):
             version, url, checksum = stored['version'], stored['url'], stored['sha256']
         else:
-            data = read_json(f'https://formulae.brew.sh/api/formula/{urllib.parse.quote(name, safe="")}.json')
+            data = self.formula_metadata(name)
             self.metadata[name] = data
             version = data['versions']['stable']
             bottle = data['bottle']['stable']['files'].get('arm64_sequoia')
@@ -340,6 +340,20 @@ class Bottles:
         if len(kegs) != 1: raise RuntimeError(f'Cannot identify extracted keg for {name}')
         self.kegs[name] = kegs[0]
         return kegs[0]
+
+    @staticmethod
+    def formula_metadata(name):
+        try:
+            return read_json(f'https://formulae.brew.sh/api/formula/{urllib.parse.quote(name, safe="")}.json')
+        except urllib.error.HTTPError as error:
+            if error.code != 404 or not name.startswith('php@'):
+                raise
+            # The newest PHP branch is an alias of `php`, not a separate
+            # formula/API endpoint. Never substitute a different PHP branch.
+            data = read_json('https://formulae.brew.sh/api/formula/php.json')
+            if name not in data.get('aliases', []):
+                raise error
+            return data
 
     def dependency(self, original):
         for prefix in ('/opt/homebrew/opt/', '/opt/homebrew/Cellar/'):
