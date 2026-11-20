@@ -208,7 +208,17 @@ fn failed_root_setup_is_stopped_gracefully_and_retry_preserves_existing_data() {
     let student = fixture.manager.layout.data.join("mysql/student.ibd");
     fs::write(&student, b"student data").unwrap();
     fixture.set("fail-alter");
-    assert!(fixture.start().unwrap_err().contains("root setup failed"));
+    // Force a scheduler pause after TCP becomes connectable, before the server
+    // accepts requests. The fixture's authentication state must already exist.
+    fixture.set("pause-after-listen");
+    let error = fixture.start().unwrap_err();
+    assert!(
+        error.contains("root setup failed"),
+        "{error}; fixture events: {}; server log: {}",
+        fixture.events(),
+        fs::read_to_string(fixture.manager.layout.data.join("logs/mysql-process.log"))
+            .unwrap_or_default()
+    );
     assert!(!fixture.mysql().running);
     assert!(!fixture.manager.layout.data.join("database-ready").exists());
     fs::remove_file(fixture.flag("fail-alter")).unwrap();
@@ -287,11 +297,14 @@ fn start_all_rolls_back_new_unprovisioned_mysql_without_losing_student_data() {
     fixture.set("fail-alter");
     let student = fixture.manager.layout.data.join("mysql/student.ibd");
     fs::write(&student, b"coursework").unwrap();
-    assert!(fixture
-        .manager
-        .start_all()
-        .unwrap_err()
-        .contains("root setup failed"));
+    let error = fixture.manager.start_all().unwrap_err();
+    assert!(
+        error.contains("root setup failed"),
+        "{error}; fixture events: {}; server log: {}",
+        fixture.events(),
+        fs::read_to_string(fixture.manager.layout.data.join("logs/mysql-process.log"))
+            .unwrap_or_default()
+    );
     assert!(fixture.manager.processes.is_empty());
     assert_eq!(fs::read(student).unwrap(), b"coursework");
     assert!(fixture.events().contains("mysqladmin:passwordless"));

@@ -71,9 +71,15 @@ if name == 'mysqld':
                 listener = socket.socket()
                 listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 listener.bind(('127.0.0.1', config.getint('mysqld', 'port')))
+                # The manager probes TCP before launching fixture SQL clients.
+                # Publish their authentication state before TCP can report ready.
+                ready.touch()
                 listener.listen()
                 listener.settimeout(.02)
-                ready.touch()
+                if (control / 'pause-after-listen').exists():
+                    deadline = time.monotonic() + 5
+                    while not (control / 'passwordless-ready-check').exists() and time.monotonic() < deadline:
+                        time.sleep(.01)
             if listener:
                 try:
                     connection, _ = listener.accept()
@@ -94,7 +100,10 @@ secure = args[0].startswith('--defaults-file=')
 if not secure:
     assert args[0] == '--no-defaults' and '--skip-password' in args
 event(f'{name}:{"secure" if secure else "passwordless"}')
-if not (control / 'ready').exists():
+ready_at_entry = (control / 'ready').exists()
+if name == 'mysql' and not secure and (control / 'pause-after-listen').exists():
+    (control / 'passwordless-ready-check').touch()
+if not ready_at_entry:
     fail('fixture server is not ready')
 if secure != (control / 'root-secure').exists():
     fail('fixture authentication failed')
