@@ -97,17 +97,18 @@ fn from_environment(layout: &Layout, environment: &[(OsString, OsString)]) -> Co
     }
     let name = if cfg!(windows) { "fnm.exe" } else { "fnm" };
     let external = paths.into_iter().map(|path| path.join(name)).find(|path| {
-        if owned_path(layout, path) || !path.is_file() {
+        if owned_path(layout, path) {
             return false;
         }
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            if !fs::metadata(path).is_ok_and(|m| m.permissions().mode() & 0o111 != 0) {
-                return false;
-            }
+            fs::metadata(path).is_ok_and(|m| m.is_file() && m.permissions().mode() & 0o111 != 0)
         }
-        true
+        #[cfg(not(unix))]
+        {
+            path.is_file()
+        }
     });
     Context {
         directory,
