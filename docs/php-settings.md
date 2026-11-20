@@ -11,7 +11,7 @@ Open **Settings → PHP settings** in the desktop app. The card starts with the 
 | Upload size per file | 64 MiB | PHP's per-file limit. PHP POST and Nginx request limits are 8 MiB larger for multipart headers and other form fields. Several files together must fit within that request limit. |
 | Timezone | UTC | Choose an identifier supported by that PHP version, such as `Asia/Yangon`. |
 | Display errors | On | Show PHP errors in website responses. Error logging stays enabled. |
-| Session upload progress | On | Controls `session.upload_progress.enabled`. Session-based tracking requires the application's normal PHP upload-progress setup. Turning this off leaves normal file uploads and browser-side progress available. |
+| Session upload progress | Off | Controls `session.upload_progress.enabled`. Session-based tracking requires the application's normal PHP upload-progress setup. Patched PHP rejects runtime session configuration while this is On; phpMyAdmin always keeps it Off in its own directory. Turning this off leaves normal file uploads and browser-side progress available. |
 
 PHP execution time and Nginx response inactivity measure different things. On Unix, time spent waiting on external work may not count toward PHP’s execution limit; the aligned Nginx timeout remains an idle-response limit rather than a guaranteed total request duration.
 

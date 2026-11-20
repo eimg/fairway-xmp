@@ -22,7 +22,7 @@ impl Default for PhpSettings {
             upload_max_filesize_mb: 64,
             timezone: "UTC".into(),
             display_errors: true,
-            session_upload_progress: true,
+            session_upload_progress: false,
         }
     }
 }
@@ -232,14 +232,14 @@ mod tests {
     fn overrides_are_sparse_and_independent_per_minor_version() {
         let mut overrides = Overrides::default();
         let changed = PhpSettings {
-            session_upload_progress: false,
+            session_upload_progress: true,
             upload_max_filesize_mb: 128,
             ..PhpSettings::default()
         };
         overrides.set("8.5", &changed).unwrap();
         assert_eq!(
             overrides.versions["8.5"],
-            serde_json::json!({"sessionUploadProgress":false,"uploadMaxFilesizeMb":128})
+            serde_json::json!({"sessionUploadProgress":true,"uploadMaxFilesizeMb":128})
         );
         assert_eq!(overrides.settings("8.5").unwrap(), changed);
         assert_eq!(overrides.settings("8.4").unwrap(), PhpSettings::default());
@@ -291,6 +291,6 @@ mod tests {
         assert!(settings
             .ini()
             .contains("session.upload_progress.enabled=Off\n"));
-        assert!(PhpSettings::default().session_upload_progress);
+        assert!(!PhpSettings::default().session_upload_progress);
     }
 }

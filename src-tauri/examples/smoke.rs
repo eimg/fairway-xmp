@@ -676,7 +676,7 @@ fn main() -> Result<(), String> {
             let php_versions = manager.layout.php_versions()?;
             if php_versions.len() > 1 {
                 let probe = manager.layout.www.join("php-version.php");
-                fs::write(&probe, "<?php echo PHP_VERSION;").map_err(|e| e.to_string())?;
+                fs::write(&probe, "<?php echo PHP_VERSION . ' progress=' . (int)ini_get('session.upload_progress.enabled');").map_err(|e| e.to_string())?;
                 for (minor, full) in php_versions {
                     let full = full.as_str().ok_or("Invalid PHP version in manifest")?;
                     manager.save_php_version(minor.clone())?;
@@ -704,8 +704,16 @@ fn main() -> Result<(), String> {
                         }));
                     composer.arg("--version");
                     assert!(without_startup_warnings(composer)?.contains("Composer version"));
+                    manager.save_php_settings(
+                        &minor,
+                        Some(fairway_core::php_settings::PhpSettings {
+                            session_upload_progress: true,
+                            ..Default::default()
+                        }),
+                    )?;
                     manager.start_all()?;
-                    assert!(http(chosen.website, "/php-version.php").contains(full));
+                    assert!(http(chosen.website, "/php-version.php")
+                        .contains(&format!("{full} progress=1")));
                     let pma = http(chosen.phpmyadmin, "/");
                     assert!(
                         pma.starts_with("HTTP/1.1 200")

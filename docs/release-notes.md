@@ -6,6 +6,7 @@ Release candidate preparation. The candidate workflow will build and verify inst
 
 - PHP 8.6.0 is available alongside patched PHP 8.2–8.5. **PHP 8.5.13 remains the default.** Switch versions in Advanced service settings with services stopped; the choice applies to websites, terminal PHP and Composer.
 - Update Nginx to 1.30.7, Composer to 2.11.2 and Mailpit to 1.34.0. MySQL remains at 9.7.4 LTS and phpMyAdmin at its official 5.2.3 distribution.
+- Keep session upload progress Off by default for patched PHP; phpMyAdmin remains compatible when a project opts in. Regular file uploads remain available.
 - Update compatible frontend and Rust dependencies, including updater/archive and TLS verification fixes.
 - Add Light, Dark and System appearance modes and Windows Fluent overlay scrollbars.
 - Simplify local access controls and recover cleanly when a selected SQLite database file is missing.

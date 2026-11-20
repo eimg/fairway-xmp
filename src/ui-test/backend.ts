@@ -19,7 +19,7 @@ let startupServices = { nginx: false, mysql: false, mail: false };
 let loginRegistered = false;
 let nodeFixture: NodeStatus;
 let nodeInstallation: { id: string; version: string; phase: 'installing' | 'activating'; cancelled: boolean; wake?: () => void } | null = null;
-const phpDefaults: PhpSettings = { memoryLimitMb: 256, maxExecutionTime: 120, uploadMaxFilesizeMb: 64, timezone: 'UTC', displayErrors: true, sessionUploadProgress: true };
+const phpDefaults: PhpSettings = { memoryLimitMb: 256, maxExecutionTime: 120, uploadMaxFilesizeMb: 64, timezone: 'UTC', displayErrors: true, sessionUploadProgress: false };
 let phpOverrides: Record<string, PhpSettings> = {};
 function phpSettings(version: string): PhpSettingsView {
   if (!data.phpVersions[version]) throw new Error('PHP version is unavailable.');

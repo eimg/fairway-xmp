@@ -66,7 +66,7 @@ export default function PhpSettingsCard({ data, busy, save }: Props) {
           <label><span>Timezone<small>Use a PHP timezone such as UTC or Asia/Yangon.</small></span><input required list="php-timezones" autoComplete="off" value={draft.timezone} onChange={event => update('timezone', event.target.value)} /><datalist id="php-timezones">{loaded.timezones.map(zone => <option key={zone} value={zone} />)}</datalist></label>
         </div>
         <label className="php-settings-toggle"><input type="checkbox" checked={draft.displayErrors} onChange={event => update('displayErrors', event.target.checked)} /><span>Display errors<small>Show PHP errors in website responses. Errors are also logged.</small></span></label>
-        <label className="php-settings-toggle"><input type="checkbox" checked={draft.sessionUploadProgress} onChange={event => update('sessionUploadProgress', event.target.checked)} /><span>Session upload progress<small>Track uploads through PHP sessions. Regular file uploads and browser upload progress still work when this is off.</small></span></label>
+        <label className="php-settings-toggle"><input type="checkbox" checked={draft.sessionUploadProgress} onChange={event => update('sessionUploadProgress', event.target.checked)} /><span>Session upload progress<small>Enable only for apps that do not change session settings at runtime. Regular file uploads and browser upload progress still work when this is off.</small></span></label>
       </fieldset>
       {webRunning && <p className="settings-hint">Stop Nginx and PHP from Environment before saving settings for the active version.</p>}
       {version !== data.phpVersion && <p className="settings-hint">These settings will apply when PHP {version} becomes active.</p>}

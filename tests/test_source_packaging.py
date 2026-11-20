@@ -6,6 +6,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from urllib.error import HTTPError
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
@@ -14,6 +15,29 @@ from fnm_sources import source_plan, rebuild
 
 
 class SourceTreeTests(unittest.TestCase):
+    def test_source_host_failure_backs_off_and_preserves_checksum(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            archive = self.archive(root, 'source.tar.gz')
+            digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+            item = {'name': 'patch', 'url': 'https://example.test/source',
+                    'sha256': digest, 'file': 'patch.tar.gz'}
+            sources = root / 'sources'; sources.mkdir()
+            unavailable = HTTPError(item['url'], 503, 'Service Unavailable', {}, None)
+            with patch('package_sources.download', side_effect=[unavailable, unavailable, (archive, digest)]) as download, \
+                    patch('package_sources.time.sleep') as sleep:
+                self.assertEqual(fetch_source(item, sources)['sha256'], digest)
+            self.assertEqual([call.args for call in sleep.call_args_list], [(10,), (20,)])
+            self.assertEqual([call.args for call in download.call_args_list], [(item['url'], digest)] * 3)
+            self.assertEqual((sources / item['file']).read_bytes(), archive.read_bytes())
+            (sources / item['file']).unlink()
+            for error in [unavailable, RuntimeError('Checksum mismatch; refused to extract')]:
+                with patch('package_sources.download', side_effect=error) as download, \
+                        patch('package_sources.time.sleep'):
+                    with self.assertRaises(RuntimeError): fetch_source(item, sources)
+                self.assertEqual(download.call_count, 3)
+                self.assertFalse((sources / item['file']).exists())
+
     def test_fnm_sources_reconstruct_an_offline_vendor_tree_and_check_crate_hashes(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import tarfile
+import time
 import urllib.parse
 import zipfile
 
@@ -257,6 +258,12 @@ def fetch_source(item, sources):
                     raise
             except (OSError, http.client.HTTPException) as error:
                 failure = error
+                if attempt < 2:
+                    # download() already retries brief interruptions. Give an
+                    # overloaded source host time to recover between batches.
+                    delay = 10 * (attempt + 1)
+                    print(f'Retrying source {item["name"]} in {delay}s: {error}', flush=True)
+                    time.sleep(delay)
         if archive is not None:
             break
     if archive is None:

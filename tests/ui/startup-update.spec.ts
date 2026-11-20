@@ -64,7 +64,7 @@ test('removed PHP selection can be replaced in Settings while service startup st
         if (command === 'snapshot') return structuredClone(snapshot) as T;
         if (command === 'startup_services') return { nginx: false, mysql: false, mail: false } as T;
         if (command === 'login_item_status') return { registered: false, state: 'notRegistered' } as T;
-        if (command === 'get_php_settings') return { version: String(args.version), settings: { memoryLimitMb: 256, maxExecutionTime: 120, uploadMaxFilesizeMb: 64, timezone: 'UTC', displayErrors: true, sessionUploadProgress: true }, customized: false, timezones: ['UTC'] } as T;
+        if (command === 'get_php_settings') return { version: String(args.version), settings: { memoryLimitMb: 256, maxExecutionTime: 120, uploadMaxFilesizeMb: 64, timezone: 'UTC', displayErrors: true, sessionUploadProgress: false }, customized: false, timezones: ['UTC'] } as T;
         if (command === 'save_settings') {
           if (!snapshot.phpVersions[String(args.version)]) throw new Error('Unavailable PHP');
           snapshot.phpVersion = String(args.version);

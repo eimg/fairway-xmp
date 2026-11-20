@@ -1173,6 +1173,13 @@ impl Manager {
             target.join("config.inc.php"),
         )
         .map_err(|e| e.to_string())?;
+        // Patched PHP forbids runtime session changes while upload progress is
+        // enabled. Keep phpMyAdmin's cookie setup independent of project opt-ins.
+        // Both PHP-FPM and Windows CGI read this before running the application.
+        atomic_write(
+            &target.join(".user.ini"),
+            b"session.upload_progress.enabled=Off\n",
+        )?;
         Ok(())
     }
 

@@ -23,37 +23,39 @@ class SmokeProcessTests(unittest.TestCase):
     def test_parent_exit_does_not_wait_for_descendant_output_handle(self):
         child = None
         child_handle = None
-        try:
-            with tempfile.TemporaryDirectory() as folder, SmokeCommands(folder) as commands:
-                result = commands.run([sys.executable, '-c',
-                    "import subprocess,sys,time; time.sleep(.2); "
-                    "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']); print(p.pid)"], timeout=5)
-                child = int(result.stdout.strip())
-                self.assertEqual(result.returncode, 0)
-                if os.name == 'nt':
-                    from ctypes import wintypes as w
-                    api = commands.job.api
-                    api.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
-                    api.OpenProcess.restype = w.HANDLE
-                    api.WaitForSingleObject.argtypes = [w.HANDLE, w.DWORD]
-                    api.WaitForSingleObject.restype = w.DWORD
-                    child_handle = api.OpenProcess(0x00100000, False, child)  # SYNCHRONIZE
-                    self.assertTrue(child_handle)
-                    self.assertEqual(api.WaitForSingleObject(child_handle, 0), 258)  # still running
-                # It remains available between commands in the same smoke session.
-                commands.run([sys.executable, '-c', 'pass'], timeout=5)
-        finally:
-            # WindowsJob cleans its test descendants on context exit.
-            if child_handle:
-                try:
-                    self.assertEqual(api.WaitForSingleObject(child_handle, 5000), 0)
-                finally:
-                    api.CloseHandle(child_handle)
-            if child and os.name != 'nt':
-                try:
-                    os.kill(child, signal.SIGKILL)
-                except ProcessLookupError:
-                    pass
+        with tempfile.TemporaryDirectory() as folder:
+            try:
+                with SmokeCommands(folder) as commands:
+                    result = commands.run([sys.executable, '-c',
+                        "import subprocess,sys,time; time.sleep(.2); "
+                        "p=subprocess.Popen([sys.executable,'-c','import time; time.sleep(60)']); print(p.pid)"], timeout=5)
+                    child = int(result.stdout.strip())
+                    self.assertEqual(result.returncode, 0)
+                    if os.name == 'nt':
+                        from ctypes import wintypes as w
+                        api = commands.job.api
+                        api.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
+                        api.OpenProcess.restype = w.HANDLE
+                        api.WaitForSingleObject.argtypes = [w.HANDLE, w.DWORD]
+                        api.WaitForSingleObject.restype = w.DWORD
+                        child_handle = api.OpenProcess(0x00100000, False, child)  # SYNCHRONIZE
+                        self.assertTrue(child_handle)
+                        self.assertEqual(api.WaitForSingleObject(child_handle, 0), 258)  # still running
+                    # It remains available between commands in the same smoke session.
+                    commands.run([sys.executable, '-c', 'pass'], timeout=5)
+            finally:
+                # WindowsJob terminates descendants on context exit. Wait for
+                # the process handle before TemporaryDirectory removes its logs.
+                if child_handle:
+                    try:
+                        self.assertEqual(api.WaitForSingleObject(child_handle, 5000), 0)
+                    finally:
+                        api.CloseHandle(child_handle)
+                if child and os.name != 'nt':
+                    try:
+                        os.kill(child, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
 
     def test_timeout_is_bounded_with_descendant_output_handle_open(self):
         with tempfile.TemporaryDirectory() as folder, SmokeCommands(folder) as commands:
