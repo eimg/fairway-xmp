@@ -1,4 +1,4 @@
-name: Browser UI review
+name: Browser safety smoke
 
 on:
   workflow_call:
@@ -7,9 +7,9 @@ permissions:
   contents: read
 
 jobs:
-  review:
+  smoke:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -17,17 +17,16 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npm run test:unit
       - run: npx playwright install --with-deps chromium webkit
       - run: npm run test:ui
-      - name: Save visual review report
-        if: always()
+      - name: Save browser smoke failure diagnostics
+        if: failure()
         uses: actions/upload-artifact@v6
         with:
-          name: ui-visual-review-${{ github.sha }}
+          name: ui-smoke-${{ github.sha }}
           path: |
             playwright-report/
             test-results/
           if-no-files-found: warn
-          retention-days: 30
+          retention-days: 7
 

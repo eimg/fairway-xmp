@@ -1,10 +1,10 @@
 # Testing
 
-Choose checks for the behavior being changed. Device checks help investigate platform behavior; they are not release approval requirements. Record observed results.
+Choose checks for the behavior being changed. The stable desktop interface has a small automated safety net; actual visual review covers layout, themes, window sizes and usability. Record observed results. CI does not claim visual acceptance or require a device acceptance JSON.
 
 ## Automated checks
 
-Run the commands below locally as needed. For the complete Windows/macOS source checks and Chromium/WebKit suite in CI, use **Actions → Build and verify Fairway XMP → Run workflow**. Application verification and cache warming run only when explicitly requested; pushes and pull requests do not start them. Release candidates still run their full checks.
+Run the commands below locally as needed. For the Windows/macOS source checks and focused browser smoke checks in CI, use **Actions → Build and verify Fairway XMP → Run workflow**. Application verification and cache warming run only when explicitly requested; pushes and pull requests do not start them. Release candidates retain runtime, database, installer and updater acceptance checks.
 
 ```sh
 npm run build
@@ -35,19 +35,17 @@ The service smoke checks real PHP/Composer, Nginx, MySQL, mail, backup restorati
 
 The extension smoke checks `sockets`, SOAP and LDAP initialization/options/escaping through generated CLI/web configuration on every PHP branch, plus Unix CLI signals and child exit status using `pcntl`/`posix`. It requires local socket/process access but no external service. It does not authenticate against an LDAP directory. See [PHP clients and workers](php-client-support.md).
 
-The PHP settings smoke checks each branch through generated CLI/web configuration, multipart uploads with session progress disabled, upload-size enforcement, restart persistence, inactive-version edits, failed-save rollback, reset, unlimited execution and a quiet 65-second response that exceeds Nginx’s former 60-second timeout. `php-settings-native.spec.ts` additionally drives the production settings UI against the real Rust backend; `php-settings.spec.ts` covers per-version forms and running-service behavior in Chromium/WebKit.
+The PHP settings smoke checks each branch through generated CLI/web configuration, multipart uploads with session progress disabled, upload-size enforcement, restart persistence, inactive-version edits, failed-save rollback, reset, unlimited execution and a quiet 65-second response that exceeds Nginx’s former 60-second timeout. `php-settings-native.spec.ts` adds one focused production UI check for real persistent settings through the Rust backend. Review per-version forms and running-service controls visually when they change.
 
 The settings smoke verifies the identity of the loaded `php.ini` before checking values. Its Windows fixture uses an ASCII data-directory name because PHP startup requires an ANSI-compatible configuration path or existing NTFS short aliases; the runner's workspace volume need not provide those aliases. Project paths remain Unicode. Other platforms also exercise Unicode application-data paths.
 
 Database engine upgrade fixtures and installed-lifecycle baselines remain automated compatibility tests. Their old version names identify test inputs, not current development restrictions. Installer lifecycle scripts modify profiles only in disposable GitHub-hosted accounts; do not run them against a personal account.
 
-## Browser and native bridge
+## Minimal UI smoke checks and visual review
 
-`node-tools.spec.ts` covers desktop Install/Install & use, explicit selection, failed activation/retry, read-only stores, activation handover, confirmed active-version uninstall, and cancellable downloads across navigation in Chromium/WebKit at normal/minimum sizes. Native selection regression tests verify rollback of existing and absent defaults, failed fnm selection, and process-tree cancellation.
+Add a UI test only for a distinct, consequential frontend failure that lower-level tests and visual review cannot reliably catch. Prefer extending an existing check or testing logic below the browser. New features and cosmetic changes do not automatically need new UI tests. Detailed validation, exact values, cancellation, rollback and process safety belong in unit and native integration tests.
 
-Node/fnm checks are noninteractive and use isolated stores. Policy tests cover external-manager detection after Fairway launchers, shell-exported custom storage, ownership-bound mutations, read-only listing and activation handover without invoking fnm. On macOS run `cargo run --manifest-path src-tauri/Cargo.toml --example node_tools_smoke --no-default-features --features terminal --locked -- /path/to/fresh-fnm-check`; on Windows use `node_tools_windows_smoke`. The examples install Node into scratch storage, test version selection and native startup scripts, and preserve personal profiles/installations. Mac/Windows candidate jobs run the appropriate example after staging fnm.
-
-On Linux, after preparing the runtime, run `python3 tests/linux_fnm_smoke.py --runtime src-tauri/resources/runtime --install-node`. It checks the bundled native fnm and downloads Node LTS into a temporary home/store, then verifies Node/npm/npx without editing personal shell profiles. Omit `--install-node` to check fnm without a Node download. See [Node tools](node-tools.md).
+`npm run test:ui` runs five browser journeys in Chromium: production preview isolation, stale database-response rejection, failed-workspace recovery without replacing a sibling terminal, explicit recovery from a failed lazy chunk, and the production mail CSP/sandbox boundary. Only mail isolation and lazy-chunk recovery repeat in WebKit, for seven browser executions. Both engines use one normal desktop size; there is no automated minimum-size matrix or screenshot tour.
 
 `npm run dev` is a disabled browser preview. `npm run dev:ui` enables an explicitly labeled in-memory backend for service/error/update scenarios; no native files, services or settings are changed.
 
@@ -57,9 +55,24 @@ npm run test:ui
 npm run test:ui:report
 ```
 
-The browser suite covers Chromium/WebKit at normal and minimum desktop sizes and attaches screenshots, traces and failure recordings. Assertions establish behavior; screenshots remain available for optional visual review. Browser engines do not reproduce native tray menus, dialogs or Windows ConPTY.
+Failure screenshots and traces support diagnosis. CI rejects tests that pass only on retry; retries are diagnostic, not a passing result. Passing tests do not collect scenario screenshots, and the HTML report is not visual acceptance. The reusable `ui-smoke.yml` workflow runs these checks during explicitly dispatched verification and release candidates at the same source commit as native CI.
 
-For real packaged tools and database operations, build `terminal_bridge` and use `FAIRWAY_TEST_RUNTIME` with the `*-native.spec.ts` suites. Candidate workflows use `FAIRWAY_NATIVE_ONLY=1` with the built production frontend. The bridge uses isolated data, communicates over stdio, and opens no database HTTP endpoint.
+`npm run test:ui:native` selects `playwright.native.config.ts` and runs four normal-size Chromium journeys: terminal input reaches a real PTY and bundled PHP/Composer, MySQL editing reaches the real database, SQLite edits the original project file with MySQL stopped, and PHP settings persist through the real backend. Build the `terminal_bridge` example and set `FAIRWAY_TEST_RUNTIME` to the staged runtime first; missing native prerequisites are errors rather than skipped coverage. This separate configuration serves only the production frontend and builds it for local runs. Candidate workflows set `FAIRWAY_NATIVE_ONLY=1` to reuse already-built production assets. The bridge uses isolated data, communicates over stdio, and opens no database HTTP endpoint. Default Playwright discovery runs only browser smoke checks.
+
+```sh
+cargo build --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --example terminal_bridge --locked
+FAIRWAY_TEST_RUNTIME="$PWD/src-tauri/resources/runtime" npm run test:ui:native
+```
+
+In PowerShell, set `$env:FAIRWAY_TEST_RUNTIME` before running the npm command. Use actual visual review for Light/Dark themes, 1080×760 and 820×650 windows, long content, empty/busy/error states, navigation and ordinary forms. Check the installed macOS/Windows app for native WebView, picker, tray, focus and terminal behavior. This human review is separate from automated candidate completion; it adds no publication checklist or acceptance-file gate.
+
+## Node and fnm verification
+
+Native selection regression tests verify rollback of existing and absent defaults, failed fnm selection, and process-tree cancellation. Review Node install/use/uninstall controls and download feedback visually when changing that interface.
+
+Node/fnm checks are noninteractive and use isolated stores. Policy tests cover external-manager detection after Fairway launchers, shell-exported custom storage, ownership-bound mutations, read-only listing and activation handover without invoking fnm. On macOS run `cargo run --manifest-path src-tauri/Cargo.toml --example node_tools_smoke --no-default-features --features terminal --locked -- /path/to/fresh-fnm-check`; on Windows use `node_tools_windows_smoke`. The examples install Node into scratch storage, test version selection and native startup scripts, and preserve personal profiles/installations. Mac/Windows candidate jobs run the appropriate example after staging fnm.
+
+On Linux, after preparing the runtime, run `python3 tests/linux_fnm_smoke.py --runtime src-tauri/resources/runtime --install-node`. It checks the bundled native fnm and downloads Node LTS into a temporary home/store, then verifies Node/npm/npx without editing personal shell profiles. Omit `--install-node` to check fnm without a Node download. See [Node tools](node-tools.md).
 
 ## Isolated development profiles
 
