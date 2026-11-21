@@ -396,7 +396,10 @@ export const guides = [
   },
   {
     "id": "sqlite",
-    "navTitle": ["SQLite files", "SQLite ဖိုင်များ"],
+    "navTitle": [
+      "SQLite files",
+      "SQLite ဖိုင်များ"
+    ],
     "group": "data",
     "title": [
       "Open a project’s SQLite file",
@@ -419,6 +422,16 @@ export const guides = [
       "ဖွင့်ထားသော SQLite ဖိုင်၏ အချက်အလက်နှင့် Table စာရင်းကို Browse Data တွင် တွေ့ရမည်။"
     ],
     "trouble": [
+      [
+        [
+          "A previously opened SQLite file is missing",
+          "ဖွင့်ခဲ့ဖူးသော SQLite ဖိုင် မတွေ့တော့လျှင်"
+        ],
+        [
+          "If the file was moved or removed, Browse Data clears the unavailable selection and returns to the open-file screen. Choose <strong>Open SQLite file…</strong> to select its new location or another existing database. To recover the old database, restore its file from a backup and reopen it.",
+          "ဖိုင်ကို နေရာရွှေ့ထားလျှင် သို့မဟုတ် ဖယ်ရှားထားလျှင် Browse Data က မရှိတော့သော ဖိုင်ရွေးချယ်မှုကို ရှင်းပြီး ဖိုင်ရွေးရန် နေရာကို ပြန်ပြမည်။ <strong>Open SQLite file…</strong> ဖြင့် တည်နေရာအသစ် သို့မဟုတ် ရှိပြီးသား အခြား Database ဖိုင်ကို ရွေးပါ။ Database အဟောင်းကို ပြန်ရယူရန် Backup မှ ဖိုင်ပြန်ထည့်၍ ပြန်ဖွင့်ပါ။"
+        ]
+      ],
       [
         [
           "Restore a SQLite backup",
@@ -692,7 +705,10 @@ export const guides = [
   },
   {
     "id": "php",
-    "navTitle": ["PHP version", "PHP Version"],
+    "navTitle": [
+      "PHP version",
+      "PHP Version"
+    ],
     "group": "tools",
     "title": [
       "Switch the active PHP version",
@@ -735,17 +751,24 @@ export const guides = [
       "command-not-found"
     ],
     "intro": [
-      "One selection applies to all Fairway XMP sites, terminal PHP and Composer. Available versions are PHP 8.2–8.6.",
-      "ရွေးထားသော PHP version တစ်ခုတည်းကို Fairway XMP Site အားလုံး၊ Terminal PHP နှင့် Composer တို့တွင် အသုံးပြုသည်။ PHP 8.2–8.6 ကို ရွေးနိုင်သည်။"
+      "One selection applies to all Fairway XMP sites, terminal PHP and Composer. PHP 8.2–8.6 are available; PHP 8.5 is the default. Choose 8.6 explicitly when your project needs it.",
+      "ရွေးထားသော PHP version တစ်ခုတည်းကို Fairway XMP Site အားလုံး၊ Terminal PHP နှင့် Composer တို့တွင် အသုံးပြုသည်။ PHP 8.2–8.6 ကို ရွေးနိုင်ပြီး PHP 8.5 သည် မူလရွေးချယ်ထားသော Version ဖြစ်သည်။ ပရောဂျက်အတွက် လိုအပ်လျှင် PHP 8.6 ကို ကိုယ်တိုင် ရွေးပြောင်းပါ။"
     ]
   },
   {
     "id": "settings",
-    "navTitle": ["PHP settings", "PHP Settings"],
+    "navTitle": [
+      "PHP settings",
+      "PHP Settings"
+    ],
     "group": "tools",
     "title": [
       "Change PHP limits or timezone",
       "PHP Settings များ ပြောင်းရန်"
+    ],
+    "intro": [
+      "Session upload progress is Off by default. Normal file uploads still work; enable session-based tracking only if your application requires it.",
+      "Session upload progress ကို မူလအတိုင်း Off ထားသည်။ ပုံမှန်ဖိုင် Upload များ ဆက်သုံးနိုင်သည်။ App အတွက် လိုအပ်မှသာ Session ဖြင့် Upload progress စစ်ဆေးခြင်းကို ဖွင့်ပါ။"
     ],
     "steps": [
       [
@@ -783,6 +806,16 @@ export const guides = [
         [
           "The upload limit is per file; multiple files must fit the total request limit. Execution time and web-server response inactivity are separate limits. Fairway XMP settings do not change limits enforced by the application. Inspect <a href=\"#logs\">Logs</a> for the reported limit.",
           "Upload limit သည် ဖိုင်တစ်ဖိုင်အတွက် ဖြစ်သည်။ ဖိုင်များစွာ ပေးပို့လျှင် စုစုပေါင်း Request limit အတွင်းလည်း ဝင်ရန် လိုအပ်သည်။ Execution time နှင့် Web server မှ တုံ့ပြန်မှုမရှိဘဲ စောင့်နိုင်သောအချိန်သည် မတူညီပါ။ Fairway XMP Settings က App ကိုယ်တိုင် သတ်မှတ်ထားသော Limit များကို မပြောင်းပေးပါ။ မည်သည့် Limit ကြောင့် ဖြစ်ကြောင်း <a href=\"#logs\">Logs</a> မှ စစ်ပါ။"
+        ]
+      ],
+      [
+        [
+          "Session errors after enabling upload progress",
+          "Upload progress ဖွင့်ပြီး Session error ဖြစ်လျှင်"
+        ],
+        [
+          "<strong>Session upload progress</strong> is Off by default; regular uploads still work. Patched PHP rejects runtime session-setting changes while this is On. If your application reports a session-setting error, turn it Off, save and restart Nginx/PHP and any project development servers. phpMyAdmin keeps this setting Off in its own directory.",
+          "<strong>Session upload progress</strong> ကို မူလအတိုင်း Off ထားသည်။ ပုံမှန်ဖိုင် Upload များကို ဆက်သုံးနိုင်သည်။ ပြင်ဆင်ချက်ပါသော PHP တွင် ဤ Settings ကို On ထားလျှင် App က Session settings များကို Run နေစဉ် ပြောင်းမရပါ။ Session-setting error ဖြစ်လျှင် Off ပြန်ထား၍ သိမ်းဆည်းပါ။ Nginx/PHP နှင့် ပရောဂျက် Development server များကို ပြန်စတင်ပါ။ phpMyAdmin သည် ၎င်း၏ Folder အတွက် ဤ Settings ကို Off ထားသည်။"
         ]
       ]
     ],
@@ -1217,6 +1250,42 @@ export const guides = [
     ]
   },
   {
+    "id": "appearance",
+    "navTitle": [
+      "Appearance",
+      "အရောင်ပုံစံ"
+    ],
+    "group": "management",
+    "title": [
+      "Choose Light or Dark appearance",
+      "Light သို့မဟုတ် Dark အရောင်ပုံစံ ရွေးရန်"
+    ],
+    "steps": [
+      [
+        "Open <strong>Settings</strong> in the desktop app. Services can keep running.",
+        "Choose <strong>Light</strong> or <strong>Dark</strong> beside the Settings heading.",
+        "Continue using the app. The appearance changes immediately and your choice is saved for future sessions."
+      ],
+      [
+        "Desktop App တွင် <strong>Settings</strong> ကို ဖွင့်ပါ။ Service များ ဆက်လက်အလုပ်လုပ်နေနိုင်သည်။",
+        "Settings ခေါင်းစဉ်ဘေးရှိ <strong>Light</strong> သို့မဟုတ် <strong>Dark</strong> ကို ရွေးပါ။",
+        "App ကို ဆက်သုံးနိုင်သည်။ အရောင်ပုံစံ ချက်ချင်းပြောင်းပြီး နောက်တစ်ကြိမ် App ဖွင့်သည့်အခါအတွက်လည်း ရွေးချယ်မှုကို သိမ်းထားမည်။"
+      ]
+    ],
+    "check": [
+      "The workspace uses the selected appearance. A new installation starts in Light mode.",
+      "App တွင် ရွေးထားသော အရောင်ပုံစံကို အသုံးပြုမည်။ အသစ်ထည့်သွင်းထားသော App သည် Light mode ဖြင့် စတင်သည်။"
+    ],
+    "intro": [
+      "This controls the desktop app. These guide pages have their own dark-mode button in the page header, or in the guide menu on mobile.",
+      "ဤရွေးချယ်မှုသည် Desktop App အတွက် ဖြစ်သည်။ ဤလမ်းညွှန်စာမျက်နှာများ၏ Dark mode ကို စာမျက်နှာထိပ်ရှိ သီးခြားခလုတ်ဖြင့် ပြောင်းနိုင်သည်။ ဖုန်းတွင် လမ်းညွှန် Menu အတွင်းရှိ ခလုတ်ကို သုံးပါ။"
+    ],
+    "linux": [
+      "The Linux terminal edition has no desktop appearance setting.",
+      "Linux terminal edition တွင် Desktop အရောင်ပုံစံ ရွေးရန် Settings မပါဝင်ပါ။"
+    ]
+  },
+  {
     "id": "lifecycle",
     "navTitle": ["Stop or quit", "ရပ်ရန်နှင့် ထွက်ရန်"],
     "group": "management",
@@ -1249,7 +1318,10 @@ export const guides = [
   },
   {
     "id": "updates",
-    "navTitle": ["Updates", "Update"],
+    "navTitle": [
+      "Updates",
+      "Update"
+    ],
     "group": "management",
     "title": [
       "Update Fairway XMP",
@@ -1273,6 +1345,16 @@ export const guides = [
     ],
     "image": "updates.png",
     "trouble": [
+      [
+        [
+          "A published version is not offered in the app",
+          "ဖြန့်ဝေထားသော Version ကို App တွင် Update မပြလျှင်"
+        ],
+        [
+          "Stable and preview installations check separate update feeds. A release on GitHub may not be offered on your channel. To install the current stable release manually, use <strong>Get Fairway XMP</strong> on this page and follow the installer update procedure below. Back up your databases first.",
+          "Stable နှင့် Preview installation များက သီးခြား Update feed များကို စစ်သည်။ GitHub တွင် ဖြန့်ဝေထားသော Version ကို သင့် Channel တွင် Update မပြသေးခြင်း ဖြစ်နိုင်သည်။ လက်ရှိ Stable release ကို ကိုယ်တိုင် ထည့်သွင်းရန် ဤစာမျက်နှာရှိ <strong>Fairway XMP ရယူရန်</strong> ကို နှိပ်၍ အောက်ပါ Installer ဖြင့် Update လုပ်နည်းကို လိုက်နာပါ။ Database များကို ဦးစွာ Backup သိမ်းပါ။"
+        ]
+      ],
       [
         [
           "The app offers View downloads instead",

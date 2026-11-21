@@ -8,7 +8,7 @@ PHP 8.6 is now available alongside patched PHP 8.2–8.5, with PHP 8.5 remaining
 - Update Nginx to 1.30.7, Composer to 2.11.2 and Mailpit to 1.34.0. MySQL remains at 9.7.4 LTS and phpMyAdmin at its official 5.2.3 distribution.
 - Keep session upload progress Off by default for patched PHP; phpMyAdmin remains compatible when a project opts in. Regular file uploads remain available.
 - Update compatible frontend and Rust dependencies, including updater/archive and TLS verification fixes.
-- Add Light, Dark and System appearance modes and Windows Fluent overlay scrollbars.
+- Add Light and Dark appearance modes and Windows Fluent overlay scrollbars.
 - Simplify local access controls and recover cleanly when a selected SQLite database file is missing.
 
 ## Release scope

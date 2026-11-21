@@ -44,7 +44,7 @@ python scripts/prepare_runtime.py
 
 Homebrew's latest branch uses the canonical `php` formula with a `php@8.6` alias. The downloader accepts canonical metadata only when that exact alias is advertised, and verifies the requested version. The default 8.5 branch uses its separate versioned formula. Preserve older branches' required library generations rather than replacing libraries solely by package name. Linux checks Nginx's actual version before reusing staged bytes.
 
-The 0.2.0 candidate updates PHP 8.2–8.5 patches, adds 8.6.0, and updates stable Nginx, Composer and Mailpit. MySQL remains on 9.7.4. phpMyAdmin stays on its official 5.2.3 distribution; its PHP 8.6 compatibility and bundled dependency uncertainty are accepted for this candidate while 8.5 remains the default. Do not describe phpMyAdmin as fully validated on 8.6 without test evidence.
+Release 0.2.0 updates PHP 8.2–8.5 patches, adds 8.6.0, and updates stable Nginx, Composer and Mailpit. MySQL remains on 9.7.4. phpMyAdmin stays on its official 5.2.3 distribution; its PHP 8.6 compatibility and bundled dependency uncertainty are accepted for 0.2.0 while 8.5 remains the default. Do not describe phpMyAdmin as fully validated on 8.6 without test evidence.
 
 Before publication, run the candidate's automated CLI/web, extension, database, mail, session/upload, installer and updater checks across all supported platforms. Sources, checksums and licenses must correspond to the actual packaged inputs. Interactive device/visual testing is handled by the release owner and is not a candidate prerequisite.
 

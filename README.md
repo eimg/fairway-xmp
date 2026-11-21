@@ -22,7 +22,7 @@ Latest published release: **[v0.2.0](https://github.com/eimg/fairway-xmp/release
 
 See the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.2.0) for these downloads and [current limitations](docs/maintenance.md#current-limitations). Download the installer for your computer and follow its prompts. The Mac app and installer are Developer ID signed and notarized by Apple. Windows installers do not yet have Authenticode signatures and may show an unknown-publisher warning; in-app updates use a separate cryptographic signature.
 
-Version 0.2.0 adds optional **PHP 8.6**, keeps **PHP 8.5** as the default, updates the bundled tools, and includes Light, Dark and System appearance modes. Stable desktop installations receive the update in app. Linux users rerun the installer. See the [release notes](docs/release-notes.md).
+Version 0.2.0 adds optional **PHP 8.6**, keeps **PHP 8.5** as the default, updates the bundled tools, and includes Light and Dark appearance modes. Stable desktop installations receive the update in app. Linux users rerun the installer. See the [release notes](docs/release-notes.md).
 
 ## Linux terminal edition
 

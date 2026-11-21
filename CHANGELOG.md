@@ -10,7 +10,7 @@ Past entries record released changes; they are not current development or releas
 - Default session upload progress to Off for patched PHP and keep phpMyAdmin session setup working when projects opt in.
 - Resolve Homebrew's latest-PHP alias without substituting another branch, and reject stale Linux Nginx binaries during runtime reuse.
 - Update Vite and compatible Rust updater, archive, TLS verification and I/O dependencies with available fixes. December OpenSSL patches are planned separately for 0.2.1.
-- Include Light, Dark and System appearance modes, Windows Fluent overlay scrollbars, simpler local access controls, and recovery when a selected SQLite file is missing.
+- Include Light and Dark appearance modes, Windows Fluent overlay scrollbars, simpler local access controls, and recovery when a selected SQLite file is missing.
 
 Published from [candidate run 44859372902](https://github.com/eimg/fairway-xmp/actions/runs/44859372902), commit `3ea8998af8d2ddafb0ad4040e1380fada4ac4035`, using the tested installers and updater payloads without rebuilding. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows. Version 0.2.0 is offered through the stable update feed; Linux updates remain manual.
 
