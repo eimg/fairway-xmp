@@ -2,7 +2,7 @@
 
 Past entries record released changes; they are not current development or release restrictions. See [Build and release](docs/build-and-release.md) for the current process.
 
-## 0.2.0 — candidate
+## 0.2.0 — 2026-11-21
 
 - Add PHP 8.6.0 as an optional branch and update PHP 8.2/8.3/8.4/8.5 to 8.2.36/8.3.37/8.4.28/8.5.13. PHP 8.5 remains the default for websites, CLI and Composer.
 - Update stable Nginx to 1.30.7, Composer to 2.11.2 and Mailpit to 1.34.0, with reviewed platform download and corresponding-source inputs. Keep MySQL 9.7.4 and the official phpMyAdmin 5.2.3 distribution.
@@ -12,7 +12,7 @@ Past entries record released changes; they are not current development or releas
 - Update Vite and compatible Rust updater, archive, TLS verification and I/O dependencies with available fixes. December OpenSSL patches are planned separately for 0.2.1.
 - Include Light, Dark and System appearance modes, Windows Fluent overlay scrollbars, simpler local access controls, and recovery when a selected SQLite file is missing.
 
-Candidate checks and publication are pending. No interactive device testing is claimed.
+Published from [candidate run 44859372902](https://github.com/eimg/fairway-xmp/actions/runs/44859372902), commit `3ea8998af8d2ddafb0ad4040e1380fada4ac4035`, using the tested installers and updater payloads without rebuilding. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows. Version 0.2.0 is offered through the stable update feed; Linux updates remain manual.
 
 ## 0.1.3 — 2026-11-07
 
