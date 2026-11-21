@@ -1,6 +1,6 @@
 # Fairway XMP 0.2.0
 
-Release candidate preparation. The candidate workflow will build and verify installers and signed updater payloads from one source commit; this document does not claim a completed run or publication.
+PHP 8.6 is now available alongside patched PHP 8.2–8.5, with PHP 8.5 remaining the default. This release also includes appearance choices and updates to the bundled development tools.
 
 ## Changes
 
@@ -15,7 +15,7 @@ Release candidate preparation. The candidate workflow will build and verify inst
 
 phpMyAdmin's PHP 8.6 compatibility uncertainty is accepted for this release while PHP 8.5 remains the default. The scheduled December OpenSSL patches are planned for 0.2.1, targeted for December 2–3 once the needed packages are available. This is a local development environment.
 
-Automated platform, runtime, installer and updater checks run in the release-candidate workflow. The release owner handles interactive visual testing separately. Candidate dispatch does not publish a release or update feed.
+Automated platform, runtime, installer and updater checks passed in [candidate run 44859372902](https://github.com/eimg/fairway-xmp/actions/runs/44859372902), commit `3ea8998af8d2ddafb0ad4040e1380fada4ac4035`. Installers and signed updater payloads are published from those tested artifacts without rebuilding. The release owner handles interactive visual review separately.
 
 ## Supported platforms
 
