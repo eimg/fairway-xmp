@@ -192,7 +192,7 @@ fairway site https DOMAIN on|off
 fairway site hosts                      Retry address setup
 fairway logs nginx|mysql|php|mail
 fairway ports [WEB PMA DB PHP [MAIL SMTP]]
-fairway php-version [8.2|8.3|8.4|8.5]    Change with services stopped
+fairway php-version [8.2|8.3|8.4|8.5|8.6] Change with services stopped
 fairway php-settings [VERSION]
 fairway php-settings VERSION --file FILE
 fairway php-settings VERSION --reset
