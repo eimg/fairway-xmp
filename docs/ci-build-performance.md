@@ -1,8 +1,10 @@
 # CI and build performance
 
-Routine verification is manual-only: run **Actions → Build and verify Fairway XMP → Run workflow** on the intended branch/ref. Ordinary pushes and pull requests do not start application builds or the full browser suite. Starting another verification on the same ref cancels the older verification. Candidate checks still include every platform and browser review from one commit; no candidate is canceled by routine verification concurrency. The separate documentation website workflow retains its lightweight checks for relevant pull requests and manual publication from `main`.
+Routine verification is manual-only: run **Actions → Build and verify Fairway XMP → Run workflow** on the intended branch/ref. Ordinary pushes and pull requests do not start application builds or browser smoke checks. Starting another verification on the same ref cancels the older verification. Candidate checks include every platform and the focused browser smoke suite from one commit; no candidate is canceled by routine verification concurrency. The separate documentation website workflow retains its lightweight checks for relevant pull requests and manual publication from `main`.
 
-Browser review and the Docker portability host use the tested Ubuntu 24.04 image explicitly. This keeps their environment stable through GitHub's [announced Ubuntu 26.04 migration](https://github.com/actions/runner-images/issues/14748). Runtime compilation continues to use Ubuntu 22.04 for the glibc 2.35 baseline.
+Browser smoke checks and the Docker portability host use the tested Ubuntu 24.04 image explicitly. This keeps their environment stable through GitHub's [announced Ubuntu 26.04 migration](https://github.com/actions/runner-images/issues/14748). Runtime compilation continues to use Ubuntu 22.04 for the glibc 2.35 baseline.
+
+The reusable `ui-smoke.yml` workflow runs five Chromium checks and two targeted WebKit repeats at one normal window size. Desktop candidates add four native Chromium wiring checks per platform. The previous full browser/viewport matrix and successful-scenario screenshot tours are retired. Failure diagnostics remain available; human visual review owns appearance, minimum-size layouts, themes and usability. Backend, runtime, installer and updater coverage is unchanged. See [testing](testing.md) for the selection policy and commands.
 
 ## Runtime and dependency reuse
 

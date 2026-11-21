@@ -102,7 +102,9 @@ def assemble(inputs, output, require_updater=False):
             if not by_target[target].get('updater') or by_target[target]['lifecycle'].get('updater', {}).get('status') != 'passed':
                 raise ValueError('Missing native updater evidence')
     data = {'schema': 1, 'version': version, 'commit': commit, 'status': 'ready-for-publication',
-            'uiReview': {'artifact': f'ui-visual-review-{commit}'},
+            # The orchestrator requires this workflow to succeed. Reports are
+            # failure diagnostics, not a passing visual-review artifact.
+            'uiSmoke': {'workflow': 'ui-smoke.yml'},
             'signing': {target: by_target[target].get('signing', 'unsigned') for target in TARGETS},
             'knownLimitations': ['Windows installer has no Authenticode signature; first downloads can show SmartScreen. Linux updates are manual.' if require_updater else 'Unsigned installers; manual updates.', 'Windows MySQL requires ANSI-compatible filesystem paths or existing short-name aliases; see docs/data-browser.md.', 'Windows non-UTF-8 system code pages require ASCII identifiers for MySQL CLI backup/export; a failed pre-update backup blocks installation and preserves data/services. See docs/data-browser.md.'],
             'candidates': by_target}

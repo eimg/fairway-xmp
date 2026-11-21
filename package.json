@@ -17,6 +17,7 @@
     "test:unit": "node scripts/test_unit.mjs",
     "dev:ui": "vite --host 127.0.0.1 --mode ui-test",
     "test:ui": "playwright test",
+    "test:ui:native": "playwright test --config playwright.native.config.ts",
     "test:ui:report": "playwright show-report",
     "site:test:theme": "node website/build.mjs && node --test website/theme.test.mjs"
   },

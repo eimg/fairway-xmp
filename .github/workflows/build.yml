@@ -20,8 +20,8 @@ jobs:
     if: inputs.warm_inputs
     uses: ./.github/workflows/warm-build-cache.yml
 
-  ui-review:
-    uses: ./.github/workflows/ui-review.yml
+  ui-smoke:
+    uses: ./.github/workflows/ui-smoke.yml
 
   verify:
     strategy:

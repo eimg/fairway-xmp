@@ -119,13 +119,13 @@ jobs:
       - name: Build native terminal test bridge
         run: cargo build --manifest-path src-tauri/Cargo.toml --no-default-features --features terminal --example terminal_bridge --locked
       - run: npx playwright install --only-shell chromium
-      - name: Exercise native terminal, data browser and logs through browser input
+      - name: Smoke test native terminal, MySQL, SQLite and PHP settings wiring
         env:
           FAIRWAY_NATIVE_ONLY: '1'
           FAIRWAY_TEST_RUNTIME: ${{ github.workspace }}/src-tauri/resources/runtime
-        run: npx playwright test tests/ui/terminal-native.spec.ts tests/ui/data-browser-native.spec.ts tests/ui/sqlite-browser-native.spec.ts tests/ui/schema-details-native.spec.ts tests/ui/logs-native.spec.ts tests/ui/php-settings-native.spec.ts --project chromium --workers=1
-      - name: Save native desktop browser report
-        if: always()
+        run: npm run test:ui:native
+      - name: Save native UI smoke failure diagnostics
+        if: failure()
         uses: actions/upload-artifact@v6
         with:
           name: native-desktop-macos-${{ github.sha }}

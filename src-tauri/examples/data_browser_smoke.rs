@@ -19,6 +19,118 @@ use std::{
 fn call(layout: &Layout, request: Value) -> Result<Value, String> {
     data_browser::execute(layout, request, Arc::new(AtomicBool::new(false)))
 }
+
+fn schema_details(layout: &Layout, database: &str) -> Result<(), String> {
+    let query = |sql: &str| call(layout, json!({"op":"query","database":database,"sql":sql}));
+    let structure = |table: &str| {
+        call(
+            layout,
+            json!({"op":"structure","database":database,"table":table}),
+        )
+    };
+    let index = |table: &str, name: &str| -> Result<Value, String> {
+        structure(table)?["indexes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|index| index["name"] == name)
+            .cloned()
+            .ok_or_else(|| format!("Missing index {name}"))
+    };
+    let drop_index = |name: &str, original: &Value| {
+        call(
+            layout,
+            json!({"op":"drop_index","database":database,"table":"schema_memberships","name":name,"originalIndex":original,"confirmed":true}),
+        )
+    };
+    query(&format!("CREATE TABLE schema_teams(id INT PRIMARY KEY); CREATE TABLE schema_memberships(id INT PRIMARY KEY, team_id INT, email VARCHAR(80) NOT NULL, term VARCHAR(20) NOT NULL, CONSTRAINT fk_schema_team FOREIGN KEY(team_id) REFERENCES schema_teams(id) ON UPDATE RESTRICT ON DELETE CASCADE); INSERT INTO schema_memberships VALUES(1,NULL,'same','a'),(2,NULL,'same','b'),(3,NULL,'third','b'); CREATE DATABASE browser_schema_other; CREATE TABLE browser_schema_other.memberships(team_id INT, FOREIGN KEY(team_id) REFERENCES {database}.schema_teams(id));"))?;
+    let create_index = |name: &str, columns: Value, unique: bool| {
+        call(
+            layout,
+            json!({"op":"create_index","database":database,"table":"schema_memberships","name":name,"indexColumns":columns,"unique":unique}),
+        )
+    };
+    let duplicate = create_index("uq_schema_email", json!(["email"]), true).unwrap_err();
+    assert!(
+        duplicate.contains("existing values contain duplicates"),
+        "{duplicate}"
+    );
+    assert!(!structure("schema_memberships")?["indexes"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|index| index["name"] == "uq_schema_email"));
+    create_index("uq_schema_term_email", json!(["term", "email"]), true)?;
+    let unique = index("schema_memberships", "uq_schema_term_email")?;
+    assert_eq!(unique["unique"], true);
+    assert_eq!(unique["parts"][0]["name"], "term");
+    assert_eq!(unique["parts"][1]["name"], "email");
+    assert!(query("INSERT INTO schema_memberships VALUES(4,NULL,'same','a')").is_err());
+
+    let child = structure("schema_memberships")?;
+    let foreign = &child["foreignKeys"][0];
+    assert_eq!(foreign["columns"], json!(["team_id"]));
+    assert_eq!(foreign["referencedDatabase"], database);
+    assert_eq!(foreign["referencedTable"], "schema_teams");
+    assert_eq!(foreign["referencedColumns"], json!(["id"]));
+    assert_eq!(foreign["onUpdate"], "RESTRICT");
+    assert_eq!(foreign["onDelete"], "CASCADE");
+    let parent = structure("schema_teams")?;
+    assert!(parent["referencedBy"].as_array().unwrap().contains(foreign));
+    assert!(parent["referencedBy"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|link| link["database"] == "browser_schema_other" && link["table"] == "memberships"));
+    for table in ["schema_teams", "schema_memberships"] {
+        let protected = index(
+            table,
+            if table == "schema_teams" {
+                "PRIMARY"
+            } else {
+                "fk_schema_team"
+            },
+        )?;
+        assert_eq!(protected["removable"], false);
+        let error = call(layout, json!({"op":"drop_index","database":database,"table":table,"name":protected["name"],"originalIndex":protected,"confirmed":true})).unwrap_err();
+        assert!(error.contains("manage it in SQL"), "{error}");
+    }
+    assert_eq!(index("schema_memberships", "PRIMARY")?["removable"], false);
+
+    create_index("idx_schema_ordinary", json!(["term"]), false)?;
+    let old = index("schema_memberships", "idx_schema_ordinary")?;
+    query("DROP INDEX idx_schema_ordinary ON schema_memberships; CREATE INDEX idx_schema_ordinary ON schema_memberships(email)")?;
+    let stale = drop_index("idx_schema_ordinary", &old).unwrap_err();
+    assert!(stale.contains("changed or was removed"), "{stale}");
+    let current = index("schema_memberships", "idx_schema_ordinary")?;
+    assert_eq!(current["parts"][0]["name"], "email");
+    assert!(call(layout, json!({"op":"drop_index","database":database,"table":"schema_memberships","name":"idx_schema_ordinary","originalIndex":current})).unwrap_err().contains("Confirm"));
+    let backups = || -> Result<Vec<PathBuf>, String> {
+        std::fs::read_dir(layout.data.join("backups"))
+            .map_err(|e| e.to_string())?
+            .map(|entry| entry.map(|entry| entry.path()).map_err(|e| e.to_string()))
+            .collect()
+    };
+    let before = backups()?;
+    drop_index("idx_schema_ordinary", &current)?;
+    assert!(index("schema_memberships", "idx_schema_ordinary").is_err());
+    let published: Vec<_> = backups()?
+        .into_iter()
+        .filter(|path| !before.contains(path))
+        .collect();
+    assert_eq!(published.len(), 1);
+    assert_eq!(
+        published[0].extension().and_then(|ext| ext.to_str()),
+        Some("sql")
+    );
+    assert!(std::fs::read_to_string(&published[0])
+        .map_err(|e| e.to_string())?
+        .contains("KEY `idx_schema_ordinary`"));
+    query("DROP DATABASE browser_schema_other; DROP TABLE schema_memberships; DROP TABLE schema_teams")?;
+    println!("PASS: ordered MySQL indexes, duplicate and stale guards, protected keys, cross-schema relationships and backup-before-removal.");
+    Ok(())
+}
+
 fn main() -> Result<(), String> {
     let root = std::env::current_dir()
         .map_err(|e| e.to_string())?
@@ -62,6 +174,7 @@ fn main() -> Result<(), String> {
                 json!({"op":"rename_database","database":"browser_test","name":"browser_ready","confirmed":true}),
             )?;
             let db = "browser_ready";
+            schema_details(l, db)?;
             call(
                 l,
                 json!({"op":"create_table","database":db,"table":"students","columns":[

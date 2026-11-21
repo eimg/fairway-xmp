@@ -1,10 +1,10 @@
 # Build and release
 
-Builds and publication are separate actions. A successful automated candidate is ready to publish when the owner authorizes it. Device testing is optional. There is no manual acceptance JSON, test-attestation phase or prerelease scope freeze.
+Builds and publication are separate actions. A successful automated candidate is ready to publish when the owner authorizes it. The release owner handles actual visual review separately; automated UI smoke checks do not establish visual acceptance. There is no manual acceptance JSON, test-attestation phase or prerelease scope freeze.
 
 ## Build workflows
 
-Run **Release candidate** (`release-candidate.yml`) from the intended commit, or push a `candidate-*` tag. It combines browser checks and the Windows, Apple Silicon macOS and Linux installer workflows at the same source commit. Individual platform workflows can also produce development installers or standalone test applications without publishing a release.
+Run **Release candidate** (`release-candidate.yml`) from the intended commit, or push a `candidate-*` tag. It combines the focused `ui-smoke.yml` browser checks and the Windows, Apple Silicon macOS and Linux installer workflows at the same source commit. Desktop workflows retain four native UI wiring checks alongside detailed runtime/database and installer/updater acceptance. Individual platform workflows can also produce development installers or standalone test applications without publishing a release. See [testing](testing.md) for UI coverage and human visual review.
 
 The macOS candidate uses `build` followed by `package`; signing, notarization and updater signing happen in `package`. The separate `standalone` and `sign-standalone` jobs run only when manually selecting `standalone_only` to produce a permissions-test app ZIP. Their skipped status in a normal candidate is expected.
 

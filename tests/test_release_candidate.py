@@ -33,6 +33,8 @@ class CandidateTests(unittest.TestCase):
                 candidate.write(root / 'runtime-manifest.json', {'php': '8.5.11'})
                 result = candidate.assemble(root, root / 'output/manifest.json')
                 self.assertEqual(result['status'], 'ready-for-publication')
+                self.assertEqual(result['uiSmoke'], {'workflow': 'ui-smoke.yml'})
+                self.assertNotIn('uiReview', result)
                 self.assertFalse((root / 'output/acceptance-template.json').exists())
                 data = candidate.read(root / 'candidate-windows-x64.json'); data['commit'] = 'c' * 40
                 candidate.write(root / 'candidate-windows-x64.json', data)
