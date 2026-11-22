@@ -2,13 +2,15 @@
 
 Past entries record released changes; they are not current development or release restrictions. See [Build and release](docs/build-and-release.md) for the current process.
 
-## 0.2.1 — Unreleased
+## 0.2.1 — 2026-11-22
 
 - Fix Windows PHP, Composer and management launchers by converting canonical runtime paths to native DOS/UNC paths before CMD interprets them. Preserve literal exclamation marks and forward command exit status.
 - Display the shared document root with native separators, including `C:\Users\name\fairway\www` on Windows.
 - Exercise PHP/Composer launchers across bundled PHP versions and after stopping services and closing the manager; check installed commands in CMD and PowerShell.
 
-The release owner confirmed that [Windows test build `4b2c0d2`](https://github.com/eimg/fairway-xmp/actions/runs/45010512779) resolves the reported CLI and document-root issues. Full 0.2.1 candidate verification is pending. Bundled runtimes and dependencies are unchanged from 0.2.0; December OpenSSL maintenance is planned separately for a later patch.
+The release owner confirmed that [Windows test build `4b2c0d2`](https://github.com/eimg/fairway-xmp/actions/runs/45010512779) resolves the reported CLI and document-root issues. Bundled runtimes and dependencies are unchanged from 0.2.0; December OpenSSL maintenance is planned separately for a later patch.
+
+Published from [candidate run 45019828647](https://github.com/eimg/fairway-xmp/actions/runs/45019828647), commit `10703b73bcc1e4bd9b6dc56e0a16237aafd29213`, using the tested installers and updater payloads without rebuilding. Installer lifecycle checks passed on all three platforms, and desktop updater lifecycle checks passed on macOS and Windows. Version 0.2.1 is offered through the stable and preview desktop update feeds; Linux updates remain manual.
 
 ## 0.2.0 — 2026-11-21
 
