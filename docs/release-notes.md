@@ -1,24 +1,27 @@
-# Fairway XMP 0.2.0
+# Fairway XMP 0.2.1
 
-PHP 8.6 is now available alongside patched PHP 8.2–8.5, with PHP 8.5 remaining the default. This release also includes appearance choices and updates to the bundled development tools.
+This patch fixes Windows command-line launchers and the shared document-root path display.
 
 ## Changes
 
-- PHP 8.6.0 is available alongside patched PHP 8.2–8.5. **PHP 8.5.13 remains the default.** Switch versions in Advanced service settings with services stopped; the choice applies to websites, terminal PHP and Composer.
-- Update Nginx to 1.30.7, Composer to 2.11.2 and Mailpit to 1.34.0. MySQL remains at 9.7.4 LTS and phpMyAdmin at its official 5.2.3 distribution.
-- Keep session upload progress Off by default for patched PHP; phpMyAdmin remains compatible when a project opts in. Regular file uploads remain available.
-- Update compatible frontend and Rust dependencies, including updater/archive and TLS verification fixes.
-- Add Light and Dark appearance modes and Windows Fluent overlay scrollbars.
-- Simplify local access controls and recover cleanly when a selected SQLite database file is missing.
+- Fix PHP and Composer commands reporting **The system cannot find the path specified** after enabling command-line tools. Normalize generated Windows launcher paths so commands work in ordinary terminals, including after Fairway XMP is closed.
+- Apply the same path handling to the `fairway` management launcher. Preserve literal exclamation marks in paths and command exit status.
+- Show the document root with consistent Windows separators, such as `C:\Users\name\fairway\www`, across Environment, Settings and Terminal.
 
 ## Release scope
 
-phpMyAdmin's PHP 8.6 compatibility uncertainty is accepted for this release while PHP 8.5 remains the default. The scheduled December OpenSSL patches are planned for 0.2.1, targeted for December 2–3 once the needed packages are available. This is a local development environment.
+Bundled PHP versions, development tools and dependencies are unchanged from 0.2.0. PHP 8.5 remains the default. Scheduled December OpenSSL maintenance is planned separately for a later patch after the required upstream packages become available.
 
-Automated platform, runtime, installer and updater checks passed in [candidate run 44859372902](https://github.com/eimg/fairway-xmp/actions/runs/44859372902), commit `3ea8998af8d2ddafb0ad4040e1380fada4ac4035`. Installers and signed updater payloads are published from those tested artifacts without rebuilding. The release owner handles interactive visual review separately.
+Windows Authenticode signing remains deferred; desktop updater payloads retain their existing cryptographic signatures. Mac distribution builds remain Developer ID signed and notarized. Linux updates remain manual.
+
+## Verification
+
+The Windows fixes passed [test build 45010512779](https://github.com/eimg/fairway-xmp/actions/runs/45010512779), commit `4b2c0d26ebf1436937ce23199ae98a409516781b`, including native CLI and installed upgrade/reinstall checks. The release owner confirmed both reported issues are resolved on the affected Windows computer.
+
+Full 0.2.1 candidate verification is pending. Publication uses the exact successful candidate artifacts without rebuilding.
 
 ## Supported platforms
 
-- Windows 10 22H2 or Windows 11, x64. The installer can show an unknown-publisher warning; desktop updates use signed payloads.
-- macOS 15 or later on Apple Silicon. Distribution app and installer builds are Developer ID signed and notarized.
-- Linux x86_64 with glibc 2.35 or newer. Updates use the terminal installer.
+- Windows 10 22H2 or Windows 11, x64.
+- macOS 15 or later on Apple Silicon.
+- Linux x86_64 with glibc 2.35 or newer.

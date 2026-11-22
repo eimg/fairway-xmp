@@ -48,7 +48,7 @@ Release 0.2.0 updates PHP 8.2–8.5 patches, adds 8.6.0, and updates stable Ngin
 
 Before publication, run the candidate's automated CLI/web, extension, database, mail, session/upload, installer and updater checks across all supported platforms. Sources, checksums and licenses must correspond to the actual packaged inputs. Interactive device/visual testing is handled by the release owner and is not a candidate prerequisite.
 
-OpenSSL's scheduled December patches are reserved for 0.2.1, targeted for December 2–3, 2026 after the required upstream packages become available. 0.2.0 uses currently available libraries and does not claim to include those future fixes. Maintenance notices and dependency-version matches are reviewed against this local development tool's actual usage; they do not by themselves establish an exploitable application path.
+Release 0.2.1 fixes Windows CLI launcher paths and document-root separators without changing the 0.2.0 runtimes or dependencies. OpenSSL's scheduled December patches remain planned for a later patch, targeted for December 2–3, 2026 after the required upstream packages become available. The 0.2.0 and 0.2.1 runtime inputs do not include those future fixes. Maintenance notices and dependency-version matches are reviewed against this local development tool's actual usage; they do not by themselves establish an exploitable application path.
 
 ## Node updates
 
