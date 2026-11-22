@@ -147,6 +147,8 @@ Desktop Settings includes a separate curated PHP settings card for memory limit,
 
 Generated PHP configuration uses the standard development `variables_order=GPCS`. Host variables remain available through `getenv()` and `$_SERVER`, while application code such as Dotenv populates `$_ENV`. Laravel's development-server environment filtering therefore preserves Fairway's `PHPRC`, `PHP_INI_SCAN_DIR` and `MIBS` settings when launching child PHP processes and restarting after `.env` changes.
 
+Windows PHP, Composer and management batch launchers emit native DOS/UNC paths with backslash separators, converting canonical `\\?\` resource paths before CMD interprets them. Launchers disable inherited delayed expansion to preserve literal exclamation marks in paths and forward tool exit status. Already-enabled commands refresh on desktop launch; this does not change the optional PATH preference. Native Windows checks execute PHP/Composer launchers through CMD and PowerShell, including installed paths with spaces.
+
 Linux uses a separate `cli` Cargo feature, without Tauri, WebView or GUI dependencies. Runtime inputs are SHA256-pinned in `runtime-linux-downloads.lock.json`; PHP and Nginx are compiled on the glibc 2.35 baseline. MySQL uses the official generic x86_64 archive. Each component bundles its native library closure with relative RUNPATHs; MySQL and PHP OpenSSL versions remain isolated. Build validation rejects newer glibc symbol requirements. Corresponding source archives include the exact app commit, PHP/Nginx/MySQL sources and Ubuntu sources/patches for copied libraries.
 
 Source builds require `pdo_pgsql` and `pgsql` in every bundled PHP version for applications using a user-supplied PostgreSQL server. Windows enables the shipped DLLs in generated PHP configuration; Mac uses the existing compiled client extensions. Linux builds both extensions against libpq and bundles its dependency closure and corresponding sources using the glibc 2.35 baseline. Linux build reuse checks the PHP version and all required extensions so pre-client builds are rebuilt. Runtime verification checks the required extensions in all PHP versions. PHP runtime packaging includes client support only. PostgreSQL server packaging, administration utilities, service lifecycle, a desktop Data browser adapter and environment backup/update integration remain future work. Runtime verification does not prohibit adding PostgreSQL components later. Existing MySQL/SQLite behavior remains. Candidate workflows exercise both APIs through generated configuration in CLI and Nginx/PHP requests against isolated external SCRAM-authenticated test servers. See `docs/postgres-client-support.md`.
@@ -220,7 +222,7 @@ Data browser navigation preserves its workspace state across sidebar visits. Dat
 
 ## Files
 
-- Document root: the current user's lowercase `fairway/www` folder under their home directory.
+- Document root: the current user's lowercase `fairway/www` folder under their home directory, constructed with native path components so Windows displays `fairway\www`.
 - Application data: `dev.fairway.environment` under the platform's local user data directory.
 - Application data contains settings, generated service configs, logs, MySQL data, phpMyAdmin's writable overlay, PHP sessions, temporary files, Composer home, backups, and CLI launchers.
 - Runtime files remain inside the installed application resources and are not mutated at startup.

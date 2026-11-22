@@ -148,20 +148,27 @@ pub fn write_windows_launchers(layout: &Layout) -> Result<()> {
     {
         return Err("The installation path contains a percent sign, which Windows command launchers cannot support.".into());
     }
-    // Batch sources are UTF-8 so Windows user/install paths can contain Unicode.
-    let base = format!("@echo off\r\nchcp 65001 >nul\r\nsetlocal\r\nset \"PHP_INI_SCAN_DIR=\"\r\nset \"PHPRC={}\"\r\nset \"COMPOSER_HOME={}\"\r\n",
-        crate::config::windows_ansi_path(&layout.data.join("config/php.ini")).display(), layout.data.join("composer").display());
+    let php = layout.php_exe("php")?;
+    let ini = crate::config::windows_ansi_path(&layout.data.join("config/php.ini"));
+    let composer_home = layout.data.join("composer");
     atomic_write(
         &layout.bin.join("php.cmd"),
-        format!("{base}\"{}\" %*\r\n", layout.php_exe("php")?.display()).as_bytes(),
+        windows_tool_script(
+            &php.to_string_lossy(),
+            &ini.to_string_lossy(),
+            &composer_home.to_string_lossy(),
+            None,
+        )?
+        .as_bytes(),
     )?;
     atomic_write(
         &layout.bin.join("composer.cmd"),
-        format!(
-            "{base}\"{}\" \"{}\" %*\r\n",
-            layout.php_exe("php")?.display(),
-            layout.runtime.join("composer.phar").display()
-        )
+        windows_tool_script(
+            &php.to_string_lossy(),
+            &ini.to_string_lossy(),
+            &composer_home.to_string_lossy(),
+            Some(&layout.runtime.join("composer.phar").to_string_lossy()),
+        )?
         .as_bytes(),
     )?;
     crate::node_tools::write_launcher(layout)?;
@@ -185,13 +192,50 @@ pub fn write_windows_launchers(layout: &Layout) -> Result<()> {
         atomic_write(
             &layout.bin.join("fairway.cmd"),
             format!(
-                "@echo off\r\nchcp 65001 >nul\r\n\"{}\" %*\r\nexit /b %errorlevel%\r\n",
-                launcher.display()
+                "@echo off\r\nsetlocal DisableDelayedExpansion\r\nchcp 65001 >nul\r\n\"{}\" %*\r\nexit /b %errorlevel%\r\n",
+                windows_command_path(&launcher.to_string_lossy())?
             )
             .as_bytes(),
         )?;
     }
     Ok(())
+}
+
+#[cfg(any(windows, test))]
+fn windows_command_path(path: &str) -> Result<String> {
+    if path.chars().any(|c| matches!(c, '%' | '"' | '\r' | '\n')) {
+        return Err(
+            "Windows command launchers require paths without percent signs, quotes or line breaks."
+                .into(),
+        );
+    }
+    // Tauri's resource directory is canonicalized (\\?\ on Windows). CMD
+    // needs ordinary DOS/UNC paths and native separators, unlike Win32 APIs.
+    let path = path.replace('/', "\\");
+    Ok(if let Some(unc) = path.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{unc}")
+    } else {
+        path.strip_prefix(r"\\?\").unwrap_or(&path).into()
+    })
+}
+
+#[cfg(any(windows, test))]
+fn windows_tool_script(
+    php: &str,
+    ini: &str,
+    composer_home: &str,
+    composer: Option<&str>,
+) -> Result<String> {
+    let php = windows_command_path(php)?;
+    let ini = windows_command_path(ini)?;
+    let composer_home = windows_command_path(composer_home)?;
+    let composer = composer
+        .map(|path| windows_command_path(path).map(|path| format!(" \"{path}\"")))
+        .transpose()?
+        .unwrap_or_default();
+    // Batch sources are UTF-8 so Windows user/install paths can contain Unicode.
+    // Disable inherited delayed expansion before reading paths containing '!'.
+    Ok(format!("@echo off\r\nsetlocal DisableDelayedExpansion\r\nchcp 65001 >nul\r\nset \"PHP_INI_SCAN_DIR=\"\r\nset \"PHPRC={ini}\"\r\nset \"COMPOSER_HOME={composer_home}\"\r\n\"{php}\"{composer} %*\r\nexit /b %errorlevel%\r\n"))
 }
 
 pub fn install(layout: &Layout) -> Result<()> {
@@ -540,6 +584,53 @@ fn open_path(path: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn windows_launchers_use_shell_paths_for_canonical_runtime_and_data() {
+        for (root, expected) in [
+            (
+                r"\\?\C:\Program Files\Fairway XMP",
+                r"C:\Program Files\Fairway XMP",
+            ),
+            (r"\\?\UNC\server\Fairway XMP", r"\\server\Fairway XMP"),
+        ] {
+            let php = format!(r"{root}/runtime/php/bin/php.exe");
+            let ini = format!(r"{root}/student data/config/php.ini");
+            let home = format!(r"{root}/student data/composer");
+            let composer = format!(r"{root}/runtime/composer.phar");
+            for phar in [None, Some(composer.as_str())] {
+                let script = windows_tool_script(&php, &ini, &home, phar).unwrap();
+                assert!(!script.contains(r"\\?\"), "{script}");
+                assert!(script.contains(&format!(r#""{expected}\runtime\php\bin\php.exe""#)));
+                assert!(script.contains(&format!(
+                    r#"set "PHPRC={expected}\student data\config\php.ini""#
+                )));
+                assert!(script.contains(&format!(
+                    r#"set "COMPOSER_HOME={expected}\student data\composer""#
+                )));
+                if phar.is_some() {
+                    assert!(script.contains(&format!(r#" "{expected}\runtime\composer.phar" %*"#)));
+                } else {
+                    assert!(script.contains("php.exe\" %*\r\n"));
+                }
+                assert!(script.ends_with("exit /b %errorlevel%\r\n"));
+            }
+        }
+    }
+
+    #[test]
+    fn windows_launchers_preserve_literal_paths_and_reject_batch_syntax() {
+        let path = r"C:\student's home 日本 & (class)!\php.exe";
+        let script = windows_tool_script(path, path, path, Some(path)).unwrap();
+        assert!(script.starts_with("@echo off\r\nsetlocal DisableDelayedExpansion\r\n"));
+        assert!(script.contains(&format!("\"{path}\" \"{path}\" %*")));
+        for path in ["C:\\%USER%\\php.exe", "a\"b", "a\rb", "a\nb"] {
+            assert!(windows_tool_script(path, "ini", "home", None).is_err());
+            assert!(windows_tool_script("php", path, "home", None).is_err());
+            assert!(windows_tool_script("php", "ini", path, None).is_err());
+            assert!(windows_tool_script("php", "ini", "home", Some(path)).is_err());
+        }
+    }
     #[cfg(feature = "desktop")]
     #[test]
     fn mail_links_accept_web_urls_and_reject_other_destinations() {

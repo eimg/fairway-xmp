@@ -200,7 +200,7 @@ impl Layout {
 
     pub fn at(home: PathBuf, data: PathBuf, runtime: PathBuf) -> Self {
         Self {
-            www: home.join("fairway/www"),
+            www: home.join("fairway").join("www"),
             bin: data.join("bin"),
             home,
             data,
@@ -885,6 +885,10 @@ mod tests {
             PathBuf::from("/tmp/runtime"),
         );
         assert_eq!(layout.www, PathBuf::from("/Users/A $name/fairway/www"));
+        assert!(layout
+            .www
+            .to_string_lossy()
+            .ends_with(&format!("fairway{}www", std::path::MAIN_SEPARATOR)));
         let nginx = nginx_config(&layout, &Ports::default(), &[], &Default::default());
         assert!(nginx.contains("/Users/A ${fairway_dollar}name/fairway/www"));
         assert_eq!(nginx_path(Path::new("/tmp/A $name")), "\"/tmp/A $name\"");

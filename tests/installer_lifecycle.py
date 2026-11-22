@@ -91,6 +91,18 @@ def main():
             help_text = subprocess.check_output(['cmd.exe', '/D', '/C', str(launcher), 'db', '--help'], text=True)
             if 'fairway db export DATABASE' not in help_text:
                 raise RuntimeError('Windows database launcher did not return command output')
+            # Exercise the actual installed PATH commands, including the spaced
+            # installation directory, from both supported Windows shells.
+            cli_env = {**os.environ, 'PATH': str(data / 'bin') + os.pathsep + os.environ['PATH']}
+            for command, expected in [('php -v', 'PHP 8.'), ('composer --version', 'Composer version')]:
+                for shell in [
+                    ['cmd.exe', '/D', '/V:ON', '/C', command],
+                    ['powershell.exe', '-NoLogo', '-NoProfile', '-NonInteractive',
+                     '-Command', command + '; exit $LASTEXITCODE'],
+                ]:
+                    result = subprocess.run(shell, env=cli_env, capture_output=True, text=True, timeout=60)
+                    if result.returncode or expected not in result.stdout:
+                        raise RuntimeError(f'Installed {command} launcher failed: {result}')
         completed.append('installed-database-cli-and-launcher')
         update_evidence = None
         if args.updater:

@@ -100,6 +100,71 @@ fn check_config(
     Ok(result)
 }
 
+#[cfg(windows)]
+fn check_windows_launchers(
+    layout: &Layout,
+    script: &Path,
+    settings: &PhpSettings,
+) -> Result<(), String> {
+    use std::os::windows::process::CommandExt;
+
+    // Match the release desktop's Tauri resource paths, rather than the CLI's
+    // already-normalized runtime. Do not install PATH/profile integration.
+    let mut tools = layout.clone();
+    tools.runtime = fs::canonicalize(&layout.runtime).map_err(|e| e.to_string())?;
+    tools.data = fs::canonicalize(&layout.data).map_err(|e| e.to_string())?;
+    tools.bin = layout.data.join("launcher tools ! & (test)");
+    fs::create_dir_all(&tools.bin).map_err(|e| e.to_string())?;
+    fairway_core::integration::write_windows_launchers(&tools)?;
+    let paths = std::env::join_paths(std::iter::once(tools.bin.clone()).chain(
+        std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()),
+    ))
+    .map_err(|e| e.to_string())?;
+    let run = |command: &str| {
+        process::command("cmd.exe")
+            .args(["/D", "/V:ON", "/S", "/C"])
+            .raw_arg(format!("\"{command}\""))
+            .env("PATH", &paths)
+            .output()
+            .map_err(|e| e.to_string())
+    };
+    for (command, expected) in [
+        ("php -v", format!("PHP {}.", layout.php_version()?)),
+        ("composer --version", "Composer version".into()),
+    ] {
+        let output = run(command)?;
+        if !output.status.success() || !String::from_utf8_lossy(&output.stdout).contains(&expected)
+        {
+            return Err(format!("{command} launcher failed: {output:?}"));
+        }
+    }
+    let output = run(&format!("php \"{}\"", script.display()))?;
+    if !output.status.success() || !output.stderr.is_empty() {
+        return Err(format!(
+            "PHP configuration through launcher failed: {output:?}"
+        ));
+    }
+    check_config(
+        &String::from_utf8_lossy(&output.stdout),
+        settings,
+        true,
+        &layout.data.join("config/php.ini"),
+    )?;
+    let failure = layout.data.join("launcher failure.php");
+    fs::write(
+        &failure,
+        "<?php fwrite(STDERR, 'launcher-stderr'); exit(37);",
+    )
+    .map_err(|e| e.to_string())?;
+    let output = run(&format!("php \"{}\"", failure.display()))?;
+    if output.status.code() != Some(37) || output.stderr != b"launcher-stderr" {
+        return Err(format!(
+            "PHP launcher lost stderr or exit status: {output:?}"
+        ));
+    }
+    Ok(())
+}
+
 fn main() -> Result<(), String> {
     let mut args = std::env::args_os().skip(1);
     let current = std::env::current_dir().map_err(|e| e.to_string())?;
@@ -195,6 +260,8 @@ fn main() -> Result<(), String> {
             true,
             &managed_ini,
         )?;
+        #[cfg(windows)]
+        check_windows_launchers(&layout, &script, &settings)?;
         let output = process::command(manager.layout.php_exe("php")?)
             .arg(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -331,5 +398,13 @@ fn main() -> Result<(), String> {
     manager.stop_all()?;
     web?;
     println!("PASS: a quiet 65-second PHP request completes through Nginx with the default 120-second execution setting.");
+    // PHP/Composer must remain usable after the app/service owner has exited.
+    // The launchers call PHP directly; no desktop or supervisor is required.
+    drop(manager);
+    #[cfg(windows)]
+    {
+        check_windows_launchers(&layout, &script, &PhpSettings::default())?;
+        println!("PASS: Windows PHP/Composer launchers work after the service manager closes.");
+    }
     Ok(())
 }

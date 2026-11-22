@@ -110,6 +110,8 @@ Build debug entry points with `cargo build --manifest-path src-tauri/Cargo.toml 
 
 Add `--output .runtime-work/shared-cli-smoke` to retain per-command arguments, UTF-8 output and service logs. Each command reports its start, completion and elapsed time; timeouts use bounded process cleanup. Windows test descendants stay in a test-owned job until cleanup, and its CI smoke step has a separate 10-minute limit with failure diagnostics uploaded as an artifact.
 
+The Windows `php_settings_smoke` also generates PHP/Composer batch launchers from canonical resource/data paths and runs them through CMD with delayed expansion enabled in the caller. It verifies every PHP branch, managed configuration, stderr and failure exit status without editing user PATH or profiles, then repeats after stopping services and dropping the manager. The disposable Windows installer lifecycle checks installed `php -v` and `composer --version` in CMD and PowerShell with a spaced installation path and no desktop running.
+
 ## Desktop startup preferences (macOS and Windows)
 
 Rust tests cover default-off and preserved per-service selections, invalid-file
