@@ -18,7 +18,7 @@ Windows Authenticode signing remains deferred; desktop updater payloads retain t
 
 The Windows fixes passed [test build 45010512779](https://github.com/eimg/fairway-xmp/actions/runs/45010512779), commit `4b2c0d26ebf1436937ce23199ae98a409516781b`, including native CLI and installed upgrade/reinstall checks. The release owner confirmed both reported issues are resolved on the affected Windows computer.
 
-Full 0.2.1 candidate verification is pending. Publication uses the exact successful candidate artifacts without rebuilding.
+Full platform, runtime and installer checks passed in [candidate run 45019828647](https://github.com/eimg/fairway-xmp/actions/runs/45019828647), commit `10703b73bcc1e4bd9b6dc56e0a16237aafd29213`. Desktop updater lifecycle checks passed on macOS and Windows. Publication uses these exact tested artifacts without rebuilding.
 
 ## Supported platforms
 
