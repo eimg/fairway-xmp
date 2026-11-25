@@ -60,7 +60,7 @@ class ReleaseTagTests(unittest.TestCase):
                         self.assertFalse(any(p.name == 'acceptance.json' for p in paths))
                         uploaded.update({'id': 42, 'tag_name': 'v' + version, 'draft': True, 'assets': [
                             {'name': p.name, 'digest': 'sha256:' + publisher.sha256(p), 'size': p.stat().st_size} for p in paths]})
-                with mock.patch.dict(os.environ, {'GITHUB_ACTIONS': 'true' if prebuilt else 'false', 'FAIRWAY_UPDATE_VERIFIER': str(root / 'verify_update') if prebuilt else '', 'GH_REPO': 'eimg/fairway-xmp', 'FAIRWAY_RUN_ID': '123', 'FAIRWAY_TAG': 'v' + version, 'FAIRWAY_SHA': sha, 'FAIRWAY_NOTES': str(notes), 'FAIRWAY_ACCEPTANCE': ''}), \
+                with mock.patch.dict(os.environ, {'GITHUB_ACTIONS': 'true' if prebuilt else 'false', 'FAIRWAY_UPDATE_VERIFIER': str(root / 'verify_update') if prebuilt else '', 'GH_REPO': 'RizzRioo06/fairway-xmp', 'FAIRWAY_RUN_ID': '123', 'FAIRWAY_TAG': 'v' + version, 'FAIRWAY_SHA': sha, 'FAIRWAY_NOTES': str(notes), 'FAIRWAY_ACCEPTANCE': ''}), \
                      mock.patch.object(publisher, 'run_json', side_effect=run_json), mock.patch.object(publisher, 'verify_tag'), \
                      mock.patch.object(publisher.subprocess, 'check_call', side_effect=execute), mock.patch.object(publisher.subprocess, 'check_output', return_value=b'{}'), mock.patch('builtins.print'):
                     publisher.main(signed=True)
@@ -86,7 +86,7 @@ class ReleaseTagTests(unittest.TestCase):
                     else:
                         manifest['candidates']['windows-x64']['lifecycle']['updater']['status'] = 'passed'
                     (metadata / 'candidate-manifest.json').write_text(json.dumps(manifest))
-                    with self.subTest(failure=failure), mock.patch.dict(os.environ, {'GITHUB_ACTIONS': 'true' if prebuilt else 'false', 'FAIRWAY_UPDATE_VERIFIER': str(root / 'verify_update') if prebuilt else '', 'GH_REPO': 'eimg/fairway-xmp', 'FAIRWAY_RUN_ID': '123', 'FAIRWAY_TAG': 'v' + version, 'FAIRWAY_SHA': sha, 'FAIRWAY_NOTES': str(notes), 'FAIRWAY_ACCEPTANCE': ''}), \
+                    with self.subTest(failure=failure), mock.patch.dict(os.environ, {'GITHUB_ACTIONS': 'true' if prebuilt else 'false', 'FAIRWAY_UPDATE_VERIFIER': str(root / 'verify_update') if prebuilt else '', 'GH_REPO': 'RizzRioo06/fairway-xmp', 'FAIRWAY_RUN_ID': '123', 'FAIRWAY_TAG': 'v' + version, 'FAIRWAY_SHA': sha, 'FAIRWAY_NOTES': str(notes), 'FAIRWAY_ACCEPTANCE': ''}), \
                          mock.patch.object(publisher, 'run_json', side_effect=run_json), mock.patch.object(publisher, 'verify_tag'), \
                          mock.patch.object(publisher.subprocess, 'check_call', side_effect=execute), mock.patch.object(publisher.subprocess, 'check_output', return_value=b'{}'), \
                          self.assertRaises((ValueError, subprocess.CalledProcessError)):
@@ -96,12 +96,12 @@ class ReleaseTagTests(unittest.TestCase):
     def test_uploaded_draft_is_found_without_the_published_tag_endpoint(self):
         release = {'id': 42, 'tag_name': 'v0.1.0-beta.3', 'draft': True}
         with mock.patch.object(publisher, 'run_json', return_value=[release]) as api:
-            self.assertEqual(publisher.find_draft_release('eimg/fairway-xmp', release['tag_name']), release)
-            api.assert_called_once_with('gh', 'api', 'repos/eimg/fairway-xmp/releases?per_page=100')
+            self.assertEqual(publisher.find_draft_release('RizzRioo06/fairway-xmp', release['tag_name']), release)
+            api.assert_called_once_with('gh', 'api', 'repos/RizzRioo06/fairway-xmp/releases?per_page=100')
         for releases in ([], [release, release], [{**release, 'draft': False}]):
             with self.subTest(releases=releases), mock.patch.object(publisher, 'run_json', return_value=releases):
                 with self.assertRaises(RuntimeError):
-                    publisher.find_draft_release('eimg/fairway-xmp', release['tag_name'])
+                    publisher.find_draft_release('RizzRioo06/fairway-xmp', release['tag_name'])
 
     def test_uploaded_assets_require_the_exact_set_and_content(self):
         with tempfile.TemporaryDirectory() as temporary:

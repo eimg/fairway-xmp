@@ -18,7 +18,7 @@ class ReleaseFeedTests(unittest.TestCase):
         for version in ['0.1.0-beta.4', '0.1.0-rc.1']:
             with self.subTest(version=version), mock.patch.object(publisher.subprocess, 'run') as request:
                 with self.assertRaisesRegex(ValueError, 'Only stable'):
-                    publisher.promote_feed('eimg/fairway-xmp', 'v' + version, Path('/unused'), 'stable-feed')
+                    publisher.promote_feed('RizzRioo06/fairway-xmp', 'v' + version, Path('/unused'), 'stable-feed')
                 request.assert_not_called()
 
     def test_preview_uses_legacy_endpoint_and_stable_uses_stable_endpoint(self):
@@ -31,22 +31,22 @@ class ReleaseFeedTests(unittest.TestCase):
                 key = root / 'updater.pub'; key.write_text('test public key')
                 output = root / 'overlay.json'
                 subprocess.run([sys.executable, str(root / 'scripts/configure_release.py'), '--public-key', str(key), '--output', str(output)], check=True, capture_output=True)
-                self.assertEqual(json.loads(output.read_text())['plugins']['updater']['endpoints'], [f'https://github.com/eimg/fairway-xmp/releases/download/{feed}/latest.json'])
+                self.assertEqual(json.loads(output.read_text())['plugins']['updater']['endpoints'], [f'https://github.com/RizzRioo06/fairway-xmp/releases/download/{feed}/latest.json'])
 
     def test_feed_promotion_routes_rc_and_stable_and_checks_release_status(self):
         for version, prerelease, feeds in [('0.1.0-rc.1', True, ['beta-feed']), ('0.1.0', False, ['stable-feed', 'beta-feed'])]:
             def download(args):
                 root = Path(args[args.index('--dir') + 1])
                 (root / 'latest.json').write_text(json.dumps({'version': version, 'platforms': {
-                    platform: {'url': f'https://github.com/eimg/fairway-xmp/releases/download/v{version}/{platform}', 'signature': 'test signature'}
+                    platform: {'url': f'https://github.com/RizzRioo06/fairway-xmp/releases/download/v{version}/{platform}', 'signature': 'test signature'}
                     for platform in ['darwin-aarch64', 'windows-x86_64']}}))
-            with self.subTest(version=version), mock.patch.dict(os.environ, {'GH_REPO': 'eimg/fairway-xmp', 'FAIRWAY_TAG': 'v' + version}), \
+            with self.subTest(version=version), mock.patch.dict(os.environ, {'GH_REPO': 'RizzRioo06/fairway-xmp', 'FAIRWAY_TAG': 'v' + version}), \
                  mock.patch.object(publisher.subprocess, 'check_output', return_value=json.dumps({'isDraft': False, 'isPrerelease': prerelease})), \
                  mock.patch.object(publisher.subprocess, 'check_call', side_effect=download), mock.patch.object(publisher, 'promote_feed') as promote, mock.patch('builtins.print'):
                 publisher.main()
                 self.assertEqual([call.args[3] for call in promote.call_args_list], feeds)
             for bad in [{'isDraft': True, 'isPrerelease': prerelease}, {'isDraft': False, 'isPrerelease': not prerelease}]:
-                with mock.patch.dict(os.environ, {'GH_REPO': 'eimg/fairway-xmp', 'FAIRWAY_TAG': 'v' + version}), \
+                with mock.patch.dict(os.environ, {'GH_REPO': 'RizzRioo06/fairway-xmp', 'FAIRWAY_TAG': 'v' + version}), \
                      mock.patch.object(publisher.subprocess, 'check_output', return_value=json.dumps(bad)), \
                      mock.patch.object(publisher, 'promote_feed') as promote, mock.patch('builtins.print'):
                     with self.assertRaises(ValueError): publisher.main()
@@ -69,9 +69,9 @@ class ReleaseFeedTests(unittest.TestCase):
                 with mock.patch.object(publisher.subprocess, 'run', return_value=mock.Mock(returncode=0)), \
                      mock.patch.object(publisher.subprocess, 'check_call', side_effect=download) as calls, mock.patch('builtins.print'):
                     if result == 'reject':
-                        with self.assertRaisesRegex(ValueError, 'backwards'): publisher.promote_feed('eimg/fairway-xmp', 'v' + new, root, feed)
+                        with self.assertRaisesRegex(ValueError, 'backwards'): publisher.promote_feed('RizzRioo06/fairway-xmp', 'v' + new, root, feed)
                     else:
-                        publisher.promote_feed('eimg/fairway-xmp', 'v' + new, root, feed)
+                        publisher.promote_feed('RizzRioo06/fairway-xmp', 'v' + new, root, feed)
                     uploads = [call for call in calls.call_args_list if call.args[0][:3] == ['gh', 'release', 'upload']]
                     self.assertEqual(bool(uploads), result == 'upload')
 
@@ -83,12 +83,12 @@ class ReleaseFeedTests(unittest.TestCase):
                      mock.patch.object(publisher.subprocess, 'check_output', side_effect=[response]), \
                      mock.patch.object(publisher.subprocess, 'check_call') as mutate:
                     with self.assertRaises((ValueError, subprocess.CalledProcessError)):
-                        publisher.promote_feed('eimg/fairway-xmp', 'v0.1.0-rc.1', root, 'beta-feed')
+                        publisher.promote_feed('RizzRioo06/fairway-xmp', 'v0.1.0-rc.1', root, 'beta-feed')
                     mutate.assert_not_called()
             with mock.patch.object(publisher.subprocess, 'run', return_value=mock.Mock(returncode=1)), \
                  mock.patch.object(publisher.subprocess, 'check_output', return_value='[]'), \
                  mock.patch.object(publisher.subprocess, 'check_call') as mutate:
-                publisher.promote_feed('eimg/fairway-xmp', 'v0.1.0', root, 'stable-feed')
+                publisher.promote_feed('RizzRioo06/fairway-xmp', 'v0.1.0', root, 'stable-feed')
                 args = mutate.call_args.args[0]
                 self.assertEqual(args[:4], ['gh', 'release', 'create', 'stable-feed'])
                 self.assertIn('--prerelease', args)

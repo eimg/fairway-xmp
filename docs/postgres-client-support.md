@@ -6,6 +6,11 @@ Supply your own running PostgreSQL server, locally, in a container, or on anothe
 
 Fairway includes no PostgreSQL server, `psql`, `pg_dump` or PostgreSQL service controls. The desktop data browser supports MySQL/SQLite. Install any administration tools separately. Fairway's environment backups and updater protect its own MySQL data; external PostgreSQL databases keep their own backup and upgrade process. phpMyAdmin remains MySQL-only.
 
+Phase 2 [Stage 1 architecture and discovery](postgresql-integration.md) adds only
+read-only tool discovery and explicit version-inspection IPC. It does not change
+this client-only packaging, start servers, connect to databases, or add a PostgreSQL
+explorer yet.
+
 ## Verify the PHP drivers
 
 Enable Fairway's command-line tools in Settings and open a new terminal. On Linux, use `fairway php` instead of `php` if PATH integration is disabled.

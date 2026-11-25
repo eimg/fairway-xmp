@@ -1,0 +1,107 @@
+name: Prepare signed PostgreSQL runtime
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FAIRWAY_APPLE_TEAM_ID: ${{ vars.FAIRWAY_APPLE_TEAM_ID }}
+  APPLE_SIGNING_IDENTITY: ${{ vars.APPLE_SIGNING_IDENTITY }}
+  APPLE_INSTALLER_IDENTITY: ${{ vars.APPLE_INSTALLER_IDENTITY }}
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Check reviewed source and fork identity configuration
+        id: source
+        run: |
+          python scripts/check_release_setup.py --apple
+          commit=$(python scripts/verify_signing_source.py)
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+      - name: Build checksum-pinned official sources in private staging
+        run: |
+          mkdir -p artifacts/unsigned
+          python scripts/prepare_postgresql_runtime.py --authorize-source-build --output "$PWD/artifacts/unsigned/postgresql"
+          chmod 400 artifacts/unsigned/postgresql/manifest.json
+          COPYFILE_DISABLE=1 tar -czf artifacts/postgresql-unsigned.tar.gz -C artifacts/unsigned postgresql
+      - uses: actions/upload-artifact@v6
+        with:
+          name: postgresql-unsigned
+          path: artifacts/postgresql-unsigned.tar.gz
+          compression-level: 0
+          retention-days: 1
+          if-no-files-found: error
+
+  sign:
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Check exact trusted signing source
+        run: |
+          python scripts/verify_signing_source.py --expected '${{ needs.build.outputs.commit }}'
+          python scripts/check_release_setup.py --apple
+      - uses: actions/download-artifact@v7
+        with:
+          name: postgresql-unsigned
+          path: artifacts
+      - name: Validate archive before importing credentials
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from postgresql_release import unpack, verify_payload
+          stage = Path('artifacts/unsigned')
+          stage.mkdir(mode=0o700)
+          unpack(Path('artifacts/postgresql-unsigned.tar.gz'), stage)
+          verify_payload(stage / 'postgresql')
+          PY
+      - name: Import temporary Apple credentials
+        env:
+          APPLE_CERTIFICATES_P12: ${{ secrets.APPLE_CERTIFICATES_P12 }}
+          APPLE_CERTIFICATES_PASSWORD: ${{ secrets.APPLE_CERTIFICATES_PASSWORD }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: bash scripts/import_apple_credentials.sh
+      - name: Sign nested runtime code then compute final manifest and pin
+        run: python scripts/postgresql_release.py sign --source artifacts/unsigned/postgresql --output artifacts/postgresql-release --team-id "$FAIRWAY_APPLE_TEAM_ID" --identity "$APPLE_SIGNING_IDENTITY"
+      - name: Remove temporary credentials
+        if: always()
+        run: bash scripts/cleanup_apple_credentials.sh
+      - name: Archive exact signed bytes and review pin
+        run: |
+          COPYFILE_DISABLE=1 tar -czf artifacts/postgresql-signed.tar.gz -C artifacts/postgresql-release postgresql runtime-pin.json provenance.json
+          cp artifacts/postgresql-release/runtime-pin.json artifacts/runtime-pin.json
+          echo 'Review the signed payload and commit its runtime-pin.json to src-tauri/src/postgresql/managed/runtime-pin.json. Set FAIRWAY_POSTGRES_RUNTIME_RUN to this run ID. No application release was published.' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v6
+        with:
+          name: postgresql-signed
+          path: |
+            artifacts/postgresql-signed.tar.gz
+            artifacts/runtime-pin.json
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error

@@ -1,4 +1,4 @@
-#[cfg(any(target_os = "macos", windows))]
+#[cfg(any(unix, windows))]
 mod command_output;
 pub mod config;
 pub mod data_browser;
@@ -17,6 +17,7 @@ pub mod node_projects;
 #[cfg(any(target_os = "macos", windows))]
 pub mod node_tools;
 pub mod php_settings;
+pub mod postgresql;
 pub mod process;
 #[cfg(any(target_os = "macos", windows))]
 mod shell_environment;

@@ -7,6 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+from release_versions import REPOSITORY
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -63,6 +64,7 @@ def verify_uploaded_assets(release, stage):
 
 def main(signed=True):
     repo = os.environ['GH_REPO']
+    require(repo == REPOSITORY, 'Publication is restricted to the personal fork')
     run_id = os.environ['FAIRWAY_RUN_ID']
     tag = os.environ['FAIRWAY_TAG']
     sha = os.environ['FAIRWAY_SHA']

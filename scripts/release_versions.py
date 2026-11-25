@@ -3,7 +3,7 @@ import re
 
 NUMBER = r'(0|[1-9][0-9]*)'
 VERSION = re.compile(rf'{NUMBER}\.{NUMBER}\.{NUMBER}(?:-(beta|rc)\.{NUMBER})?')
-REPOSITORY = 'eimg/fairway-xmp'
+REPOSITORY = 'RizzRioo06/fairway-xmp'
 
 
 def version_key(value):

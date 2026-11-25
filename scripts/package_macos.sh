@@ -35,7 +35,7 @@ if [ -n "${APPLE_SIGNING_IDENTITY:-}" ]; then
   python3 "$ROOT/scripts/sign_macos.py" "$APP" "$APPLE_SIGNING_IDENTITY"
   if [ "${FAIRWAY_DEFER_RUNTIME_CHECKS:-0}" != 1 ]; then
     python3 "$ROOT/scripts/check_signed_php.py" "$APP"
-    python3 "$ROOT/scripts/verify_macos_permissions.py" "$APP" --team-id 4Q27NQ2UAF
+    python3 "$ROOT/scripts/verify_macos_permissions.py" "$APP" --team-id "${FAIRWAY_APPLE_TEAM_ID:?Set your Apple Developer team ID}"
   fi
 fi
 if [ -n "${APPLE_NOTARY_PROFILE:-}" ]; then

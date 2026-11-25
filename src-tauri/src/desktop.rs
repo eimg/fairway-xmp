@@ -18,6 +18,9 @@ use tauri::{Emitter, Manager as _, State};
 use tauri_plugin_updater::UpdaterExt;
 
 mod node_project_commands;
+mod postgresql_commands;
+mod postgresql_explorer_commands;
+mod postgresql_managed_commands;
 
 #[cfg(target_os = "macos")]
 pub(crate) mod authorization;
@@ -149,9 +152,15 @@ pub(crate) fn request_quit(app: &tauri::AppHandle) {
         let _ = tray.set_busy(true);
     }
     let _ = app.emit("fairway-shutdown", ());
+    app.state::<Arc<crate::postgresql::explorer::Explorer>>()
+        .cancel_all();
     let state = app.state::<Shared>().inner().clone();
     let nodes = app
         .state::<Arc<crate::node_projects::NodeProjects>>()
+        .inner()
+        .clone();
+    let postgres = app
+        .state::<Arc<crate::postgresql::Managed>>()
         .inner()
         .clone();
     let app = app.clone();
@@ -160,7 +169,12 @@ pub(crate) fn request_quit(app: &tauri::AppHandle) {
         let result = tauri::async_runtime::spawn_blocking(move || {
             waiting.wait_for_operation();
             crate::lifecycle::stop_components(
-                || nodes.stop_all_runs().map_err(|error| error.message),
+                || {
+                    crate::lifecycle::stop_components(
+                        || nodes.stop_all_runs().map_err(|error| error.message),
+                        || postgres.stop_for_shutdown().map_err(|error| error.message),
+                    )
+                },
                 || {
                     let mut startup = state.lock().map_err(|_| {
                         "The service manager is unavailable. Restart Fairway XMP.".to_string()
@@ -186,7 +200,7 @@ pub(crate) fn request_quit(app: &tauri::AppHandle) {
                 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
                 show_window(&app);
                 let handle = app.clone();
-                app.dialog().message(format!("{error}\n\nKeep Fairway XMP open to retry, or quit and leave any remaining PHP services running. Managed Node projects and embedded terminal sessions will close. Your project and database files will be kept."))
+                app.dialog().message(format!("{error}\n\nKeep Fairway XMP open to retry, or quit and leave any remaining services running. Managed Node projects and embedded terminal sessions will close. PostgreSQL will not be forcibly killed; an unfinished shutdown requires manual review before its next start. Your project and database files will be kept."))
                     .title("Services could not be stopped")
                     .buttons(MessageDialogButtons::OkCancelCustom("Quit anyway".into(), "Keep open".into()))
                     .show(move |leave| {
@@ -1087,20 +1101,25 @@ async fn install_update(
         "fairway-update-progress",
         serde_json::json!({"phase": "preparing"}),
     );
+    app.state::<Arc<crate::postgresql::explorer::Explorer>>()
+        .cancel_all();
     access(state.inner().clone(), crate::updates::prepare).await?;
     let nodes = app
         .state::<Arc<crate::node_projects::NodeProjects>>()
         .inner()
         .clone();
-    tauri::async_runtime::spawn_blocking(move || nodes.stop_all_runs())
-        .await
-        .map_err(|e| e.to_string())?
-        .map_err(|e| {
-            format!(
-                "Node cleanup failed. The update was not installed: {}",
-                e.message
-            )
-        })?;
+    let postgres = app
+        .state::<Arc<crate::postgresql::Managed>>()
+        .inner()
+        .clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::lifecycle::stop_components(
+            || nodes.stop_all_runs().map_err(|e| e.message),
+            || postgres.stop_for_shutdown().map_err(|e| e.message),
+        )
+    })
+    .await
+    .map_err(|_| "Managed-service cleanup failed; update was not installed".to_string())??;
     app.state::<crate::terminal::Terminals>().close_all();
     // Windows exits inside install(); post-install cleanup is unreachable.
     access(state.inner().clone(), |m| remove_app_marker(m)).await?;
@@ -1208,6 +1227,9 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
     }
     let runtime = runtime_location(&std::env::current_exe().map_err(|e| e.to_string())?)?;
     let layout = Layout::new(runtime)?;
+    if action == "--remove-data" {
+        crate::postgresql::ensure_data_removal_allowed(&layout.data)?;
+    }
     if [
         "--prepare-uninstall",
         "--remove-data",
@@ -1265,6 +1287,12 @@ pub fn maintenance(args: &[String]) -> Result<bool> {
 }
 
 pub fn run() {
+    if crate::postgresql::explorer::worker_entrypoint() {
+        return;
+    }
+    if crate::postgresql::managed_health_worker() {
+        return;
+    }
     // Dispatch before Tauri single-instance/plugin initialization.
     match crate::node_projects::runner_entrypoint() {
         Ok(true) => return,
@@ -1323,7 +1351,10 @@ pub fn run() {
             } else {
                 app.path().resource_dir()?.join("runtime")
             };
+            app.manage(Arc::new(crate::postgresql::Discovery::new(Some(runtime.clone()))));
             let startup = crate::startup::Startup::new(runtime);
+            app.manage(Arc::new(crate::postgresql::Managed::new(startup.layout.clone())));
+            app.manage(Arc::new(crate::postgresql::explorer::Explorer::default()));
             let nodes = Arc::new(crate::node_projects::NodeProjects::new(startup.layout.clone()));
             let event_app = app.handle().clone();
             nodes.observe_runs(move |status| { let _ = event_app.emit("node-project-run-status", status); });
@@ -1360,6 +1391,21 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            postgresql_commands::postgres_runtime_discover,
+            postgresql_commands::postgres_runtime_inspect,
+            postgresql_managed_commands::postgres_managed_provision,
+            postgresql_managed_commands::postgres_managed_initialize,
+            postgresql_managed_commands::postgres_managed_start,
+            postgresql_managed_commands::postgres_managed_stop,
+            postgresql_managed_commands::postgres_managed_restart,
+            postgresql_managed_commands::postgres_managed_snapshot,
+            postgresql_managed_commands::postgres_managed_health,
+            postgresql_managed_commands::postgres_managed_logs,
+            postgresql_explorer_commands::postgres_connection_open,
+            postgresql_explorer_commands::postgres_connection_close,
+            postgresql_explorer_commands::postgres_explorer_execute,
+            postgresql_explorer_commands::postgres_explorer_cancel,
+
             snapshot,
             startup_status,
             retry_startup,

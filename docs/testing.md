@@ -101,3 +101,49 @@ its own folders and fnm inventory, dispatches the same runner entrypoint, and
 stops owned runs before disposing the fixture. Its test picker returns those
 folders. It does not automate Finder or execute personal project scripts.
 Keep device acceptance separate using the [manual guide](node-projects-manual-testing.md).
+
+## PostgreSQL integration Stage 1 (read-only)
+
+Do not run the existing PostgreSQL **server smoke** during Stage 1: it initializes
+a disposable cluster. The discovery tests need no database or network connection:
+
+```sh
+cargo test --manifest-path src-tauri/Cargo.toml --no-default-features \
+  --features terminal --locked postgresql
+cargo run --manifest-path src-tauri/Cargo.toml --no-default-features \
+  --example postgres_discovery --locked
+```
+
+The example prints metadata only. Its explicit `--inspect` argument authorizes
+fixed native `--version` invocations, never server initialization/start or health
+connections. Wrappers/scripts are refused. Use installed tools read-only; do not
+install/start Homebrew services or change existing clusters just to obtain test
+candidates. See [Stage 1 design](postgresql-integration.md) and
+[observed verification](postgresql-stage1-verification.md).
+
+
+## Managed PostgreSQL Stage 2
+
+Only explicitly authorized isolated tests may build the pinned source and initialize
+new disposable clusters. Never run them against installed Fairway, Homebrew/system
+clusters or personal profiles. The ignored native lifecycle fixture needs the
+reviewed payload and a headless health worker; see [Stage 2 reproduction and actual
+results](postgresql-stage2-verification.md). It uses a memory-only test vault and
+does not establish native Keychain qualification. The separate opt-in Keychain smoke
+must be run by an operator in a disposable macOS account. [Runtime preparation](postgresql-runtime.md)
+requires checksum verification before authorized source-script execution.
+
+
+## PostgreSQL Stage 3 backend
+
+The focused opt-in suite reuses the verified Stage 2 payload and headless worker;
+it creates only disposable clusters and never uses Keychain or personal databases.
+See [Stage 3 reproduction/results](postgresql-stage3-verification.md) for catalog,
+exact-type rows, read-only/write consent, bounds, timeout, cancellation/owner-loss
+and restricted external-role fixtures. Signed runtime/Keychain acceptance remains
+unverified. No graphical PostgreSQL workspace is implemented or simulated here.
+
+The current uncommitted graphical workspace and real Summit 17.12 connection work
+are covered separately in [native workspace acceptance](postgresql-native-acceptance.md).
+Use its headless native check for real database evidence and its isolated launch
+commands for operator Mac GUI acceptance. `dev:ui` remains simulated throughout.

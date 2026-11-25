@@ -181,6 +181,7 @@ function syncNode() {
 
 export async function invoke<T>(command: string, args: Record<string, unknown> = {}): Promise<T> {
   window.dispatchEvent(new CustomEvent('fairway-ui-command', { detail: command }));
+  if (command.startsWith('postgres_')) return (await import('./postgresql')).request(command, args) as Promise<T>;
   if (command.startsWith('node_project')) return structuredClone(await nodeRequest(command, args, emit, platform)) as T;
   if (command === 'pick_folder' && document.querySelector('.node-projects-page [role=dialog]')) return ((await import('./node-projects')).options.root ?? '/Users/Student May/Code/Node café 日本') as T;
   if (command.startsWith('terminal_')) return terminalRequest(command, args, data.documentRoot, data.phpVersions[data.phpVersion], data.runtimeReady, data.projects) as T;

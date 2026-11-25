@@ -11,6 +11,7 @@ import PhpSettingsCard from './PhpSettings';
 import NodeTools from './NodeTools';
 import NodeProjectsPage from './node-projects/NodeProjectsPage';
 import DataBrowser from './data/DataBrowser';
+import PostgresPage from './postgresql/PostgresPage';
 import SitesPage from './SitesPage';
 import MailPage from './MailPage';
 import LogsPage from './LogsPage';
@@ -32,8 +33,9 @@ const meta = {
   mail: { name: 'Mail', description: 'Catches emails your apps send', icon: Mail, version: 'mailpit', color: 'teal' },
 } as const;
 
-type View = 'nodes' | 'environment' | 'projects' | 'mail' | 'settings' | 'updates' | 'data' | 'terminal' | 'logs';
+type View = 'postgres' | 'nodes' | 'environment' | 'projects' | 'mail' | 'settings' | 'updates' | 'data' | 'terminal' | 'logs';
 const viewTitle: Record<View, string> = {
+  postgres: 'PostgreSQL',
   nodes: 'Node Projects',
   environment: 'Environment',
   projects: 'Manage Sites',
@@ -86,6 +88,8 @@ function AppContent() {
     }
     setCurrentView(next);
   }
+  const [postgresOpened, setPostgresOpened] = useState(false);
+  useEffect(() => { if (view === 'postgres') setPostgresOpened(true); }, [view]);
   const [logRequest, setLogRequest] = useState<{ key: number; source: string } | null>(null);
 
   function showLog(service: ServiceId) {
@@ -330,6 +334,7 @@ function AppContent() {
           <button className={view === 'projects' ? 'nav-item active' : 'nav-item'} title={foldTitle('Manage Sites')} onClick={() => setView('projects')}><AppWindow size={18} /><span className="nav-label">Manage Sites</span></button>
           <button className={view === 'mail' ? 'nav-item active' : 'nav-item'} title={foldTitle('View Mail')} onClick={() => setView('mail')}><Mail size={18} /><span className="nav-label">View Mail</span></button>
           {dataBrowserAvailable && <button className={view === 'data' ? 'nav-item active' : 'nav-item'} title={foldTitle('Browse Data')} disabled={!!busy && !databaseBusy} onClick={() => setView('data')}><Database size={18} /><span className="nav-label">Browse Data</span></button>}
+          {dataBrowserAvailable && <button className={view === 'postgres' ? 'nav-item active' : 'nav-item'} title={foldTitle('PostgreSQL')} onClick={() => setView('postgres')}><Database size={18} /><span className="nav-label">PostgreSQL</span></button>}
         </div>
         <div className="nav-group nav-group-app" role="group" aria-label="App">
           <button className={view === 'settings' ? 'nav-item active' : 'nav-item'} title={foldTitle('Settings')} onClick={() => setView('settings')}><Settings2 size={18} /><span className="nav-label">Settings</span></button>
@@ -362,6 +367,8 @@ function AppContent() {
         {dataBrowserAvailable && <Activity mode={view === 'data' ? 'visible' : 'hidden'}><RecoveryBoundary onError={maximized === 'data' ? restoreWorkspace : undefined} name="Data browser"><DataBrowser ready={data.services.some(service => service.id === 'mysql' && service.ready)} busy={!!busy && !databaseBusy} start={() => serviceAction('start', 'mysql')} open={open} /></RecoveryBoundary></Activity>}
 
         <div hidden={view !== 'logs'}><RecoveryBoundary onError={maximized === 'logs' ? restoreWorkspace : undefined} name="Logs"><LogsPage active={view === 'logs'} busy={!!busy} services={data.services} projects={data.projects} request={logRequest} openFolder={() => open('logs')} /></RecoveryBoundary></div>
+
+        {postgresOpened && <div hidden={view !== 'postgres'}><RecoveryBoundary onError={maximized === 'postgres' ? restoreWorkspace : undefined} name="PostgreSQL"><PostgresPage active={view === 'postgres'} busy={!!busy} platform={data.os} /></RecoveryBoundary></div>}
 
         <div hidden={view !== 'nodes'}><RecoveryBoundary onError={maximized === 'node-logs' ? restoreWorkspace : undefined} name="Node Projects"><NodeProjectsPage active={view === 'nodes'} busy={!!busy} /></RecoveryBoundary></div>
 

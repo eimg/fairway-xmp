@@ -1,0 +1,17 @@
+//! Fixed pg_catalog SQL; schema/relation names remain bound text values.
+use super::super::explorer_contract::Operation;
+pub const COLUMNS: &str = r#"SELECT a.attname AS name, pg_catalog.format_type(a.atttypid,a.atttypmod) AS type, a.atttypid::text AS type_oid, a.attnotnull AS not_null, pg_catalog.pg_get_expr(d.adbin,d.adrelid) AS default_expression, a.attidentity AS identity, a.attgenerated AS generated FROM pg_catalog.pg_attribute a JOIN pg_catalog.pg_class c ON c.oid=a.attrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum WHERE n.nspname=$1 AND c.relname=$2 AND a.attnum>0 AND NOT a.attisdropped AND pg_catalog.has_schema_privilege(n.oid,'USAGE') AND pg_catalog.has_table_privilege(c.oid,'SELECT') ORDER BY a.attnum"#;
+pub const PRIMARY: &str = r#"SELECT a.attname FROM pg_catalog.pg_index i JOIN pg_catalog.pg_class c ON c.oid=i.indrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace CROSS JOIN LATERAL unnest(i.indkey) WITH ORDINALITY k(attnum,ord) JOIN pg_catalog.pg_attribute a ON a.attrelid=c.oid AND a.attnum=k.attnum WHERE n.nspname=$1 AND c.relname=$2 AND i.indisprimary AND i.indisvalid AND k.ord<=i.indnkeyatts ORDER BY k.ord"#;
+pub fn query(op: &Operation) -> Option<(&'static str, Vec<Option<String>>)> {
+    let pair =
+        |schema: &String, relation: &String| vec![Some(schema.clone()), Some(relation.clone())];
+    Some(match op{
+        Operation::Databases=>("SELECT oid::text AS oid, datname AS name, pg_catalog.pg_encoding_to_char(encoding) AS encoding, datcollate AS collation FROM pg_catalog.pg_database WHERE datallowconn AND NOT datistemplate AND pg_catalog.has_database_privilege(oid,'CONNECT') ORDER BY datname",vec![]),
+        Operation::Schemas=>("SELECT oid::text AS oid, nspname AS name FROM pg_catalog.pg_namespace WHERE left(nspname,3)<>'pg_' AND nspname<>'information_schema' AND pg_catalog.has_schema_privilege(oid,'USAGE') ORDER BY nspname",vec![]),
+        Operation::Relations{schema}=>("SELECT c.oid::text AS oid,c.relname AS name,c.relkind::text AS kind,pg_catalog.obj_description(c.oid,'pg_class') AS comment FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relkind IN ('r','p','v','m','f') AND pg_catalog.has_schema_privilege(n.oid,'USAGE') AND pg_catalog.has_table_privilege(c.oid,'SELECT') ORDER BY c.relname",vec![Some(schema.clone())]),
+        Operation::Columns{schema,relation}=>(COLUMNS,pair(schema,relation)),
+        Operation::Indexes{schema,relation}=>("SELECT ci.relname AS name,i.indisprimary AS primary,i.indisunique AS unique,i.indisvalid AS valid,pg_catalog.pg_get_indexdef(i.indexrelid) AS definition FROM pg_catalog.pg_index i JOIN pg_catalog.pg_class c ON c.oid=i.indrelid JOIN pg_catalog.pg_class ci ON ci.oid=i.indexrelid JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=$2 AND pg_catalog.has_schema_privilege(n.oid,'USAGE') AND pg_catalog.has_table_privilege(c.oid,'SELECT') ORDER BY ci.relname",pair(schema,relation)),
+        Operation::View{schema,relation}=>("SELECT c.relname AS name,c.relkind::text AS kind,pg_catalog.pg_get_viewdef(c.oid,true) AS definition FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=$2 AND c.relkind IN ('v','m') AND pg_catalog.has_schema_privilege(n.oid,'USAGE') AND pg_catalog.has_table_privilege(c.oid,'SELECT')",pair(schema,relation)),
+        _=>return None,
+    })
+}

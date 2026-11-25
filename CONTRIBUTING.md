@@ -48,7 +48,7 @@ Output is under `src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis/`. 
 Apple Silicon/macOS 15+ is supported. Signed distribution builds include the native hosts helper and user-keychain trust features:
 
 ```sh
-python3 scripts/build_macos_hosts_helper.py --team-id 4Q27NQ2UAF --output artifacts/hosts-helper
+python3 scripts/build_macos_hosts_helper.py --team-id "${FAIRWAY_APPLE_TEAM_ID:?Set your Apple Developer team ID}" --output artifacts/hosts-helper
 npm run tauri -- build --bundles app --features native-macos-trust,native-macos-hosts --no-sign
 ditto artifacts/hosts-helper/Library 'src-tauri/target/release/bundle/macos/Fairway XMP.app/Contents/Library'
 python3 scripts/verify_macos_permissions.py 'src-tauri/target/release/bundle/macos/Fairway XMP.app'

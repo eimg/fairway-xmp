@@ -21,6 +21,13 @@ jobs:
         with:
           python-version: '3.12'
       - run: python scripts/release_candidate.py version
+      - name: Fail early until fork signing and runtime configuration is ready
+        env:
+          FAIRWAY_APPLE_TEAM_ID: ${{ vars.FAIRWAY_APPLE_TEAM_ID }}
+          APPLE_SIGNING_IDENTITY: ${{ vars.APPLE_SIGNING_IDENTITY }}
+          APPLE_INSTALLER_IDENTITY: ${{ vars.APPLE_INSTALLER_IDENTITY }}
+          FAIRWAY_POSTGRES_RUNTIME_RUN: ${{ vars.FAIRWAY_POSTGRES_RUNTIME_RUN }}
+        run: python scripts/check_release_setup.py --updater --apple --postgres
   ui:
     needs: identity
     uses: ./.github/workflows/ui-review.yml

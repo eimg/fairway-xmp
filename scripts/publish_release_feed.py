@@ -9,6 +9,8 @@ from release_versions import REPOSITORY, channel, version_key
 
 
 def promote_feed(repo, tag, root, feed_tag):
+    if repo != REPOSITORY:
+        raise ValueError('Feed promotion is restricted to the personal fork')
     version = tag.removeprefix('v')
     release_channel = channel(version)
     if feed_tag not in ('beta-feed', 'stable-feed') or (feed_tag == 'stable-feed' and release_channel != 'stable'):

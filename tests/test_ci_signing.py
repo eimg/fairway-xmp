@@ -230,6 +230,19 @@ class WorkflowSigningBoundaryTests(unittest.TestCase):
         self.assertNotRegex(jobs['publish'], r'cargo |rust-toolchain|rust-cache')
         self.assertIn('FAIRWAY_UPDATE_VERIFIER:', jobs['publish'])
 
+    def test_postgresql_is_signed_before_pinning_and_compilation_without_running_payloads_with_credentials(self):
+        jobs = self.jobs('postgresql-runtime.yml')
+        self.assertNotIn('${{ secrets.', jobs['build'])
+        signer = jobs['sign']
+        self.assertNotRegex(signer, r'cargo (?:build|run|test)|rust-cache|rust-toolchain')
+        self.assertIn('verify_signing_source.py --expected', signer)
+        window = signer[signer.index('run: bash scripts/import_apple_credentials.sh'):signer.index('run: bash scripts/cleanup_apple_credentials.sh')]
+        self.assertIn('postgresql_release.py sign', window)
+        self.assertNotRegex(window, r'/bin/(postgres|initdb|psql)|cargo |npm ')
+        macos = self.jobs('macos-test-build.yml')
+        self.assertLess(macos['build'].index('postgresql_release.py stage'), macos['build'].index('npm run tauri -- build'))
+        self.assertGreater(macos['package'].index('artifacts/postgresql-tests postgresql'), macos['package'].index('run: bash scripts/cleanup_apple_credentials.sh'))
+
 
 if __name__ == '__main__':
     unittest.main()
