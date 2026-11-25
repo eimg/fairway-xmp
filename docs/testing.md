@@ -142,3 +142,8 @@ See [Stage 3 reproduction/results](postgresql-stage3-verification.md) for catalo
 exact-type rows, read-only/write consent, bounds, timeout, cancellation/owner-loss
 and restricted external-role fixtures. Signed runtime/Keychain acceptance remains
 unverified. No graphical PostgreSQL workspace is implemented or simulated here.
+
+The current uncommitted graphical workspace and real Summit 17.12 connection work
+are covered separately in [native workspace acceptance](postgresql-native-acceptance.md).
+Use its headless native check for real database evidence and its isolated launch
+commands for operator Mac GUI acceptance. `dev:ui` remains simulated throughout.

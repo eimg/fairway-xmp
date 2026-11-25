@@ -308,10 +308,26 @@ def main():
     shutil.copyfile(ROOT / 'runtime-manifest.json', stage / 'runtime-manifest.json')
     shutil.copyfile(Path(__file__), stage / 'package_sources.py')
     shutil.copyfile(ROOT / 'scripts/fnm_sources.py', stage / 'fnm_sources.py')
+    postgres = ROOT / 'src-tauri/resources/runtime/postgresql'
+    if postgres.exists():
+        from postgresql_release import verify_payload, PIN
+        verify_payload(postgres, json.loads(PIN.read_text()), bundled=True)
+        pg_sources = stage / 'postgresql'
+        pg_sources.mkdir(exist_ok=True)
+        for path in (postgres / 'licenses').iterdir():
+            shutil.copyfile(path, pg_sources / path.name)
+        for path in (ROOT / 'postgresql-source.lock.json', ROOT / 'scripts/prepare_postgresql_runtime.py', PIN):
+            shutil.copyfile(path, pg_sources / path.name)
+        shutil.copyfile(postgres / 'manifest.json', pg_sources / 'manifest.json')
     (stage / 'README.md').write_text(f'''# Fairway XMP {version}: bundled-tool source
 
 This archive accompanies the Windows x64 and macOS ARM64 installers.
 Fairway XMP source commit: {commit}.
+
+When PostgreSQL is bundled, `postgresql/` contains its unchanged official source
+archive, notices, source lock, preparation recipe, final manifest and reviewed pin.
+Its signed runtime is prepared separately before application compilation; see
+the application source's docs/fork-release.md for the signing and pinning sequence.
 
 `upstream/` contains source distributions for every bundled Homebrew component,
 MySQL (also used by the official Windows distribution), Nginx, phpMyAdmin, Composer,

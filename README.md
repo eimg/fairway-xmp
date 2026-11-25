@@ -1,5 +1,9 @@
 # Fairway XMP
 
+Personal fork: `RizzRioo06/fairway-xmp`. **0.2.0-rc.1 is in preparation and has
+not been published.** See [implemented features and release setup](docs/fork-release.md).
+The upstream downloads below do not contain this branch's PostgreSQL workspace.
+
 A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. Run your web server and database from one control panel, write code in your preferred editor, and manage your data with the built-in database browser or phpMyAdmin.
 
 ![Fairway XMP on macOS showing the Environment page with services stopped](docs/images/control-panel.png)
@@ -8,7 +12,7 @@ A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. 
 
 ## Downloads
 
-Latest published release: **[v0.1.0](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0)**.
+Upstream baseline release: **[v0.1.0](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0)**.
 
 | Computer | Requirements | Download |
 | --- | --- | --- |
@@ -202,6 +206,6 @@ The uninstaller removes the app and its command-line integration. Your projects 
 
 See the [documentation index](docs/README.md) for development, testing, releases and maintenance.
 
-For problems or suggestions, [open an issue](https://github.com/eimg/fairway-xmp/issues). Include your operating system, what you tried, and any error shown in Fairway XMP.
+For problems or suggestions about this fork, [open an issue](https://github.com/RizzRioo06/fairway-xmp/issues). Include your operating system, what you tried, and any error shown in Fairway XMP.
 
 Fairway XMP’s application code uses the [MIT license](LICENSE). Included tools have [their own licenses](THIRD_PARTY_NOTICES.md). Release checksums and bundled-tool sources are available on the [release page](https://github.com/eimg/fairway-xmp/releases/tag/v0.1.0). For contributing to the app, see [Contributing](CONTRIBUTING.md).

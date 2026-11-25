@@ -443,9 +443,9 @@ pub fn open(layout: &Layout, target: &str, ports: &crate::config::Ports) -> Resu
         "website" => format!("http://127.0.0.1:{website}/"),
         "phpmyadmin" => format!("http://127.0.0.1:{}/", ports.phpmyadmin),
         "mail" => format!("http://127.0.0.1:{}/", ports.mail),
-        "releases" => "https://github.com/eimg/fairway-xmp/releases".into(),
-        "source" => "https://github.com/eimg/fairway-xmp".into(),
-        "issues" => "https://github.com/eimg/fairway-xmp/issues".into(),
+        "releases" => "https://github.com/RizzRioo06/fairway-xmp/releases".into(),
+        "source" => "https://github.com/RizzRioo06/fairway-xmp".into(),
+        "issues" => "https://github.com/RizzRioo06/fairway-xmp/issues".into(),
         name if name.starts_with("project:") => layout
             .registered_projects()?
             .into_iter()

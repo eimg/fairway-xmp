@@ -58,14 +58,25 @@ identity and publishes exclusively. Installed files are rechecked before control
 and health. An occupied or unowned runtime is never overwritten or adopted.
 The server's runtime lease stays held until its owned child exits.
 
-**Release blockers:** normal release workflows do not yet package this independent
-runtime. Distribution must sign its nested code with the authorized team **before**
-computing the final manifest/pin and compiling the app; signing after pinning changes
-hashes and is refused. The final signed/hardened app, Keychain access, notarization,
-installer and supported older macOS versions need qualification. Do not distribute
-the development ad-hoc payload as a verified release or disable library validation
-to bypass this boundary. Existing PHP/MySQL/Node runtime locks remain unchanged.
+**Prepared release path:** `postgresql-runtime.yml` separates source building and
+credential-only runtime signing. Review/commit the resulting pin before the macOS
+candidate stages that exact artifact and compiles the app. Final app signing
+preserves the pinned runtime bytes. See [fork setup](fork-release.md).
+
+**Remaining blockers:** no fork signing credentials are configured; the current
+pin still identifies the development payload. The pipeline has not run with real
+Developer ID signing. Signed/hardened app, Keychain, notarization, installer and
+older macOS execution evidence remain unverified. Do not distribute the development
+ad-hoc payload as a verified release or disable library validation. Existing
+PHP/MySQL/Node runtime locks remain unchanged.
 
 The rejected Homebrew-bottle candidate passed version/link checks but failed real
 `initdb` because of embedded Homebrew catalog/timezone paths. It is not an accepted
 payload; the official source build removes that packaging dependency.
+
+The missing development payload was rebuilt on 2026-11-24 with the same source
+lock/configuration and reviewed with isolated native fixtures plus real external
+17.12 access. The development manifest pin changed with compiler/SDK bytes; see
+[current native acceptance](postgresql-native-acceptance.md) for its hash, limits
+and isolated GUI commands. The 18.6 client pin does not require an external server
+upgrade. Managed cluster version/identity checks remain exact.

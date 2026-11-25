@@ -49,10 +49,17 @@ pub fn hash(b: &[u8]) -> String {
         .map(|v| format!("{v:02x}"))
         .collect()
 }
-fn manifest(dir: &Dir) -> Result<(Manifest, Vec<u8>, Pin)> {
+fn read(dir: &Dir, name: &str, limit: u64, owned: bool) -> Result<Vec<u8>> {
+    if owned {
+        dir.read(name, limit)
+    } else {
+        dir.read_bundle(name, limit)
+    }
+}
+fn manifest(dir: &Dir, owned: bool) -> Result<(Manifest, Vec<u8>, Pin)> {
     let pin: Pin = serde_json::from_str(include_str!("runtime-pin.json"))
         .map_err(|_| failure("Invalid runtime pin"))?;
-    let bytes = dir.read("manifest.json", 1024 * 1024)?;
+    let bytes = read(dir, "manifest.json", 1024 * 1024, owned)?;
     if hash(&bytes) != pin.manifest_sha256 {
         return Err(failure(
             "PostgreSQL payload manifest does not match the reviewed pin",
@@ -106,7 +113,11 @@ fn verify(dir: &Dir, m: &Manifest, owned: bool) -> Result<()> {
         if depth > 32 {
             return Err(failure("Oversized runtime tree"));
         }
-        dir.private()?;
+        if owned {
+            dir.private()?;
+        } else {
+            dir.bundle_directory()?;
+        }
         for (name, mode) in dir.entries()? {
             *count += 1;
             if *count > 8192 {
@@ -128,7 +139,9 @@ fn verify(dir: &Dir, m: &Manifest, owned: bool) -> Result<()> {
                     .files
                     .get(&relative)
                     .ok_or_else(|| failure("Unlisted runtime file"))?;
-                if mode & 0o077 != 0 || (mode & 0o100 != 0) != entry.executable {
+                if mode & (if owned { 0o077 } else { 0o7022 }) != 0
+                    || (mode & 0o100 != 0) != entry.executable
+                {
                     return Err(failure("Unsafe runtime file permissions"));
                 }
             } else {
@@ -143,7 +156,7 @@ fn verify(dir: &Dir, m: &Manifest, owned: bool) -> Result<()> {
             return Err(failure("Oversized PostgreSQL runtime file"));
         }
         let (p, leaf) = parent(dir, name, false)?;
-        let b = p.read(&leaf, e.bytes)?;
+        let b = read(&p, &leaf, e.bytes, owned)?;
         if b.len() as u64 != e.bytes || hash(&b) != e.sha256 {
             return Err(failure("PostgreSQL runtime integrity check failed"));
         }
@@ -157,13 +170,13 @@ pub fn provision(base: &Dir, base_path: &Path, source: &Path) -> Result<Runtime>
         return installed(base, base_path);
     }
     let src = Dir::absolute(source)?;
-    let (m, b, pin) = manifest(&src)?;
+    let (m, b, pin) = manifest(&src, false)?;
     verify(&src, &m, false)?;
     let stage = format!(".runtime-{:032x}", rand::random::<u128>());
     let dir = base.make(&stage)?;
     for (name, e) in &m.files {
         let (s, leaf) = parent(&src, name, false)?;
-        let bytes = s.read(&leaf, e.bytes)?;
+        let bytes = s.read_bundle(&leaf, e.bytes)?;
         if hash(&bytes) != e.sha256 {
             return Err(failure("Source payload changed"));
         }
@@ -182,6 +195,7 @@ pub fn provision(base: &Dir, base_path: &Path, source: &Path) -> Result<Runtime>
         false,
     )?;
     verify(&dir, &m, true)?;
+    src.assert_path(source)?;
     base.assert_path(base_path)?;
     base.publish(&stage, &name)?;
     installed(base, base_path)
@@ -191,7 +205,7 @@ pub fn installed(base: &Dir, base_path: &Path) -> Result<Runtime> {
     let path = base_path.join(format!("runtime-{VERSION}"));
     let dir = Dir::absolute(&path)?;
     dir.private()?;
-    let (m, _, pin) = manifest(&dir)?;
+    let (m, _, pin) = manifest(&dir, true)?;
     let owner: Owner = serde_json::from_slice(&dir.read("owner.json", 4096)?)
         .map_err(|_| failure("Unowned PostgreSQL runtime"))?;
     if owner.schema_version != 1

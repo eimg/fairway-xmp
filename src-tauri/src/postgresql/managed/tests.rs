@@ -51,6 +51,28 @@ fn fixture() -> (Scratch, Controller, Arc<MemoryVault>) {
     (s, c, v)
 }
 #[test]
+fn bundle_source_reading_does_not_relax_private_managed_storage() {
+    let s = Scratch::new();
+    fs::set_permissions(&s.0, fs::Permissions::from_mode(0o755)).unwrap();
+    let dir = Dir::absolute(&s.0).unwrap();
+    assert!(dir.private().is_err());
+    dir.bundle_directory().unwrap();
+    let path = s.0.join("source");
+    fs::write(&path, b"pinned bytes").unwrap();
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o444)).unwrap();
+    assert_eq!(dir.read_bundle("source", 100).unwrap(), b"pinned bytes");
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o666)).unwrap();
+    assert!(dir.read_bundle("source", 100).is_err());
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o444)).unwrap();
+    fs::hard_link(&path, s.0.join("alias")).unwrap();
+    assert!(dir.read_bundle("source", 100).is_err());
+    fs::remove_file(s.0.join("alias")).unwrap();
+    symlink(&path, s.0.join("link")).unwrap();
+    assert!(dir.read_bundle("link", 100).is_err());
+    fs::set_permissions(&s.0, fs::Permissions::from_mode(0o777)).unwrap();
+    assert!(dir.bundle_directory().is_err());
+}
+#[test]
 fn private_operations_refuse_links_foreign_publication_and_changed_identity() {
     let s = Scratch::new();
     let d = Dir::absolute(&s.0).unwrap();

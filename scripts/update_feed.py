@@ -5,13 +5,13 @@ import json
 from pathlib import Path
 from urllib.parse import quote
 from release_candidate import verify_files
-from release_versions import version_key
+from release_versions import REPOSITORY, version_key
 
 
 def generate(manifest, directories, repo, notes, published_at=None):
     version = manifest['version']
     version_key(version)
-    if repo != 'eimg/fairway-xmp': raise ValueError('Unexpected release repository')
+    if repo != REPOSITORY: raise ValueError('Unexpected release repository')
     if manifest.get('signing') != {'macos-arm64': 'apple-notarized', 'windows-x64': 'updater-only', 'linux-x86_64': 'unsigned'}:
         raise ValueError('Missing expected release signing policy')
     platforms = {}

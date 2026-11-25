@@ -91,6 +91,19 @@ impl Dir {
         }
         Ok(())
     }
+    // A macOS installer owns bundle resources as root. Only the pinned source
+    // reader may accept those public, non-writable resources; managed storage
+    // continues to require this user's private files and directories.
+    pub fn bundle_directory(&self) -> Result<()> {
+        let m = self
+            .0
+            .metadata()
+            .map_err(|_| failure("Missing bundle directory"))?;
+        if !m.is_dir() || (!owned(&m) && m.uid() != 0) || m.mode() & 0o7022 != 0 {
+            return Err(failure("Unsafe bundled PostgreSQL directory"));
+        }
+        Ok(())
+    }
     pub fn assert_path(&self, path: &Path) -> Result<()> {
         if Self::absolute(path)?.identity()? != self.identity()? {
             return Err(failure("Managed directory identity changed"));
@@ -149,6 +162,12 @@ impl Dir {
         }
     }
     pub fn read(&self, value: &str, limit: u64) -> Result<Vec<u8>> {
+        self.read_checked(value, limit, false)
+    }
+    pub fn read_bundle(&self, value: &str, limit: u64) -> Result<Vec<u8>> {
+        self.read_checked(value, limit, true)
+    }
+    fn read_checked(&self, value: &str, limit: u64, bundle: bool) -> Result<Vec<u8>> {
         let n = name(value)?;
         let mut f = fd(unsafe {
             libc::openat(
@@ -160,7 +179,12 @@ impl Dir {
         let m = f
             .metadata()
             .map_err(|_| failure("Cannot inspect managed file"))?;
-        if !m.is_file() || m.nlink() != 1 || !owned(&m) || m.len() > limit {
+        if !m.is_file()
+            || m.nlink() != 1
+            || (!owned(&m) && !(bundle && m.uid() == 0))
+            || (bundle && m.mode() & 0o7022 != 0)
+            || m.len() > limit
+        {
             return Err(failure("Unsafe or oversized managed file"));
         }
         let mut b = Vec::new();

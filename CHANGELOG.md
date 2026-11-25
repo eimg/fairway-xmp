@@ -4,6 +4,14 @@ Past entries record released changes; they are not current development or releas
 
 ## Unreleased
 
+- Prepare personal fork candidate 0.2.0-rc.1, including the macOS PostgreSQL
+  explorer/SQL workspace and the existing Node Projects workspace.
+- Route updater/publication/help links to the personal fork; require owner signing
+  configuration and reviewed PostgreSQL signed-runtime pinning before compilation.
+- Preserve pinned PostgreSQL bytes during final app signing and support safe reads
+  of root-owned installer resources without relaxing private managed storage.
+- Release credentials, signed artifacts and candidate CI results are still pending.
+
 ## 0.1.0 — 2026-10-27
 
 - Release the first stable version for Windows x64, Apple Silicon macOS and Linux x86_64, carrying forward RC 5's features and pinned runtimes. Stable desktop builds use the stable update feed.

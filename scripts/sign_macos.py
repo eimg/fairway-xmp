@@ -7,6 +7,7 @@ import plistlib
 import subprocess
 import sys
 from prepare_runtime import macho
+from postgresql_release import verify_payload, verify_code, PIN, read
 
 ENTITLEMENTS = Path(__file__).resolve().parents[1] / 'packaging/macos/php.entitlements.plist'
 
@@ -34,8 +35,10 @@ def signing_targets(app):
     main_binary = app / 'Contents/MacOS' / info['CFBundleExecutable']
     # Signing the app seals its main executable. Sign it only at that final
     # stage, after all nested code and resources are ready.
+    postgres = app / 'Contents/Resources/runtime/postgresql'
     return [file for file in app.rglob('*')
-            if file != main_binary and not file.is_symlink() and macho(file)]
+            if file != main_binary and not file.is_relative_to(postgres)
+            and not file.is_symlink() and macho(file)]
 
 
 def main():
@@ -50,10 +53,21 @@ def main():
     # Snapshot before signing creates transient files. Symlink aliases are
     # skipped; seal the containing app after every code file has succeeded.
     files = signing_targets(app)
+    postgres = app / 'Contents/Resources/runtime/postgresql'
+    if postgres.exists() or postgres.is_symlink():
+        # These bytes were signed before the app was compiled against their pin.
+        # Re-signing them here would invalidate the compiled integrity boundary.
+        match = re.fullmatch(r'Developer ID Application: .+ \(([A-Z0-9]{10})\)', identity)
+        if not match:
+            raise ValueError('Pinned PostgreSQL requires a Developer ID Application identity')
+        verify_payload(postgres, read(PIN), bundled=True)
+        verify_code(postgres, match[1])
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(sign, files))
     sign(app)
     subprocess.run(['codesign', '--verify', '--deep', '--strict', '--verbose=2', str(app)], check=True)
+    if postgres.exists():
+        verify_payload(postgres, read(PIN), bundled=True)
 
 
 if __name__ == '__main__': main()

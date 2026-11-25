@@ -4,7 +4,7 @@ import { Maximize2, X } from 'lucide-react';
 import { useModalFocus } from './modal-focus';
 import './workspace.css';
 
-type WorkspaceId = 'node-logs' | 'terminal' | 'logs' | 'mail' | 'data';
+type WorkspaceId = 'postgres' | 'node-logs' | 'terminal' | 'logs' | 'mail' | 'data';
 type Expanded = { id: WorkspaceId; height: number; trigger: HTMLElement | null };
 const Context = createContext<{ expanded: Expanded | null; maximize: (id: WorkspaceId) => void; restore: () => void } | null>(null);
 

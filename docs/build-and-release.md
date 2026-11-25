@@ -2,6 +2,10 @@
 
 Builds and publication are separate actions. A successful automated candidate is ready to publish when the owner authorizes it. Device testing is optional. There is no manual acceptance JSON, test-attestation phase or prerelease scope freeze.
 
+For this personal fork, complete [fork release setup](fork-release.md) first.
+Preflight refuses inherited teacher credentials; the separately signed PostgreSQL
+artifact must match the committed runtime pin before app compilation.
+
 ## Build workflows
 
 Run **Release candidate** (`release-candidate.yml`) from the intended commit, or push a `candidate-*` tag. It combines browser checks and the Windows, Apple Silicon macOS and Linux installer workflows at the same source commit. Individual platform workflows can also produce development installers or standalone test applications without publishing a release.
@@ -46,7 +50,10 @@ Windows installers currently lack Authenticode signing. Desktop updater payloads
 | `APPLE_CERTIFICATES_P12`, `APPLE_CERTIFICATES_PASSWORD` | Release application/installer identities |
 | `APPLE_API_PRIVATE_KEY`, `APPLE_API_KEY`, `APPLE_API_ISSUER` | Apple notarization |
 
-Keep private keys and exported identities outside source and artifacts. The configured Apple team is `4Q27NQ2UAF`; local signing can use the validated `fairway-notary` profile. `scripts/package_macos.sh` accepts `APPLE_SIGNING_IDENTITY`, `APPLE_INSTALLER_IDENTITY` and `APPLE_NOTARY_PROFILE`.
+Keep private keys and exported identities outside source and artifacts. Configure
+your own Apple team and Developer ID identities using the fork guide.
+`scripts/package_macos.sh` accepts `FAIRWAY_APPLE_TEAM_ID`, `APPLE_SIGNING_IDENTITY`,
+`APPLE_INSTALLER_IDENTITY` and `APPLE_NOTARY_PROFILE`.
 
 Desktop compilation and signing use separate runners. Builders have no signing credentials; packaging imports credentials only for signing, disables npm lifecycle scripts, restores no build caches, and removes the temporary Apple keychain before executing bundled code. `FAIRWAY_DEFER_RUNTIME_CHECKS` and `FAIRWAY_DEFER_UPDATER_SIGNATURE` keep bundled execution and updater signing out of the Apple-credential step. Updater keys are supplied only to the direct signing command.
 

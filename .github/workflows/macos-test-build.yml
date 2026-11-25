@@ -38,6 +38,13 @@ on:
 
 permissions:
   contents: read
+  actions: read
+
+env:
+  FAIRWAY_APPLE_TEAM_ID: ${{ vars.FAIRWAY_APPLE_TEAM_ID }}
+  APPLE_SIGNING_IDENTITY: ${{ vars.APPLE_SIGNING_IDENTITY }}
+  APPLE_INSTALLER_IDENTITY: ${{ vars.APPLE_INSTALLER_IDENTITY }}
+  FAIRWAY_POSTGRES_RUNTIME_RUN: ${{ vars.FAIRWAY_POSTGRES_RUNTIME_RUN }}
 
 jobs:
   build:
@@ -62,6 +69,9 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: Check fork release configuration
+        if: inputs.signed_release
+        run: python scripts/check_release_setup.py --updater --apple --postgres
       - uses: ./.github/actions/configure-macos-build
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -92,6 +102,38 @@ jobs:
         id: downloads
       - name: Stage verified macOS runtimes
         run: python scripts/prepare_runtime.py
+      - name: Download the reviewed pre-signed PostgreSQL runtime
+        if: inputs.signed_release
+        uses: actions/download-artifact@v7
+        with:
+          name: postgresql-signed
+          run-id: ${{ vars.FAIRWAY_POSTGRES_RUNTIME_RUN }}
+          github-token: ${{ github.token }}
+          path: artifacts/postgresql-input
+      - name: Verify signed runtime against the committed pin before compilation
+        if: inputs.signed_release
+        run: python scripts/postgresql_release.py stage --archive artifacts/postgresql-input/postgresql-signed.tar.gz --output src-tauri/resources/runtime/postgresql --team-id "$FAIRWAY_APPLE_TEAM_ID"
+      - name: Verify isolated PostgreSQL lifecycle, queries and cancellation
+        if: inputs.signed_release
+        env:
+          FAIRWAY_TEST_POSTGRES_PAYLOAD: ${{ github.workspace }}/src-tauri/resources/runtime/postgresql
+          FAIRWAY_TEST_POSTGRES_WORKER: ${{ github.workspace }}/src-tauri/target/debug/examples/postgresql_health_worker
+        run: |
+          cargo build --manifest-path src-tauri/Cargo.toml --locked --no-default-features --features terminal --example postgresql_health_worker
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features --features terminal --lib postgresql -- --include-ignored --test-threads=1
+      - name: Preserve the test harness for final signed-app worker verification
+        if: inputs.signed_release
+        run: |
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features --features terminal --lib --no-run --message-format=json > artifacts/postgresql-test-build.json
+          python - <<'PY'
+          import json, shutil
+          from pathlib import Path
+          messages = [json.loads(line) for line in Path('artifacts/postgresql-test-build.json').read_text().splitlines()]
+          executables = [m['executable'] for m in messages if m.get('reason') == 'compiler-artifact' and m.get('profile', {}).get('test') and m.get('executable')]
+          if len(executables) != 1:
+              raise ValueError('Expected exactly one native library test harness')
+          shutil.copy2(executables[0], 'artifacts/postgresql-tests')
+          PY
       - name: Verify native fnm and isolated Node activation
         run: cargo run --manifest-path src-tauri/Cargo.toml --example node_tools_smoke --no-default-features --features terminal --locked -- "$PWD/.runtime-work/fnm-check"
       - name: Collect exact sources before signing or installer tests
@@ -152,7 +194,7 @@ jobs:
           CARGO_TERM_COLOR: never
         run: |
           cargo fetch --manifest-path src-tauri/Cargo.toml --locked --target aarch64-apple-darwin
-          python scripts/build_macos_hosts_helper.py --team-id 4Q27NQ2UAF --output artifacts/hosts-helper
+          python scripts/build_macos_hosts_helper.py --team-id "${FAIRWAY_APPLE_TEAM_ID:-AAAAAAAAAA}" --output artifacts/hosts-helper
       - name: Build release app with updater
         if: inputs.signed_release
         run: |
@@ -169,7 +211,7 @@ jobs:
         run: |
           extra=()
           if [ '${{ inputs.signed_release }}' = true ]; then
-            extra=(src-tauri/target/release/examples/updater_probe)
+            extra=(src-tauri/target/release/examples/updater_probe artifacts/postgresql-tests)
           fi
           tar -czf artifacts/macos-build-inputs.tar.gz 'src-tauri/target/release/bundle/macos/Fairway XMP.app' src-tauri/target/release/examples/installer_probe .runtime-work/baseline-macos.pkg artifacts/sources-*/fairway-xmp-*-bundled-tool-sources.tar.gz "${extra[@]}"
       - uses: actions/upload-artifact@v6
@@ -232,8 +274,6 @@ jobs:
           FAIRWAY_SIGNED_RELEASE: '1'
           FAIRWAY_DEFER_RUNTIME_CHECKS: '1'
           FAIRWAY_DEFER_UPDATER_SIGNATURE: '1'
-          APPLE_SIGNING_IDENTITY: 'Developer ID Application: Ei Maung (4Q27NQ2UAF)'
-          APPLE_INSTALLER_IDENTITY: 'Developer ID Installer: Ei Maung (4Q27NQ2UAF)'
         run: sh scripts/package_macos.sh
       - name: Remove temporary signing credentials before executing bundled code
         if: ${{ always() && inputs.signed_release }}
@@ -249,8 +289,16 @@ jobs:
         run: |
           app='src-tauri/target/release/bundle/macos/Fairway XMP.app'
           python scripts/check_signed_php.py "$app"
-          python scripts/verify_macos_permissions.py "$app" --team-id 4Q27NQ2UAF
+          python scripts/verify_macos_permissions.py "$app" --team-id "$FAIRWAY_APPLE_TEAM_ID"
+          python scripts/postgresql_release.py verify --payload "$app/Contents/Resources/runtime/postgresql" --team-id "$FAIRWAY_APPLE_TEAM_ID"
           "$app/Contents/MacOS/fairway" --test-native-hosts-registration
+      - name: Verify final signed-app PostgreSQL workers with disposable clusters
+        if: inputs.signed_release
+        run: |
+          app="$PWD/src-tauri/target/release/bundle/macos/Fairway XMP.app"
+          FAIRWAY_TEST_POSTGRES_PAYLOAD="$app/Contents/Resources/runtime/postgresql" \
+          FAIRWAY_TEST_POSTGRES_WORKER="$app/Contents/MacOS/fairway" \
+            artifacts/postgresql-tests postgresql --include-ignored --test-threads=1
       - name: Package unsigned development installer
         if: ${{ !inputs.signed_release }}
         run: sh scripts/package_macos.sh
@@ -361,6 +409,16 @@ jobs:
       - uses: ./.github/actions/restore-runtime-downloads
         id: downloads
       - run: python scripts/prepare_runtime.py
+      - name: Check fork signing and PostgreSQL configuration
+        run: python scripts/check_release_setup.py --apple --postgres
+      - uses: actions/download-artifact@v7
+        with:
+          name: postgresql-signed
+          run-id: ${{ vars.FAIRWAY_POSTGRES_RUNTIME_RUN }}
+          github-token: ${{ github.token }}
+          path: artifacts/postgresql-input
+      - name: Stage exact signed PostgreSQL runtime before standalone compilation
+        run: python scripts/postgresql_release.py stage --archive artifacts/postgresql-input/postgresql-signed.tar.gz --output src-tauri/resources/runtime/postgresql --team-id "$FAIRWAY_APPLE_TEAM_ID"
       - uses: actions/cache/save@v5
         if: steps.downloads.outputs.cache-hit != 'true'
         with:
@@ -373,7 +431,7 @@ jobs:
       - name: Build native hosts helper
         env:
           CARGO_TERM_COLOR: never
-        run: python scripts/build_macos_hosts_helper.py --team-id 4Q27NQ2UAF --output artifacts/hosts-helper
+        run: python scripts/build_macos_hosts_helper.py --team-id "$FAIRWAY_APPLE_TEAM_ID" --output artifacts/hosts-helper
       - name: Build standalone desktop app with native permissions
         run: |
           python - <<'PY'
@@ -432,8 +490,8 @@ jobs:
       - name: Sign, notarize, staple and verify standalone app
         run: |
           app='src-tauri/target/release/bundle/macos/Fairway XMP.app'
-          python scripts/sign_macos.py "$app" 'Developer ID Application: Ei Maung (4Q27NQ2UAF)'
-          codesign --verify --strict '-R=anchor apple generic and identifier "dev.fairway.environment.hosts-helper" and certificate leaf[subject.OU] = "4Q27NQ2UAF"' "$app/Contents/Library/HelperTools/dev.fairway.environment.hosts-helper"
+          python scripts/sign_macos.py "$app" "$APPLE_SIGNING_IDENTITY"
+          codesign --verify --strict "-R=anchor apple generic and identifier \"dev.fairway.environment.hosts-helper\" and certificate leaf[subject.OU] = \"$FAIRWAY_APPLE_TEAM_ID\"" "$app/Contents/Library/HelperTools/dev.fairway.environment.hosts-helper"
           mkdir -p artifacts/macos-standalone
           ditto -c -k --keepParent "$app" artifacts/macos-notary-upload.zip
           xcrun notarytool submit artifacts/macos-notary-upload.zip --keychain-profile "$APPLE_NOTARY_PROFILE" --keychain "$APPLE_NOTARY_KEYCHAIN" --wait --timeout 30m | tee artifacts/macos-standalone/notarization.txt

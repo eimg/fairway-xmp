@@ -434,10 +434,10 @@ pub fn execute(e: &Envelope, cancel: Arc<AtomicBool>) -> Result<Output> {
         {
             return Err(fail(Code::ConnectionFailed, "Database identity mismatch"));
         }
-        if r[2].as_deref() != Some("180006") {
+        if !supported_server(r[2].as_deref(), e.managed.is_some()) {
             return Err(fail(
                 Code::Unavailable,
-                "Only PostgreSQL 18.6 is qualified by this backend fixture",
+                "Supported servers: external PostgreSQL 17.x or 18.6; managed PostgreSQL 18.6",
             ));
         }
         if let Some(expected) = &e.managed {
@@ -520,4 +520,44 @@ pub fn execute(e: &Envelope, cancel: Arc<AtomicBool>) -> Result<Output> {
         }
         e
     })
+}
+
+// External catalog operations use the PostgreSQL 17 catalog surface. The client
+// payload and managed cluster identity remain independently pinned to 18.6.
+fn supported_server(version: Option<&str>, managed: bool) -> bool {
+    let Some(version) = version else { return false };
+    if version == "180006" {
+        return true;
+    }
+    !managed
+        && version.len() == 6
+        && version.bytes().all(|b| b.is_ascii_digit())
+        && version
+            .parse::<u32>()
+            .is_ok_and(|v| (170000..180000).contains(&v))
+}
+
+#[cfg(test)]
+mod version_tests {
+    use super::supported_server;
+
+    #[test]
+    fn external_postgresql_17_does_not_relax_managed_or_unknown_versions() {
+        for version in ["170000", "170012", "179999", "180006"] {
+            assert!(supported_server(Some(version), false));
+            assert_eq!(supported_server(Some(version), true), version == "180006");
+        }
+        for version in [
+            None,
+            Some("160012"),
+            Some("180007"),
+            Some("190000"),
+            Some("17.12"),
+            Some("+170012"),
+            Some("0170012"),
+        ] {
+            assert!(!supported_server(version, false));
+            assert!(!supported_server(version, true));
+        }
+    }
 }
