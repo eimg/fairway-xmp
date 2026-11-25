@@ -2,6 +2,7 @@
 
 Personal fork: `RizzRioo06/fairway-xmp`. **0.2.0-rc.1 is in preparation and has
 not been published.** See [implemented features and release setup](docs/fork-release.md).
+For friends without paid Apple membership, see [free Mac/Windows sharing builds](docs/free-sharing.md).
 The upstream downloads below do not contain this branch's PostgreSQL workspace.
 
 A PHP development environment for Windows, Apple Silicon Macs and Linux x86_64. Run your web server and database from one control panel, write code in your preferred editor, and manage your data with the built-in database browser or phpMyAdmin.

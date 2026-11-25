@@ -1,7 +1,47 @@
-use std::{env, path::PathBuf, process::Command};
+use std::{env, fs, path::PathBuf, process::Command};
 
 fn main() {
     let root = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("..");
+    println!("cargo:rerun-if-env-changed=FAIRWAY_DISTRIBUTION");
+    let distribution = env::var("FAIRWAY_DISTRIBUTION").unwrap_or_else(|_| "standard".into());
+    assert!(
+        matches!(distribution.as_str(), "standard" | "free-sharing"),
+        "Unknown distribution mode"
+    );
+    println!("cargo:rustc-env=FAIRWAY_DISTRIBUTION={distribution}");
+    let free_mac = distribution == "free-sharing"
+        && env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("macos")
+        && env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("aarch64");
+    // A free sharing build pins its verified ad-hoc payload at compilation.
+    // Standard/release builds always use the committed reviewed pin. This is
+    // never a runtime environment override and never modifies the tracked pin.
+    let pin = root.join(if free_mac {
+        "artifacts/free-sharing/runtime-pin.json"
+    } else {
+        "src-tauri/src/postgresql/managed/runtime-pin.json"
+    });
+    println!("cargo:rerun-if-changed={}", pin.display());
+    let metadata = fs::symlink_metadata(&pin).expect("Prepare the PostgreSQL build pin first");
+    assert!(
+        metadata.is_file() && !metadata.is_symlink() && metadata.len() <= 4096,
+        "Unsafe PostgreSQL build pin"
+    );
+    assert_eq!(
+        pin.canonicalize()
+            .expect("Cannot resolve PostgreSQL build pin"),
+        root.canonicalize().unwrap().join(if free_mac {
+            "artifacts/free-sharing/runtime-pin.json"
+        } else {
+            "src-tauri/src/postgresql/managed/runtime-pin.json"
+        }),
+        "PostgreSQL build pin must not follow symlink ancestors"
+    );
+    let bytes = fs::read(&pin).expect("Cannot read PostgreSQL build pin");
+    fs::write(
+        PathBuf::from(env::var_os("OUT_DIR").unwrap()).join("postgresql-runtime-pin.json"),
+        bytes,
+    )
+    .expect("Cannot stage compile-time PostgreSQL pin");
     let git = |args: &[&str]| -> Option<String> {
         let output = Command::new("git")
             .arg("-C")

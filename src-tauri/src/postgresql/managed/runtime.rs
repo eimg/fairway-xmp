@@ -57,8 +57,11 @@ fn read(dir: &Dir, name: &str, limit: u64, owned: bool) -> Result<Vec<u8>> {
     }
 }
 fn manifest(dir: &Dir, owned: bool) -> Result<(Manifest, Vec<u8>, Pin)> {
-    let pin: Pin = serde_json::from_str(include_str!("runtime-pin.json"))
-        .map_err(|_| failure("Invalid runtime pin"))?;
+    let pin: Pin = serde_json::from_str(include_str!(concat!(
+        env!("OUT_DIR"),
+        "/postgresql-runtime-pin.json"
+    )))
+    .map_err(|_| failure("Invalid runtime pin"))?;
     let bytes = read(dir, "manifest.json", 1024 * 1024, owned)?;
     if hash(&bytes) != pin.manifest_sha256 {
         return Err(failure(

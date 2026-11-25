@@ -7,6 +7,7 @@ import concurrent.futures
 import hashlib
 import http.client
 import json
+import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
@@ -311,12 +312,14 @@ def main():
     postgres = ROOT / 'src-tauri/resources/runtime/postgresql'
     if postgres.exists():
         from postgresql_release import verify_payload, PIN
-        verify_payload(postgres, json.loads(PIN.read_text()), bundled=True)
+        pin_path = (ROOT / 'artifacts/free-sharing/runtime-pin.json'
+                    if os.environ.get('FAIRWAY_DISTRIBUTION') == 'free-sharing' else PIN)
+        verify_payload(postgres, json.loads(pin_path.read_text()), bundled=True)
         pg_sources = stage / 'postgresql'
         pg_sources.mkdir(exist_ok=True)
         for path in (postgres / 'licenses').iterdir():
             shutil.copyfile(path, pg_sources / path.name)
-        for path in (ROOT / 'postgresql-source.lock.json', ROOT / 'scripts/prepare_postgresql_runtime.py', PIN):
+        for path in (ROOT / 'postgresql-source.lock.json', ROOT / 'scripts/prepare_postgresql_runtime.py', pin_path):
             shutil.copyfile(path, pg_sources / path.name)
         shutil.copyfile(postgres / 'manifest.json', pg_sources / 'manifest.json')
     (stage / 'README.md').write_text(f'''# Fairway XMP {version}: bundled-tool source

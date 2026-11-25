@@ -12,8 +12,11 @@ from postgresql_release import verify_payload, verify_code, PIN, read
 ENTITLEMENTS = Path(__file__).resolve().parents[1] / 'packaging/macos/php.entitlements.plist'
 
 
-def signing_command(file, identity, app):
-    command = ['codesign', '--force', '--options', 'runtime', '--timestamp', '--sign', identity]
+def signing_command(file, identity, app, adhoc=False):
+    command = ['codesign', '--force']
+    if not adhoc:
+        command.extend(['--options', 'runtime', '--timestamp'])
+    command.extend(['--sign', '-' if adhoc else identity])
     # Nested tools otherwise inherit the enclosing app's identifier. Native XPC
     # authenticates this exact helper identity in both directions.
     if file == app / 'Contents/Library/HelperTools/dev.fairway.environment.hosts-helper':

@@ -11,6 +11,18 @@ import sign_macos
 
 
 class SigningTests(unittest.TestCase):
+    def test_free_signing_is_adhoc_without_changing_standard_hardened_signing(self):
+        app = Path('/build/Fairway XMP.app')
+        php = app / 'Contents/Resources/runtime/php/bin/php'
+        command = sign_macos.signing_command(php, '-', app, adhoc=True)
+        self.assertEqual(command[command.index('--sign') + 1], '-')
+        self.assertNotIn('--timestamp', command)
+        self.assertNotIn('--options', command)
+        self.assertIn('--entitlements', command)
+        standard = sign_macos.signing_command(php, 'Developer ID', app)
+        self.assertIn('--timestamp', standard)
+        self.assertIn('runtime', standard)
+
     def test_xpc_helper_has_its_exact_peer_identifier(self):
         app = Path('/build/Fairway XMP.app')
         helper_id = 'dev.fairway.environment.hosts-helper'

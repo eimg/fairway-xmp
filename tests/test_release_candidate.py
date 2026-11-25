@@ -73,7 +73,7 @@ class CandidateTests(unittest.TestCase):
                 candidate.record('windows-x64', output, 'installer-artifact', lifecycle, root / 'metadata/candidate-windows-x64.json')
                 data = candidate.read(root / 'metadata/candidate-windows-x64.json')
                 self.assertEqual(data['files'][installer.name]['sha256'], candidate.digest(installer))
-                for field, value in [('modifiedSources', True), ('commit', 'b' * 40), ('version', '0.1.0-alpha.2'), ('architecture', 'aarch64')]:
+                for field, value in [('modifiedSources', True), ('commit', 'b' * 40), ('version', '0.1.0-alpha.2'), ('architecture', 'aarch64'), ('distribution', 'free-sharing')]:
                     bad = copy.deepcopy(original); bad['build'][field] = value
                     candidate.write(lifecycle, bad)
                     with self.subTest(field=field), self.assertRaises(ValueError):

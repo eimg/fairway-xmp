@@ -101,6 +101,15 @@ def verify_code(payload, team):
     requirement = (f'anchor apple generic and certificate leaf[subject.OU] = "{team}" and '
                    'certificate 1[field.1.2.840.113635.100.6.2.6] exists and '
                    'certificate leaf[field.1.2.840.113635.100.6.1.13] exists')
+    return verify_native_code(payload, requirement)
+
+
+def verify_development_code(payload):
+    """Free sharing accepts valid ad-hoc code, without claiming Developer ID trust."""
+    return verify_native_code(payload, None)
+
+
+def verify_native_code(payload, requirement):
     binaries = []
     for path in sorted(payload.rglob('*')):
         if not path.is_file():
@@ -110,10 +119,15 @@ def verify_code(payload, team):
         if magic != b'\xcf\xfa\xed\xfe':
             continue
         binaries.append(path)
-        subprocess.run(['/usr/bin/codesign', '--verify', '--strict', '-R=' + requirement, str(path)], check=True, capture_output=True)
+        command = ['/usr/bin/codesign', '--verify', '--strict']
+        if requirement is not None:
+            command.append('-R=' + requirement)
+        subprocess.run([*command, str(path)], check=True, capture_output=True)
         details = subprocess.check_output(['/usr/bin/codesign', '-d', '--verbose=4', str(path)], stderr=subprocess.STDOUT, text=True)
-        if not re.search(r'flags=.*\bruntime\b', details):
+        if requirement is not None and not re.search(r'flags=.*\bruntime\b', details):
             raise ValueError('PostgreSQL code must use hardened runtime signing')
+        if requirement is None and 'Signature=adhoc' not in details:
+            raise ValueError('Free sharing expects the verified ad-hoc development payload')
         if subprocess.check_output(['/usr/bin/lipo', '-archs', str(path)], text=True).strip() != 'arm64':
             raise ValueError('Unexpected PostgreSQL architecture')
         for line in subprocess.check_output(['/usr/bin/otool', '-L', str(path)], text=True).splitlines()[1:]:

@@ -4,6 +4,10 @@ Past entries record released changes; they are not current development or releas
 
 ## Unreleased
 
+- Add a separate free Mac/Windows sharing workflow: ad-hoc Mac signing with
+  PostgreSQL pinned at compilation, unsigned Windows installers and manual updates.
+  These sharing artifacts are separate from notarized release candidates.
+
 - Prepare personal fork candidate 0.2.0-rc.1, including the macOS PostgreSQL
   explorer/SQL workspace and the existing Node Projects workspace.
 - Route updater/publication/help links to the personal fork; require owner signing

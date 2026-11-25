@@ -1,6 +1,9 @@
 # Personal fork release preparation
 
 Target: `RizzRioo06/fairway-xmp`, candidate version **0.2.0-rc.1**.
+For friends using Mac/Windows without paid Apple membership, use the separate
+[free sharing build](free-sharing.md). Its ad-hoc Mac packages and unsigned Windows
+installers are manual-update development artifacts, not this notarized candidate.
 Prepared on `feature/postgresql-integration`; the owner authorized committing,
 merging and pushing this work to the personal fork's `main` on 2026-11-25.
 No release has been built,

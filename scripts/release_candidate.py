@@ -51,6 +51,8 @@ def record(target, directory, artifact, lifecycle, output, signing="unsigned"):
         raise ValueError('Candidate checkout changed after compilation; commit reviewed inputs and rebuild')
     evidence = read(lifecycle)
     build = evidence['build']
+    if build.get('distribution', 'standard') != 'standard':
+        raise ValueError('Free sharing builds are not signed release candidates')
     if evidence.get('status') != 'passed' or build['version'] != version or build['commit'] != commit or build['modifiedSources']:
         raise ValueError('Installed artifact identity/lifecycle does not match the clean candidate source')
     expected_system = {'windows-x64': ('windows', 'x86_64'), 'macos-arm64': ('macos', 'aarch64'), 'linux-x86_64': ('linux', 'x86_64')}[target]

@@ -6,6 +6,7 @@ Start with the [user guide](../README.md) or [development setup](../CONTRIBUTING
 | --- | --- |
 | [Build and release](build-and-release.md) | Packaging, signing, candidate CI, publication and update feeds |
 | [Personal fork release](fork-release.md) | Features, fork credentials, PostgreSQL signing/pinning and remaining release work |
+| [Free sharing builds](free-sharing.md) | No-paid-account Mac/Windows packages, manual installation/updates and platform limits |
 | [Testing](testing.md) | Automated checks, isolated development profiles and optional device checks |
 | [Maintenance](maintenance.md) | Updating runtime dependencies, current limitations and future improvements |
 | [CI performance](ci-build-performance.md) | Cache reuse, build retries and artifact cleanup |

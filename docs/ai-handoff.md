@@ -1,5 +1,31 @@
 # AI handoff
 
+## Free Mac/Windows sharing (2026-11-25)
+
+- Owner wants friends on Apple Silicon Macs and Windows to use the fork without
+  paid Apple membership. Work is isolated on `feature/free-sharing-builds`.
+- Added `free-sharing-builds.yml`: unsigned Windows installer reuse and an ad-hoc
+  Mac app with manual updates, corresponding sources/checksums and PostgreSQL.
+  There are no Apple/updater secrets or release-publication steps in this path.
+- Mac uses native certificate trust and the existing administrator-password hosts
+  fallback, not the Developer ID hosts helper. Real user Gatekeeper/Keychain and
+  domain/HTTPS acceptance remain unverified.
+- `configure_free_sharing.py` verifies an ad-hoc PostgreSQL payload and generates
+  `artifacts/free-sharing/runtime-pin.json`. Only an explicitly marked Mac sharing
+  build embeds this compile-time pin from OUT_DIR; standard/release builds retain
+  the committed pin. No runtime environment variable can repin a running app.
+- `package_macos_sharing.py` seals a fresh owned app copy without re-signing
+  PostgreSQL, includes notices/source archives and records actual build identity.
+  Signed candidate recording rejects the free-sharing distribution kind.
+- Owner explicitly approved committing/pushing `feature/free-sharing-builds`,
+  merging it into the personal fork's `main`, and running both free CI builds.
+  Teacher upstream remains untouched. See Git history/Actions for final identities.
+- Local checks passed: 101 Python tests at the regression milestone plus the final
+  focused sharing/source tests, 177 Rust regressions, all 25 PostgreSQL tests in
+  free-sharing mode, strict Clippy, formatting, YAML parsing and documentation links.
+- See [manual sharing guide](free-sharing.md). No installer result is claimed
+  before CI completes; native Mac recipient approval remains operator work.
+
 ## Owner-authorized main integration (2026-11-25)
 
 - Owner explicitly requested committing the prepared code, merging it into the

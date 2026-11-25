@@ -1,0 +1,114 @@
+name: Free sharing builds
+
+on:
+  workflow_dispatch:
+    inputs:
+      authorize_postgresql_source_build:
+        description: Authorize building the checksum-pinned PostgreSQL sources in disposable Mac CI storage
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: free-sharing-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  windows:
+    uses: ./.github/workflows/windows-test-build.yml
+    with:
+      signed_release: false
+
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 150
+    env:
+      FAIRWAY_DISTRIBUTION: free-sharing
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check explicit source build authorization
+        env:
+          AUTHORIZED: ${{ inputs.authorize_postgresql_source_build }}
+        run: test "$AUTHORIZED" = true
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: ./.github/actions/configure-macos-build
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          shared-key: free-sharing-v1
+          cache-on-failure: false
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npm run test:unit
+      - uses: ./.github/actions/restore-runtime-downloads
+        id: downloads
+      - name: Stage normal runtimes and a new ad-hoc PostgreSQL payload
+        run: |
+          python scripts/prepare_runtime.py
+          python scripts/prepare_postgresql_runtime.py --authorize-source-build --output "$PWD/src-tauri/resources/runtime/postgresql"
+          mkdir -p artifacts
+          python scripts/configure_free_sharing.py
+      - run: npm run test:scripts
+      - run: cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
+      - name: Verify Rust and isolated native PostgreSQL fixtures
+        env:
+          FAIRWAY_TEST_POSTGRES_PAYLOAD: ${{ github.workspace }}/src-tauri/resources/runtime/postgresql
+          FAIRWAY_TEST_POSTGRES_WORKER: ${{ github.workspace }}/src-tauri/target/debug/examples/postgresql_health_worker
+        run: |
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features --features terminal
+          cargo build --manifest-path src-tauri/Cargo.toml --locked --no-default-features --features terminal --example postgresql_health_worker
+          cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features --features terminal --lib postgresql -- --include-ignored --test-threads=1
+      - name: Check native service behavior in disposable data
+        run: cargo run --manifest-path src-tauri/Cargo.toml --locked --no-default-features --example smoke -- "$PWD/.runtime-work/free-sharing-smoke"
+      - name: Collect exact application and third-party sources
+        run: python scripts/package_sources.py --locked
+      - name: Build updater-free app with native trust and password-based hosts authorization
+        run: |
+          npm run tauri -- build --bundles app --features native-macos-trust --config artifacts/free-sharing/tauri.json --no-sign
+      - name: Package and verify a fresh ad-hoc app copy
+        run: |
+          version=$(python scripts/release_candidate.py version)
+          python scripts/package_macos_sharing.py --app 'src-tauri/target/release/bundle/macos/Fairway XMP.app' --sources "artifacts/sources-$version/fairway-xmp-$version-bundled-tool-sources.tar.gz" --output artifacts/macos-sharing
+      - name: Exercise the actual sharing app workers without opening its GUI
+        env:
+          FAIRWAY_TEST_POSTGRES_PAYLOAD: ${{ github.workspace }}/artifacts/macos-sharing/Fairway XMP.app/Contents/Resources/runtime/postgresql
+          FAIRWAY_TEST_POSTGRES_WORKER: ${{ github.workspace }}/artifacts/macos-sharing/Fairway XMP.app/Contents/MacOS/fairway
+        run: cargo test --manifest-path src-tauri/Cargo.toml --locked --no-default-features --features terminal --lib postgresql -- --include-ignored --test-threads=1
+      - uses: actions/cache/save@v5
+        if: steps.downloads.outputs.cache-hit != 'true'
+        with:
+          path: .runtime-cache
+          key: ${{ steps.downloads.outputs.key }}
+      - uses: actions/upload-artifact@v6
+        with:
+          name: fairway-xmp-macos-arm64-free-sharing-${{ github.sha }}
+          path: |
+            artifacts/macos-sharing/*.zip
+            artifacts/macos-sharing/*.tar.gz
+            artifacts/macos-sharing/*.json
+            artifacts/macos-sharing/*.txt
+            artifacts/macos-sharing/*.md
+            artifacts/macos-sharing/LICENSE
+            artifacts/macos-sharing/THIRD_PARTY_NOTICES.md
+            artifacts/macos-sharing/runtime-downloads.lock.json
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 30
+      - name: Explain manual distribution
+        run: echo 'Free sharing artifacts use manual installation and updates. No Apple credentials, notarization, updater keys or release publication are involved. See docs/free-sharing.md; actual Mac Gatekeeper, Keychain and domain approval remain operator checks.' >> "$GITHUB_STEP_SUMMARY"
